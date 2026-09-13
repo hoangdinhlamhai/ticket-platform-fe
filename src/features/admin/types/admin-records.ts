@@ -1,0 +1,25 @@
+export type AdminReviewDecision = 'approved' | 'changes_requested' | 'rejected'
+export type AdminReviewStatus = 'pending_review' | AdminReviewDecision
+export type AdminVerificationStatus = 'not_submitted' | 'pending' | 'changes_requested' | 'verified' | 'rejected'
+export type AdminAccountStatus = 'active' | 'restricted' | 'suspended'
+export type AdminCaseStatus = 'open' | 'investigating' | 'waiting_for_information' | 'resolved' | 'dismissed'
+export type AdminCaseSeverity = 'low' | 'medium' | 'high' | 'critical'
+export type AdminSubjectType = 'event' | 'organizer' | 'user' | 'order' | 'ticket' | 'resale' | 'refund' | 'payout'
+export type AdminResaleVisibility = 'visible' | 'hidden'
+export type AdminRefundStatus = 'requested' | 'under_review' | 'approved' | 'rejected' | 'completed'
+export type AdminPayoutStatus = 'scheduled' | 'pending' | 'on_hold' | 'released' | 'paid'
+
+export type AdminTicketTier = { readonly id: string; readonly name: string; readonly price: number; readonly capacity: number; readonly soldCount: number }
+export type AdminReviewEntry = { readonly id: string; readonly submittedAt: string; readonly reviewedAt: string | null; readonly decision: AdminReviewDecision | null; readonly reason: string | null }
+export type AdminEvent = { readonly id: string; readonly organizerId: string; readonly title: string; readonly categoryId: string; readonly city: string; readonly venue: string; readonly startsAt: string; readonly policy: string; readonly reviewStatus: AdminReviewStatus; readonly submittedAt: string; readonly submissionNumber: number; readonly ticketTiers: readonly AdminTicketTier[]; readonly riskFlags: readonly string[]; readonly reviewHistory: readonly AdminReviewEntry[] }
+export type AdminOrganizer = { readonly id: string; readonly name: string; readonly contactName: string; readonly email: string; readonly city: string; readonly verificationStatus: AdminVerificationStatus; readonly accountStatus: AdminAccountStatus; readonly documents: readonly string[]; readonly grossSales: number; readonly refundRate: number }
+export type AdminUser = { readonly id: string; readonly name: string; readonly email: string; readonly city: string; readonly accountStatus: AdminAccountStatus }
+export type AdminOrder = { readonly id: string; readonly eventId: string; readonly organizerId: string; readonly userId: string; readonly source: 'primary' | 'resale'; readonly status: 'completed' | 'failed' | 'refunded'; readonly amount: number; readonly createdAt: string; readonly paymentStatus: string; readonly ticketIds: readonly string[] }
+export type AdminTicket = { readonly id: string; readonly orderId: string; readonly eventId: string; readonly userId: string; readonly reference: string; readonly credentialCode: string; readonly credentialStatus: 'valid' | 'checked_in' | 'void'; readonly checkedInAt: string | null; readonly resaleListingId: string | null }
+export type AdminResale = { readonly id: string; readonly ticketId: string; readonly eventId: string; readonly sellerId: string; readonly buyerId: string | null; readonly visibility: AdminResaleVisibility; readonly listingStatus: 'active' | 'sold' | 'withdrawn'; readonly amount: number; readonly reported: boolean; readonly createdAt: string }
+export type AdminRefund = { readonly id: string; readonly orderId: string; readonly userId: string; readonly eventId: string; readonly organizerId: string; readonly amount: number; readonly reason: string; readonly requestedAt: string; readonly status: AdminRefundStatus }
+export type AdminPayout = { readonly id: string; readonly organizerId: string; readonly eventId: string; readonly grossAmount: number; readonly refundAmount: number; readonly netAmount: number; readonly scheduledAt: string; readonly status: AdminPayoutStatus; readonly caseId: string | null }
+export type AdminCase = { readonly id: string; readonly subjectType: AdminSubjectType; readonly subjectId: string; readonly reporter: string; readonly category: string; readonly summary: string; readonly evidence: readonly string[]; readonly severity: AdminCaseSeverity; readonly status: AdminCaseStatus; readonly createdAt: string; readonly timeline: readonly { readonly id: string; readonly occurredAt: string; readonly message: string }[] }
+export type AdminAuditEntry = { readonly id: string; readonly actorLabel: string; readonly action: string; readonly targetType: AdminSubjectType | 'category' | 'settings'; readonly targetId: string; readonly reason: string | null; readonly occurredAt: string; readonly metadata: string }
+export type AdminDailyMetric = { readonly date: string; readonly primary: number; readonly resale: number; readonly successfulTransactions: number }
+export type AdminCategory = { readonly id: string; readonly label: string; readonly slug: string; readonly active: boolean }

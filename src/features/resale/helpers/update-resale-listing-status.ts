@@ -1,0 +1,2 @@
+import type { ResaleListing } from '../types/resale'
+export function updateResaleListingStatus(listings: readonly ResaleListing[], listingId: string, listingStatus: 'active' | 'sold' | 'withdrawn'): ResaleListing[] { return listings.map((listing): ResaleListing => listing.id === listingId ? { ...listing, listingStatus, availability: listingStatus === 'active' ? 'available' : 'unavailable' } : listing) }

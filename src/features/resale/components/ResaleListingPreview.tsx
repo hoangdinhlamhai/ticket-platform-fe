@@ -1,0 +1,3 @@
+import type { ResaleListing } from '../types/resale'
+import { formatResalePrice } from '../helpers/format-resale-price'
+export function ResaleListingPreview({ listing }: { listing: ResaleListing }) { return <aside className="rounded-lg bg-pine p-6 text-paper"><p className="text-xs font-extrabold tracking-[0.1em] text-mint">XEM TRƯỚC LISTING</p><h2 className="mt-3 font-body text-4xl font-extrabold tracking-[-0.08em]">{listing.eventTitle}</h2><p className="mt-4 text-story-copy">{listing.ticketType}</p><strong className="mt-6 block text-3xl text-poster-yellow">{formatResalePrice(listing.price)}</strong><span className="mt-5 inline-flex rounded-sm border border-mint/50 px-2 py-1 text-xs font-extrabold text-mint">LISTING CỦA BẠN</span></aside> }

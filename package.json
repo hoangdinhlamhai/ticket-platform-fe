@@ -1,0 +1,37 @@
+{
+  "name": "ticket-platform-vite",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "test": "node --experimental-strip-types --test src/app/application-structure.test.ts src/app/routing/attendee-route.test.ts src/app/routing/organizer-route.test.ts src/features/checkout/helpers/validate-primary-checkout.test.ts src/features/events/helpers/eventDetailHelpers.test.ts src/features/events/helpers/event-discovery-filter-state.test.ts src/features/orders/helpers/order-domain.test.ts src/features/profile/helpers/get-profile-initials.test.ts src/features/profile/helpers/validate-customer-profile.test.ts src/features/resale/helpers/resale-listing-domain.test.ts src/features/resale/helpers/resale-checkout-domain.test.ts src/features/resale/helpers/resale-seller-domain.test.ts src/features/tickets/helpers/get-ticket-profile-summary.test.ts src/features/tickets/helpers/owned-ticket-domain.test.ts src/features/tickets/helpers/ticketDetailHelpers.test.ts src/features/organizer/helpers/organizer-workspace-reducer.test.ts src/features/organizer/helpers/organizer-ticket-sale-policy.test.ts src/features/organizer/helpers/organizer-datetime-local.test.ts src/features/organizer/helpers/select-organizer-metrics.test.ts src/features/organizer/helpers/validate-organizer-event.test.ts src/features/organizer/helpers/filter-organizer-events.test.ts src/features/organizer/helpers/organizer-operations.test.ts src/features/organizer/helpers/organizer-check-in.test.ts src/features/organizer/helpers/organizer-reporting.test.ts src/features/organizer/helpers/validate-organizer-organization.test.ts src/features/organizer/hooks/use-organizer-event-form.test.ts src/features/organizer/organizer-phase-four-source-contract.test.ts src/app/routing/admin-route.test.ts src/features/admin/helpers/admin-transitions.test.ts src/features/admin/helpers/admin-workspace-reducer.test.ts src/features/admin/helpers/select-admin-dashboard.test.ts src/features/admin/helpers/filter-admin-records.test.ts src/features/admin/admin-component-contract.test.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@eslint/js": "^10.0.1",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^8.2.0"
+  }
+}

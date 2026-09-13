@@ -1,0 +1,8 @@
+import { OrganizerStatusBadge } from './OrganizerStatusBadge.tsx'
+import type { OrganizerEvent } from '../types/organizer-event.ts'
+
+type Props = { events: readonly OrganizerEvent[]; onSelect: (eventId: string) => void; title: string }
+const labels = { draft: 'Bản nháp', pending_review: 'Chờ duyệt', changes_requested: 'Cần chỉnh sửa', approved: 'Đã duyệt', published: 'Đã xuất bản', ongoing: 'Đang diễn ra', ended: 'Đã kết thúc', cancelled: 'Đã hủy', rejected: 'Từ chối' } as const
+const tones = { draft: 'neutral', pending_review: 'blue', changes_requested: 'coral', approved: 'mint', published: 'mint', ongoing: 'blue', ended: 'neutral', cancelled: 'coral', rejected: 'coral' } as const
+function date(value: string) { return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+export function OrganizerDashboardEventList({ events, onSelect, title }: Props) { return <section className="rounded-lg border border-line bg-surface p-5"><div className="flex items-center justify-between gap-3"><h2 className="m-0 text-xl font-extrabold">{title}</h2><span className="text-sm text-ink-soft">{events.length} sự kiện</span></div><ul className="mt-4 divide-y divide-line p-0">{events.map((event) => <li key={event.id} className="flex flex-wrap items-center justify-between gap-3 py-4"><div><button className="text-left text-sm font-extrabold text-blue-deep underline-offset-4 hover:underline" type="button" onClick={() => onSelect(event.id)}>{event.title}</button><p className="mt-1 mb-0 text-sm text-ink-soft">{date(event.startsAt)} · {event.city}</p></div><OrganizerStatusBadge label={labels[event.status]} tone={tones[event.status]} /></li>)}</ul></section> }

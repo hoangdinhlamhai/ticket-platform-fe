@@ -1,0 +1,5 @@
+import type { OrderFilters } from '../types/order'
+type Props = { filters: OrderFilters; onChange: (filters: OrderFilters) => void }
+export function OrderHistoryFilters({ filters, onChange }: Props) {
+  return <div className="grid grid-cols-2 gap-4 rounded-lg border border-line bg-surface p-4 mobile:grid-cols-1"><label className="text-sm font-bold">Nguồn mua<select className="mt-2 min-h-11 w-full rounded-md border border-line bg-paper px-3" value={filters.source} onChange={(event) => onChange({ ...filters, source: event.target.value as OrderFilters['source'] })}><option value="all">Tất cả nguồn</option><option value="primary">Vé chính thức</option><option value="resale">Resale</option></select></label><label className="text-sm font-bold">Trạng thái<select className="mt-2 min-h-11 w-full rounded-md border border-line bg-paper px-3" value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value as OrderFilters['status'] })}><option value="all">Tất cả trạng thái</option><option value="completed">Đã thanh toán</option><option value="failed">Thất bại</option><option value="expired">Hết hạn</option></select></label></div>
+}
