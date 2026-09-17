@@ -16,6 +16,12 @@ npm run lint
 npm run build
 ```
 
+## Xác thực Attendee (phần đã tích hợp)
+
+Frontend Attendee kết nối API xác thực tại `/api/auth`: đăng ký, đăng nhập, refresh cookie HttpOnly, đăng xuất và đọc phiên `me`. Access token chỉ giữ trong bộ nhớ; không dùng browser storage hoặc `document.cookie`. Khi chạy development, Vite cố định tại `http://localhost:5173` (`strictPort`) và proxy `/api` đến `http://localhost:3000` mà không rewrite đường dẫn.
+
+Sao chép `.env.example` nếu cần thay `VITE_API_BASE_URL`; giá trị mặc định là `/api`. Backend phải được chạy riêng ở cổng 3000; xem cấu hình trong README của `ticket-platform-nest`. Mở `/login` hoặc `/register` để sử dụng. Các thao tác refresh cookie được tuần tự hóa giữa tab bằng Web Locks trên trình duyệt hỗ trợ API này; token không đi qua storage. Google Sign-In và đặt lại mật khẩu hiển thị là chưa khả dụng.
+
 ## Phạm vi prototype hiện tại
 
 - Giao diện React + TypeScript + Vite, dùng Tailwind CSS v4.
@@ -39,10 +45,10 @@ npm run build
 
 ## Chưa triển khai
 
-Đây chưa phải là hệ thống giao dịch thật. Prototype **không** có:
+Đây chưa phải là hệ thống giao dịch thật. Ngoài xác thực Attendee cơ bản nêu trên, prototype **chưa** có:
 
-- backend, API, xác thực, OAuth hoặc gửi thông tin đăng nhập;
-- `localStorage`, `sessionStorage`, cookie, database hay bất kỳ persistence nào;
+- OAuth/Google Sign-In, đặt lại mật khẩu hoặc chỉnh sửa hồ sơ tài khoản thật;
+- persistence phía browser cho token (refresh cookie HttpOnly do backend quản lý);
 - reservation, order hoặc payment thật, webhook hay xử lý đồng thời;
 - QR check-in thật, xác thực danh tính và chống check-in trùng bằng transaction/khóa đồng thời ở phía server; prototype chỉ chặn lặp trong React session;
 - ownership transfer và resale transaction thật;

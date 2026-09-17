@@ -2,16 +2,18 @@ import type { AuthMode } from '../types/authForm'
 
 type AuthModeSwitcherProps = {
   mode: AuthMode
+  disabled?: boolean
   onSelect: (mode: AuthMode) => void
 }
 
 const modeButtonClass = 'min-h-11 cursor-pointer border-0 bg-transparent text-[0.84rem] font-bold text-ink-soft aria-pressed:bg-pine aria-pressed:text-paper'
 
-export function AuthModeSwitcher({ mode, onSelect }: AuthModeSwitcherProps) {
+export function AuthModeSwitcher({ mode, disabled = false, onSelect }: AuthModeSwitcherProps) {
   return (
     <div className="grid grid-cols-2 border border-line bg-paper-deep p-1" role="group" aria-label="Chọn biểu mẫu xác thực">
       <button
         type="button"
+        disabled={disabled}
         aria-pressed={mode === 'login'}
         className={modeButtonClass}
         onClick={() => onSelect('login')}
@@ -20,6 +22,7 @@ export function AuthModeSwitcher({ mode, onSelect }: AuthModeSwitcherProps) {
       </button>
       <button
         type="button"
+        disabled={disabled}
         aria-pressed={mode === 'register'}
         className={modeButtonClass}
         onClick={() => onSelect('register')}

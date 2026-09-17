@@ -12,14 +12,14 @@ export const AUTH_COPY: Record<AuthMode, AuthCopy> = {
     eyebrow: 'RẤT VUI ĐƯỢC GẶP LẠI',
     title: 'Chào mừng bạn trở lại',
     description:
-      'Bản xem trước giao diện đăng nhập Ticketly. Tính năng theo dõi vé và đơn hàng sẽ được kết nối ở bước tiếp theo.',
+      'Đăng nhập để quản lý phiên Ticketly của bạn. Vé, đơn hàng và hoạt động prototype vẫn là dữ liệu minh họa riêng.',
     submitLabel: 'Đăng nhập',
   },
   register: {
     eyebrow: 'THAM GIA CỘNG ĐỒNG',
     title: 'Bắt đầu hành trình',
     description:
-      'Bản xem trước giao diện tạo tài khoản Ticketly. Thông tin bạn nhập chưa được gửi hoặc lưu lại.',
+      'Tạo tài khoản Ticketly để xác thực phiên đăng nhập. Dữ liệu vé, đơn hàng và hồ sơ demo chưa được đồng bộ với tài khoản.',
     submitLabel: 'Tạo tài khoản',
   },
 }

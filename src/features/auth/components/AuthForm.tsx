@@ -9,6 +9,7 @@ type AuthFormProps = {
   errors: AuthFormErrors
   mode: AuthMode
   notice: string
+  isPending: boolean
   onForgotPassword: () => void
   onGoogle: () => void
   onModeChange: (mode: AuthMode) => void
@@ -23,7 +24,9 @@ const fieldErrorClass = 'mt-[0.4rem] text-[0.78rem] leading-[1.45] text-error'
 
 export function AuthForm({
   errors,
-  mode, 
+  isPending,
+  mode,
+  notice,
   onForgotPassword,
   onGoogle,
   onModeChange,
@@ -47,7 +50,7 @@ export function AuthForm({
         <span>Ticketly</span>
       </div>
       <section className="w-full max-w-[28rem]" aria-labelledby="auth-title">
-        <AuthModeSwitcher mode={mode} onSelect={onModeChange} />
+        <AuthModeSwitcher mode={mode} disabled={isPending} onSelect={onModeChange} />
         <header className="mt-8 mb-7 mobile:mt-[1.6rem]">
           <p className="m-0 mb-[0.45rem] text-[0.7rem] font-extrabold tracking-[0.11em] text-coral-dark">
             {copy.eyebrow}
@@ -60,7 +63,8 @@ export function AuthForm({
           </h1>
         </header>
 
-        <form noValidate onSubmit={onSubmit}>
+        <form noValidate onSubmit={onSubmit} aria-busy={isPending}>
+          {notice ? <p className="mb-4 border border-blue/30 bg-google-hover px-3 py-2 text-sm text-blue-deep" role="status">{notice}</p> : null}
           {mode === 'register' ? (
             <div className="mt-4">
               <label className="mb-[0.45rem] block text-[0.83rem] font-bold text-ink" htmlFor="name">
@@ -73,6 +77,7 @@ export function AuthForm({
                 type="text"
                 autoComplete="name"
                 required
+                disabled={isPending}
                 value={values.name}
                 onChange={onTextChange}
                 aria-invalid={Boolean(errors.name)}
@@ -98,6 +103,7 @@ export function AuthForm({
               autoComplete="email"
               inputMode="email"
               required
+              disabled={isPending}
               value={values.email}
               onChange={onTextChange}
               aria-invalid={Boolean(errors.email)}
@@ -116,6 +122,7 @@ export function AuthForm({
             label="Mật khẩu"
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             required
+            disabled={isPending}
             value={values.password}
             onChange={onTextChange}
             error={errors.password}
@@ -125,6 +132,7 @@ export function AuthForm({
             <button
               className="mt-[0.6rem] ml-auto block cursor-pointer border-0 bg-transparent p-0 text-[0.78rem] font-bold text-blue-deep underline"
               type="button"
+              disabled={isPending}
               onClick={onForgotPassword}
             >
               Quên mật khẩu?
@@ -137,6 +145,7 @@ export function AuthForm({
                 label="Xác nhận mật khẩu"
                 autoComplete="new-password"
                 required
+                disabled={isPending}
                 value={values.confirmPassword}
                 onChange={onTextChange}
                 error={errors.confirmPassword}
@@ -148,6 +157,7 @@ export function AuthForm({
                   className="mt-[0.15rem] h-[1.1rem] w-[1.1rem] cursor-pointer accent-blue"
                   type="checkbox"
                   required
+                  disabled={isPending}
                   checked={values.acceptedTerms}
                   onChange={onTermsChange}
                   aria-invalid={Boolean(errors.acceptedTerms)}
@@ -168,8 +178,9 @@ export function AuthForm({
           <button
             className="mt-6 flex min-h-[3.3rem] w-full cursor-pointer items-center justify-center gap-[0.6rem] border border-coral-dark bg-coral text-[0.94rem] font-extrabold text-paper transition-colors duration-150 ease-out hover:bg-coral-dark motion-reduce:transition-none"
             type="submit"
+            disabled={isPending}
           >
-            <span>{copy.submitLabel}</span>
+            <span>{isPending ? 'Đang xử lý…' : copy.submitLabel}</span>
             <ArrowIcon />
           </button>
         </form>
@@ -180,17 +191,21 @@ export function AuthForm({
         <button
           className="flex min-h-[3.3rem] w-full cursor-pointer items-center justify-center gap-[0.7rem] border border-line bg-surface text-[0.9rem] font-bold text-ink hover:border-blue hover:bg-google-hover hover:text-blue-deep [&>svg]:h-[1.2rem] [&>svg]:w-[1.2rem]"
           type="button"
+          disabled
+          aria-describedby="google-unavailable"
           onClick={onGoogle}
         >
           <GoogleIcon />
-          <span>Tiếp tục với Google</span>
+          <span>Google sẽ sớm được hỗ trợ</span>
         </button>
+        <p id="google-unavailable" className="mt-2 text-center text-xs text-ink-soft">Tính năng này chưa khả dụng.</p>
 
         <p className="mt-6 flex justify-center gap-[0.35rem] text-[0.82rem] text-ink-soft">
           {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
           <button
             className="cursor-pointer border-0 bg-transparent p-0 font-extrabold text-blue-deep underline"
             type="button"
+            disabled={isPending}
             onClick={() => onModeChange(mode === 'login' ? 'register' : 'login')}
           >
             {mode === 'login' ? 'Tạo tài khoản' : 'Đăng nhập'}
