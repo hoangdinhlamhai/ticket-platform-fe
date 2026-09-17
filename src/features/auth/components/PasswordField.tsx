@@ -9,6 +9,7 @@ type PasswordFieldProps = {
   name: 'password' | 'confirmPassword'
   onChange: (event: ChangeEvent<HTMLInputElement>) => void
   required: boolean
+  disabled?: boolean
   value: string
 }
 
@@ -23,6 +24,7 @@ export function PasswordField({
   name,
   onChange,
   required,
+  disabled = false,
   value,
 }: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false)
@@ -41,6 +43,7 @@ export function PasswordField({
           type={isVisible ? 'text' : 'password'}
           autoComplete={autoComplete}
           required={required}
+          disabled={disabled}
           value={value}
           onChange={onChange}
           aria-invalid={Boolean(error)}
@@ -49,6 +52,7 @@ export function PasswordField({
         <button
           className="absolute top-[0.2rem] right-[0.2rem] grid h-11 w-11 cursor-pointer place-items-center border-0 bg-transparent text-ink-soft [&>svg]:h-[1.2rem] [&>svg]:w-[1.2rem] [&>svg]:fill-none [&>svg]:stroke-current [&>svg]:[stroke-linecap:round] [&>svg]:[stroke-linejoin:round] [&>svg]:[stroke-width:1.8]"
           type="button"
+          disabled={disabled}
           aria-label={isVisible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           onClick={() => setIsVisible((current) => !current)}
         >
