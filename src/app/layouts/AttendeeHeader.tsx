@@ -69,6 +69,7 @@ export function AttendeeHeader({ activeRoute, authStatus, authenticatedUser, onL
           ) : null}
           {authStatus === 'authenticated' && authenticatedUser ? (
             <>
+              <a className="flex min-h-11 items-center rounded-md border border-pine/40 px-3 text-[0.8rem] font-extrabold text-pine no-underline hover:bg-pine/10" href="/organizer/events/new">Tạo sự kiện</a>
               <div className="flex min-h-11 items-center gap-2 rounded-md border border-blue/30 bg-google-hover px-2 text-left">
                 <span className="grid h-9 w-9 place-items-center rounded-md bg-pine text-[0.72rem] font-extrabold tracking-[0.06em] text-paper" aria-hidden="true">{getProfileInitials(authenticatedUser.fullName)}</span>
                 <span className="hidden text-[0.82rem] font-bold sm:block">{authenticatedUser.fullName}</span>

@@ -22,12 +22,14 @@ import {
 import { selectAdminDashboard } from '../features/admin/helpers/select-admin-dashboard.ts'
 import type { AdminWorkspaceController } from '../features/admin/hooks/admin-workspace-controller.ts'
 import type { AdminOperationResult } from '../features/admin/types/admin-workspace.ts'
+import { RealAdminEventReviews } from '../features/admin/components/RealAdminEventReviews.tsx'
 
 type Props = {
   readonly pathname: string
   readonly workspace: AdminWorkspaceController
   readonly onPathnameChange: (path: AdminPath) => void
   readonly onExitToAttendee: () => void
+  readonly accessToken: string | null
 }
 
 function getOperationNotice(operation: AdminOperationResult | null) {
@@ -44,7 +46,7 @@ function getOperationNotice(operation: AdminOperationResult | null) {
   return operation.reason ?? 'Không thể thực hiện thao tác này.'
 }
 
-export function AdminApplication({ pathname, workspace, onPathnameChange, onExitToAttendee }: Props) {
+export function AdminApplication({ pathname, workspace, onPathnameChange, onExitToAttendee, accessToken }: Props) {
   const route = getAdminRoute(pathname)
   const eventId = getAdminEventId(pathname)
   const caseId = getAdminCaseId(pathname)
@@ -60,6 +62,8 @@ export function AdminApplication({ pathname, workspace, onPathnameChange, onExit
 
   let page: ReactNode
   if (route === 'dashboard') page = <AdminDashboardPage workspace={workspace.workspace} navigate={navigatePage} />
+  else if (route === 'event-reviews' && accessToken) page = <RealAdminEventReviews accessToken={accessToken} navigate={navigatePage} />
+  else if (route === 'event-review-detail' && accessToken) page = <RealAdminEventReviews accessToken={accessToken} eventId={eventId ?? undefined} navigate={navigatePage} />
   else if (route === 'event-reviews') page = <AdminEventReviewListPage controller={workspace} navigate={navigatePage} />
   else if (route === 'event-review-detail') page = eventId && workspace.workspace.events.some((event) => event.id === eventId) ? <AdminEventReviewDetailPage controller={workspace} eventId={eventId} navigate={navigatePage} /> : <AdminMissingRecord title="Không tìm thấy sự kiện" navigate={navigatePage} />
   else if (route === 'cases') page = <AdminCaseListPage controller={workspace} navigate={navigatePage} />

@@ -15,61 +15,16 @@ export type OrganizerTicketTier = {
   readonly salesStartAt: string
   readonly salesEndAt: string
   readonly perOrderLimit: number
+  readonly minPerOrder?: number
+  readonly description?: string
+  readonly image?: string
 }
 
-export type OrganizerOrderLineItem = {
-  readonly ticketTierId: string
-  readonly quantity: number
-  readonly unitPrice: number
-}
+export type OrganizerTicketTierDraft = Pick<OrganizerTicketTier, 'name' | 'price' | 'capacity' | 'salesStartAt' | 'salesEndAt' | 'perOrderLimit'> & Partial<Pick<OrganizerTicketTier, 'minPerOrder' | 'description' | 'image'>>
 
-export type OrganizerOrder = {
-  readonly id: string
-  readonly eventId: string
-  readonly buyerName: string
-  readonly buyerEmail: string
-  readonly buyerPhone: string
-  readonly paymentStatus: OrganizerPaymentStatus
-  readonly createdAt: string
-  readonly paidAt: string | null
-  readonly items: readonly OrganizerOrderLineItem[]
-  readonly ticketTierIds: readonly string[]
-  readonly total: number
-}
-
-export type OrganizerAttendee = {
-  readonly id: string
-  readonly eventId: string
-  readonly orderId: string
-  readonly ticketTierId: string
-  readonly fullName: string
-  readonly email: string
-  readonly ticketReference: string
-  readonly isOrderBuyer: boolean
-  readonly credentialStatus: OrganizerCredentialStatus
-  readonly checkedInAt: string | null
-}
-
-export type OrganizerRefund = {
-  readonly id: string
-  readonly orderId: string
-  readonly amount: number
-  readonly reason: string
-  readonly createdAt: string
-}
-
-export type OrganizerPayout = {
-  readonly id: string
-  readonly eventId: string
-  readonly amount: number
-  readonly status: OrganizerPayoutStatus
-  readonly scheduledAt: string
-  readonly paidAt: string | null
-}
-
-export type OrganizerCheckInActivity = {
-  readonly id: string
-  readonly eventId: string
-  readonly attendeeId: string
-  readonly checkedInAt: string
-}
+export type OrganizerOrderLineItem = { readonly ticketTierId: string; readonly quantity: number; readonly unitPrice: number }
+export type OrganizerOrder = { readonly id: string; readonly eventId: string; readonly buyerName: string; readonly buyerEmail: string; readonly buyerPhone: string; readonly paymentStatus: OrganizerPaymentStatus; readonly createdAt: string; readonly paidAt: string | null; readonly items: readonly OrganizerOrderLineItem[]; readonly ticketTierIds: readonly string[]; readonly total: number }
+export type OrganizerAttendee = { readonly id: string; readonly eventId: string; readonly orderId: string; readonly ticketTierId: string; readonly fullName: string; readonly email: string; readonly ticketReference: string; readonly isOrderBuyer: boolean; readonly credentialStatus: OrganizerCredentialStatus; readonly checkedInAt: string | null }
+export type OrganizerRefund = { readonly id: string; readonly orderId: string; readonly amount: number; readonly reason: string; readonly createdAt: string }
+export type OrganizerPayout = { readonly id: string; readonly eventId: string; readonly amount: number; readonly status: OrganizerPayoutStatus; readonly scheduledAt: string; readonly paidAt: string | null }
+export type OrganizerCheckInActivity = { readonly id: string; readonly eventId: string; readonly attendeeId: string; readonly checkedInAt: string }

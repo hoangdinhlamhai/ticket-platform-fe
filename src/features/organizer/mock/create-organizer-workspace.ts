@@ -14,5 +14,5 @@ export function createOrganizerWorkspace(): OrganizerWorkspace {
     refunds: ORGANIZER_REFUND_FIXTURES.map((refund) => ({ ...refund })),
     payouts: ORGANIZER_PAYOUT_FIXTURES.map((payout) => ({ ...payout })),
     checkInActivities: ORGANIZER_CHECK_IN_ACTIVITY_FIXTURES.map((activity) => ({ ...activity })),
-  }
+    eventFinance: {},  }
 }
