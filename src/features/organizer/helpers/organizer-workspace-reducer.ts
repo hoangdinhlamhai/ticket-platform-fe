@@ -2,7 +2,8 @@ import { prepareOrganizerOrganizationSave, valuesFromOrganizerOrganization } fro
 import { getOrganizerCheckInOutcome } from './organizer-check-in-transitions.ts'
 import { canPublishOrganizerEvent, canSubmitOrganizerEventForReview } from './organizer-event-transitions.ts'
 import { getCanonicalOrganizerTicketSaleStatus, getOrganizerTicketSaleStatusTransition, hasValidOrganizerTicketInventory } from './organizer-inventory-transitions.ts'
-import type { OrganizerOperationPayload, OrganizerOperationResult, OrganizerWorkspace, OrganizerWorkspaceAction, OrganizerWorkspaceTransition } from '../types/organizer-workspace.ts'
+import { validateOrganizerTicketTier } from './validate-organizer-ticket-tier.ts'
+import type { OrganizerInitialTicketTierInput, OrganizerOperationPayload, OrganizerOperationResult, OrganizerWorkspace, OrganizerWorkspaceAction, OrganizerWorkspaceTransition } from '../types/organizer-workspace.ts'
 
 type OrganizerOperationName = Exclude<OrganizerWorkspaceAction['type'], 'clear_last_operation'>
 type OrganizerTargetIds = Readonly<Record<string, string>>
@@ -30,56 +31,53 @@ function nextEventId(state: OrganizerWorkspace) {
   return `org-event-session-${state.events.length + 1}`
 }
 
-function createInitialTicketTier(
-  eventId: string,
-  input: { readonly name: string; readonly price: number; readonly capacity: number },
-  startsAt: string,
-  endsAt: string,
-) {
+function createInitialTicketTier(eventId: string, input: OrganizerInitialTicketTierInput, startsAt: string, endsAt: string, index: number) {
   return {
-    id: `${eventId}-tier-1`,
+    id: `${eventId}-tier-${index + 1}`,
     eventId,
     name: input.name.trim(),
     price: input.price,
     capacity: input.capacity,
     soldCount: 0,
     saleStatus: 'scheduled' as const,
-    salesStartAt: startsAt,
-    salesEndAt: endsAt,
-    perOrderLimit: 4,
+    salesStartAt: input.salesStartAt || startsAt,
+    salesEndAt: input.salesEndAt || endsAt,
+    perOrderLimit: input.perOrderLimit ?? 4,
+    ...(input.minPerOrder === undefined ? {} : { minPerOrder: input.minPerOrder }),
+    ...(input.description === undefined ? {} : { description: input.description }),
+    ...(input.image === undefined ? {} : { image: input.image }),
   }
 }
 
 export function organizerWorkspaceReducer(state: OrganizerWorkspace, action: OrganizerWorkspaceAction): OrganizerWorkspaceTransition {
   switch (action.type) {
     case 'create_event': {
-      const { input, initialTicketTier } = action
+      const { input } = action
+      const initialTicketTiers = action.initialTicketTiers ?? (action.initialTicketTier ? [action.initialTicketTier] : [])
       const id = nextEventId(state)
-      const initialTier = createInitialTicketTier(id, initialTicketTier, input.startsAt, input.endsAt)
-      const tier = {
-        ...initialTier,
-        saleStatus: getCanonicalOrganizerTicketSaleStatus(initialTier),
-      }
-      const targetIds = { eventId: id, ticketTierId: tier.id }
+      const initialTiers = initialTicketTiers.map((item, index) => createInitialTicketTier(id, item, input.startsAt, input.endsAt, index))
+      const targetIds = { eventId: id, ticketTierId: initialTiers[0]?.id ?? `${id}-tier-1` }
       if (!input.title.trim() || !input.venue.trim() || !input.city.trim() || !hasValidEventSchedule(input.startsAt, input.endsAt)) {
         return rejected(state, 'create_event', targetIds, 'event_transition_rejected', 'Thông tin sự kiện chưa hợp lệ.')
       }
-      if (!hasValidOrganizerTicketInventory(tier)) {
-        return rejected(state, 'create_event', targetIds, 'inventory_rejected', 'Hạng vé khởi tạo có dữ liệu tồn không hợp lệ.')
+      if (!initialTiers.length || initialTiers.some((tier) => !validateOrganizerTicketTier(tier).valid || !hasValidOrganizerTicketInventory(tier))) {
+        return rejected(state, 'create_event', targetIds, 'inventory_rejected', 'Hạng vé khởi tạo có dữ liệu không hợp lệ.')
       }
-      const event = { id, title: input.title.trim(), startsAt: input.startsAt, endsAt: input.endsAt, venue: input.venue.trim(), city: input.city.trim(), status: 'draft' as const, reviewFeedback: null }
-      return { state: { ...state, events: [...state.events, event], ticketTiers: [...state.ticketTiers, tier] }, result: operationResult('create_event', { eventId: id, ticketTierId: tier.id }, { kind: 'event_created' }) }
+      const tiers = initialTiers.map((tier) => ({ ...tier, saleStatus: getCanonicalOrganizerTicketSaleStatus(tier) }))
+      const event = { id, title: input.title.trim(), startsAt: input.startsAt, endsAt: input.endsAt, venue: input.venue.trim(), city: input.city.trim(), status: 'draft' as const, reviewFeedback: null, ...(input.thumbnail === undefined ? {} : { thumbnail: input.thumbnail }), ...(input.category === undefined ? {} : { category: input.category }), ...(input.provinceId === undefined ? {} : { provinceId: input.provinceId }), ...(input.wardId === undefined ? {} : { wardId: input.wardId }), ...(input.street === undefined ? {} : { street: input.street }), ...(input.description === undefined ? {} : { description: input.description }), ...(input.organizerName === undefined ? {} : { organizerName: input.organizerName }), ...(input.organizerBio === undefined ? {} : { organizerBio: input.organizerBio }), ...(input.organizerLogo === undefined ? {} : { organizerLogo: input.organizerLogo }), ...(input.visibility === undefined ? {} : { visibility: input.visibility }), ...(input.confirmationMessage === undefined ? {} : { confirmationMessage: input.confirmationMessage }), ...(input.seatingChartImage === undefined ? {} : { seatingChartImage: input.seatingChartImage }) }
+      return { state: { ...state, events: [...state.events, event], ticketTiers: [...state.ticketTiers, ...tiers], eventFinance: action.finance === undefined ? state.eventFinance : { ...state.eventFinance, [id]: action.finance } }, result: operationResult('create_event', { eventId: id, ticketTierId: tiers[0].id }, { kind: 'event_created' }) }
     }
     case 'update_event': {
       const current = state.events.find((event) => event.id === action.eventId)
       if (!current || !['draft', 'changes_requested'].includes(current.status)) {
         return rejected(state, 'update_event', { eventId: action.eventId }, 'event_transition_rejected', 'Sự kiện không thể chỉnh sửa ở trạng thái hiện tại.')
       }
-      const event = { ...current, title: action.patch.title?.trim() ?? current.title, startsAt: action.patch.startsAt ?? current.startsAt, endsAt: action.patch.endsAt ?? current.endsAt, venue: action.patch.venue?.trim() ?? current.venue, city: action.patch.city?.trim() ?? current.city }
+      const event = { ...current, title: action.patch.title?.trim() ?? current.title, startsAt: action.patch.startsAt ?? current.startsAt, endsAt: action.patch.endsAt ?? current.endsAt, venue: action.patch.venue?.trim() ?? current.venue, city: action.patch.city?.trim() ?? current.city, ...(action.patch.thumbnail === undefined ? {} : { thumbnail: action.patch.thumbnail }), ...(action.patch.category === undefined ? {} : { category: action.patch.category }), ...(action.patch.provinceId === undefined ? {} : { provinceId: action.patch.provinceId }), ...(action.patch.wardId === undefined ? {} : { wardId: action.patch.wardId }), ...(action.patch.street === undefined ? {} : { street: action.patch.street }), ...(action.patch.description === undefined ? {} : { description: action.patch.description }), ...(action.patch.organizerName === undefined ? {} : { organizerName: action.patch.organizerName }), ...(action.patch.organizerBio === undefined ? {} : { organizerBio: action.patch.organizerBio }), ...(action.patch.organizerLogo === undefined ? {} : { organizerLogo: action.patch.organizerLogo }), ...(action.patch.visibility === undefined ? {} : { visibility: action.patch.visibility }), ...(action.patch.confirmationMessage === undefined ? {} : { confirmationMessage: action.patch.confirmationMessage }), ...(action.patch.seatingChartImage === undefined ? {} : { seatingChartImage: action.patch.seatingChartImage }) }
       if (!event.title || !event.venue || !event.city || !hasValidEventSchedule(event.startsAt, event.endsAt)) {
         return rejected(state, 'update_event', { eventId: action.eventId }, 'event_transition_rejected', 'Thông tin sự kiện chưa hợp lệ.')
       }
-      return { state: { ...state, events: state.events.map((item) => item.id === event.id ? event : item) }, result: operationResult('update_event', { eventId: event.id }, { kind: 'event_updated' }) }
+      const nextFinance = action.finance === undefined ? state.eventFinance : { ...state.eventFinance, [event.id]: action.finance }
+      return { state: { ...state, events: state.events.map((item) => item.id === event.id ? event : item), eventFinance: nextFinance }, result: operationResult('update_event', { eventId: event.id }, { kind: 'event_updated' }) }
     }
     case 'submit_event_review': {
       const current = state.events.find((event) => event.id === action.eventId)

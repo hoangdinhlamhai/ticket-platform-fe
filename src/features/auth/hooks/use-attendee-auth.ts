@@ -17,6 +17,7 @@ export function useAttendeeAuth(enabled = true) {
 
   return useMemo(() => ({
     ...snapshot,
+    accessToken: controller.getAccessToken(),
     login: controller.login,
     register: controller.register,
     refresh: controller.retry,

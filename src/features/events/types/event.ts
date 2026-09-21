@@ -13,6 +13,13 @@ export type EventTicketTier = {
   price: number
   availabilityLabel: string
   note: string
+  image?: string
+  minPerOrder?: number
+  maxPerOrder?: number
+  quantity?: number
+  saleStartAt?: string | null
+  saleEndAt?: string | null
+  eventEndAt?: string
 }
 
 export type EventCalendarSchedule = {
@@ -34,6 +41,13 @@ export type MockEvent = {
 }
 
 export type MockEventDetail = MockEvent & {
+  thumbnail?: string
+  organizerBio?: string
+  organizerLogo?: string
+  seatingChartImage?: string
+  startsAtLabel?: string
+  endsAtLabel?: string
+  descriptionHtml?: string
   address: string
   description: string
   organizer: string

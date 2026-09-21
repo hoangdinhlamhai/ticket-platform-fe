@@ -12,7 +12,7 @@ import type { OrganizerTicketTier } from '../types/organizer-commerce.ts'
 type Props = {
   eventId: string
   onClose: () => void
-  onSave: (tier: OrganizerTicketTier) => void
+  onSave: (tier: OrganizerTicketTier) => void | Promise<unknown>
   returnFocus: HTMLElement | null
   tier: OrganizerTicketTier | null
 }
@@ -23,7 +23,10 @@ type Fields = {
   capacity: string
   salesStartAt: string
   salesEndAt: string
+  minPerOrder: string
   perOrderLimit: string
+  description: string
+  image: string
 }
 
 type OriginalDateTimes = {
@@ -41,7 +44,10 @@ function fieldsFor(tier: OrganizerTicketTier | null): Fields {
         capacity: String(tier.capacity),
         salesStartAt: isoToDateTimeLocal(tier.salesStartAt),
         salesEndAt: isoToDateTimeLocal(tier.salesEndAt),
+        minPerOrder: String(tier.minPerOrder ?? 1),
         perOrderLimit: String(tier.perOrderLimit),
+        description: tier.description ?? '',
+        image: tier.image ?? '',
       }
     : {
         name: '',
@@ -49,7 +55,10 @@ function fieldsFor(tier: OrganizerTicketTier | null): Fields {
         capacity: '1',
         salesStartAt: '',
         salesEndAt: '',
+        minPerOrder: '1',
         perOrderLimit: '4',
+        description: '',
+        image: '',
       }
 }
 
@@ -72,6 +81,7 @@ export function OrganizerTicketTierForm({
 }: Props) {
   const [fields, setFields] = useState(() => fieldsFor(tier))
   const [message, setMessage] = useState('')
+  const [saving, setSaving] = useState(false)
   const closeRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   const originalsRef = useRef(originalDateTimesFor(tier))
@@ -109,7 +119,7 @@ export function OrganizerTicketTierForm({
     setFields((current) => ({ ...current, [field]: value }))
   }
 
-  const save = () => {
+  const save = async () => {
     const originals = originalsRef.current
     const salesStartAt = dateTimeLocalToIsoPreservingOriginal(
       fields.salesStartAt,
@@ -128,6 +138,9 @@ export function OrganizerTicketTierForm({
       salesStartAt: salesStartAt ?? '',
       salesEndAt: salesEndAt ?? '',
       perOrderLimit: Number(fields.perOrderLimit),
+      minPerOrder: Number(fields.minPerOrder),
+      description: fields.description,
+      image: fields.image || undefined,
     }
     const validation = validateOrganizerTicketTier(draft)
     const soldCount = tier?.soldCount ?? 0
@@ -141,26 +154,37 @@ export function OrganizerTicketTierForm({
       return
     }
 
-    onSave({
-      id: tier?.id ?? `${eventId}-tier-${crypto.randomUUID()}`,
-      eventId,
-      soldCount,
-      saleStatus: tier?.saleStatus ?? 'scheduled',
-      name: draft.name.trim(),
-      price: draft.price,
-      capacity: draft.capacity,
-      salesStartAt: draft.salesStartAt,
-      salesEndAt: draft.salesEndAt,
-      perOrderLimit: draft.perOrderLimit,
-    })
-    onClose()
+    setSaving(true)
+    try {
+      await onSave({
+        id: tier?.id ?? `${eventId}-tier-${crypto.randomUUID()}`,
+        eventId,
+        soldCount,
+        saleStatus: tier?.saleStatus ?? 'scheduled',
+        name: draft.name.trim(),
+        price: draft.price,
+        capacity: draft.capacity,
+        salesStartAt: draft.salesStartAt,
+        salesEndAt: draft.salesEndAt,
+        perOrderLimit: draft.perOrderLimit,
+        minPerOrder: draft.minPerOrder,
+        description: draft.description,
+        ...(draft.image ? { image: draft.image } : {}),
+      })
+      onClose()
+    } catch {
+      setMessage('Không thể tải ảnh hoặc lưu hạng vé. Vui lòng thử lại.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const inputs = [
     { key: 'name', label: 'Tên hạng vé', type: 'text' },
     { key: 'price', label: 'Giá vé (đ)', type: 'number' },
     { key: 'capacity', label: 'Sức chứa', type: 'number' },
-    { key: 'perOrderLimit', label: 'Giới hạn mỗi đơn', type: 'number' },
+    { key: 'minPerOrder', label: 'Tối thiểu mỗi đơn', type: 'number' },
+    { key: 'perOrderLimit', label: 'Tối đa mỗi đơn', type: 'number' },
     { key: 'salesStartAt', label: 'Mở bán', type: 'datetime-local' },
     { key: 'salesEndAt', label: 'Kết thúc bán', type: 'datetime-local' },
   ] as const
@@ -176,9 +200,10 @@ export function OrganizerTicketTierForm({
           <input className="mt-2 min-h-12 w-full rounded-md border border-line bg-surface px-3" min={type === 'number' ? 0 : undefined} step={type === 'datetime-local' ? '0.001' : undefined} type={type} value={fields[key]} onChange={(event) => update(key, event.target.value)} />
         </label>)}
       </div>
-      {tier && <p className="mt-4 rounded-md bg-paper-deep p-3 text-sm text-ink-soft">Đã bán: {tier.soldCount} vé. Mã hạng vé, sự kiện và số đã bán được giữ nguyên.</p>}
+      <label className="mt-4 block text-sm font-bold">Mô tả vé<textarea className="mt-2 min-h-24 w-full rounded-md border border-line bg-surface p-3" value={fields.description} onChange={(event) => update('description', event.target.value)} /></label>
+      <label className="mt-4 block text-sm font-bold">Ảnh vé (PNG/JPEG/WebP, tối đa 1MB)<input className="mt-2 block text-sm" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (!file || file.size > 1024 * 1024 || !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return; const reader = new FileReader(); reader.onload = () => typeof reader.result === 'string' && update('image', reader.result); reader.readAsDataURL(file) }} />{fields.image && <span className="mt-2 flex items-center gap-3"><img className="h-16 w-24 rounded object-cover" src={fields.image} alt="Ảnh vé xem trước" /><button className="text-sm text-coral-dark" type="button" onClick={() => update('image', '')}>Xóa ảnh</button></span>}</label>
       {message && <p className="mt-4 text-sm font-bold text-coral-dark" role="alert">{message}</p>}
-      <button className="mt-5 min-h-12 rounded-md bg-blue px-5 font-extrabold text-paper" type="button" onClick={save}>Lưu hạng vé</button>
+      <button className="mt-5 min-h-12 rounded-md bg-blue px-5 font-extrabold text-paper" type="button" disabled={saving} onClick={() => void save}>{saving ? 'Đang lưu…' : 'Lưu hạng vé'}</button>
     </section>
   </div>
 }

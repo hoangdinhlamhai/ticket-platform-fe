@@ -110,6 +110,7 @@ export function createAuthSessionController({ api, timer, now = () => Date.now()
   }
 
   return {
+    getAccessToken: () => accessToken,
     getSnapshot: () => snapshot,
     subscribe(listener: () => void) { listeners.add(listener); return () => listeners.delete(listener) },
     restore: () => refresh(true),

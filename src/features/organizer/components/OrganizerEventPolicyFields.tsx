@@ -3,7 +3,7 @@ import type { OrganizerEventFormValues } from '../hooks/use-organizer-event-form
 
 type Props = {
   disabled?: boolean
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void
   values: OrganizerEventFormValues
 }
 

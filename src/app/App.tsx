@@ -68,7 +68,7 @@ function AttendeeApplication() {
   const { clearLastOperation: clearAdminLastOperation } = adminWorkspace
   const { clearLastOperation: clearOrganizerLastOperation } = organizerWorkspace
   const [pathname, setPathname] = useState(() => window.location.pathname)
-  const attendeeAuth = useAttendeeAuth(!isAdminPath(pathname) && !isOrganizerPath(pathname))
+  const attendeeAuth = useAttendeeAuth(true)
   const [route, setRoute] = useState(() => getAttendeeRoute(window.location.pathname))
   const [notice, setNotice] = useState('')
   const [profile, setProfile] = useState<CustomerProfile>({ ...MOCK_CUSTOMER_PROFILE })
@@ -182,7 +182,7 @@ function AttendeeApplication() {
   const withdrawListing = useCallback((id: string) => { const listing = listings.find((item) => item.id === id); setListings((current) => updateResaleListingStatus(current, id, 'withdrawn')); if (listing?.sourceTicketId) setTickets((current) => updateOwnedTicketResaleStatus(current, listing.sourceTicketId!, 'eligible')); }, [listings])
 
   if (isAdminPath(pathname)) {
-    return <AdminApplication pathname={pathname} workspace={adminWorkspace} onPathnameChange={navigateAdmin} onExitToAttendee={() => navigate('/')} />
+    return <AdminApplication pathname={pathname} workspace={adminWorkspace} accessToken={attendeeAuth.accessToken} onPathnameChange={navigateAdmin} onExitToAttendee={() => navigate('/')} />
   }
 
   if (isOrganizerPath(pathname)) {
