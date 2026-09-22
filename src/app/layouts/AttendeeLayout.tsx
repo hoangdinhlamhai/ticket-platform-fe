@@ -7,6 +7,7 @@ type AttendeeLayoutProps = {
   children: ReactNode
   notice: string
   onNavigate: (path: AttendeePath) => void
+  onNavigateToOrganizer: () => void
   profileName: string
 }
 
@@ -15,6 +16,7 @@ export function AttendeeLayout({
   children,
   notice,
   onNavigate,
+  onNavigateToOrganizer,
   profileName,
 }: AttendeeLayoutProps) {
   return (
@@ -28,6 +30,7 @@ export function AttendeeLayout({
       <AttendeeHeader
         activeRoute={activeRoute}
         onNavigate={onNavigate}
+        onNavigateToOrganizer={onNavigateToOrganizer}
         profileName={profileName}
       />
       <main id="main-content" tabIndex={-1}>

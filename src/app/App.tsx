@@ -185,7 +185,7 @@ function App() {
 
   const state: State = { profile, tickets, orders, listings, selection, primaryOrder: orders.find((order) => order.id === primaryOrderId) ?? null, completedListingIds }
   const actions: Actions = { navigate, notice: setNotice, saveProfile: setProfile, startCheckout, completePrimary, completeResale, sellTicket: (ticket) => navigate(`/resale/sell/${ticket.id}`), publishListing, withdrawListing }
-  return <AttendeeLayout activeRoute={route} notice={notice} onNavigate={navigate} profileName={profile.fullName}><AttendeePage route={route} pathname={pathname} state={state} actions={actions} /></AttendeeLayout>
+  return <AttendeeLayout activeRoute={route} notice={notice} onNavigate={navigate} onNavigateToOrganizer={() => navigateToPath('/organizer/events/new')} profileName={profile.fullName}><AttendeePage route={route} pathname={pathname} state={state} actions={actions} /></AttendeeLayout>
 }
 
 export default App

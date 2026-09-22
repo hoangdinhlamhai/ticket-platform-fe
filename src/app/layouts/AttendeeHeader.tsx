@@ -5,6 +5,7 @@ import { shouldUseClientNavigation, isOrderRoute, isResaleRoute, type AttendeePa
 type AttendeeHeaderProps = {
   activeRoute: AttendeeRoute
   onNavigate: (path: AttendeePath) => void
+  onNavigateToOrganizer: () => void
   profileName: string
 }
 
@@ -32,7 +33,7 @@ function NavigationLink({ active, children, href, onNavigate }: NavigationLinkPr
   )
 }
 
-export function AttendeeHeader({ activeRoute, onNavigate, profileName }: AttendeeHeaderProps) {
+export function AttendeeHeader({ activeRoute, onNavigate, onNavigateToOrganizer, profileName }: AttendeeHeaderProps) {
   return (
     <header className="border-b border-line bg-paper">
       <div className="attendee-container flex min-h-[5.25rem] flex-wrap items-center justify-between gap-x-6 gap-y-3 py-3">
@@ -71,6 +72,17 @@ export function AttendeeHeader({ activeRoute, onNavigate, profileName }: Attende
             <span className="grid h-9 w-9 place-items-center rounded-md bg-pine text-[0.72rem] font-extrabold tracking-[0.06em] text-paper" aria-hidden="true">{getProfileInitials(profileName)}</span>
             <span className="hidden text-[0.82rem] font-bold sm:block">{profileName}</span>
             <span className="sr-only">Mở hồ sơ khách hàng</span>
+          </a>
+          <a
+            className="flex min-h-11 items-center rounded-md border border-blue/40 px-3 text-[0.8rem] font-extrabold text-blue-deep no-underline hover:bg-google-hover"
+            href="/organizer/events/new"
+            onClick={(event) => {
+              if (!shouldUseClientNavigation(event)) return
+              event.preventDefault()
+              onNavigateToOrganizer()
+            }}
+          >
+            Tạo sự kiện
           </a>
           <a
             className="flex min-h-11 items-center gap-2 rounded-md border border-coral-dark/50 bg-coral px-3 text-[0.8rem] font-extrabold text-paper no-underline hover:bg-coral-dark"
