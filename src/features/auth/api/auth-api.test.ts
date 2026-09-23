@@ -1,31 +1,70 @@
-import { test } from 'node:test'
+import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createAuthApi } from './auth-api.ts'
+import { ApiError } from './api-error.ts'
 
-test('login sends backend credentials and returns session', async () => {
-  let request: RequestInit | undefined
-  const api = createAuthApi('/api', async (_input, init) => {
-    request = init
-    return new Response(JSON.stringify({ user: { id: 'u1', fullName: 'A', email: 'a@example.com' }, accessToken: 'token', expiresIn: 900 }), { status: 200, headers: { 'content-type': 'application/json' } })
+const attendee = {
+  id: 'attendee-1',
+  email: 'linh@example.com',
+  fullName: 'Linh Nguyễn',
+  phone: null,
+  role: 'ATTENDEE' as const,
+  status: 'ACTIVE' as const,
+}
+
+test('auth API sends JSON credentials and forwards a bearer token for me', async () => {
+  const requests: Array<{ url: string; init: RequestInit }> = []
+  const api = createAuthApi({
+    baseUrl: 'https://api.example.test/api',
+    fetch: async (url, init) => {
+      requests.push({ url: String(url), init: init ?? {} })
+      return Response.json(url.toString().endsWith('/me') ? { user: attendee } : { user: attendee, accessToken: 'access-1', expiresIn: 3600 })
+    },
   })
 
-  const result = await api.login({ email: 'a@example.com', password: 'password123' })
+  const login = await api.login({ email: 'linh@example.com', password: 'correct-horse' })
+  const current = await api.me(login.accessToken)
 
-  assert.equal(result.accessToken, 'token')
-  assert.equal(request?.credentials, 'include')
-  assert.equal(request?.method, 'POST')
-  assert.deepEqual(JSON.parse(String(request?.body)), { email: 'a@example.com', password: 'password123' })
+  assert.equal(login.user.fullName, 'Linh Nguyễn')
+  assert.equal(current.email, 'linh@example.com')
+  assert.deepEqual(requests[0], {
+    url: 'https://api.example.test/api/auth/login',
+    init: {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email: 'linh@example.com', password: 'correct-horse' }),
+    },
+  })
+  assert.equal(requests[1]?.init.headers instanceof Headers ? requests[1].init.headers.get('Authorization') : (requests[1]?.init.headers as Record<string, string>).Authorization, 'Bearer access-1')
+  assert.equal(requests[1]?.init.credentials, 'include')
 })
 
-test('create event sends bearer token and backend field names', async () => {
-  let request: RequestInit | undefined
-  const api = createAuthApi('/api', async (_input, init) => {
-    request = init
-    return new Response(JSON.stringify({ event: { id: 'e1' } }), { status: 201, headers: { 'content-type': 'application/json' } })
+test('auth API recognizes default Nest unauthorized responses', async () => {
+  const api = createAuthApi({ baseUrl: '/api', fetch: async () => Response.json({ statusCode: 401, message: 'Unauthorized' }, { status: 401 }) })
+  await assert.rejects(() => api.refresh(), (error: unknown) => {
+    assert.ok(error instanceof ApiError)
+    assert.equal(error.code, 'UNAUTHENTICATED')
+    return true
+  })
+})
+
+test('auth API maps structured and unavailable-server errors to ApiError', async () => {
+  const structured = createAuthApi({
+    baseUrl: '/api',
+    fetch: async () => Response.json({ statusCode: 409, code: 'EMAIL_ALREADY_REGISTERED', message: 'Email đã tồn tại.', fieldErrors: { email: 'Email đã được dùng.' } }, { status: 409 }),
+  })
+  await assert.rejects(() => structured.register({ fullName: 'Linh Nguyễn', email: 'linh@example.com', password: 'correct-horse' }), (error: unknown) => {
+    assert.ok(error instanceof ApiError)
+    assert.equal(error.code, 'EMAIL_ALREADY_REGISTERED')
+    assert.equal(error.fieldErrors.email, 'Email đã được dùng.')
+    return true
   })
 
-  await api.createEvent('token', { title: 'Demo', startsAt: '2026-10-01T10:00:00.000Z', endsAt: '2026-10-01T12:00:00.000Z', venue: 'Hall', city: 'Hanoi' })
-
-  assert.equal(new Headers(request?.headers).get('authorization'), 'Bearer token')
-  assert.deepEqual(JSON.parse(String(request?.body)), { title: 'Demo', slug: 'demo', startAt: '2026-10-01T10:00:00.000Z', endAt: '2026-10-01T12:00:00.000Z', venueName: 'Hall', visibility: 'PUBLIC' })
+  const unavailable = createAuthApi({ baseUrl: '/api', fetch: async () => new Response('<html>offline</html>', { status: 503, headers: { 'Content-Type': 'text/html' } }) })
+  await assert.rejects(() => unavailable.refresh(), (error: unknown) => {
+    assert.ok(error instanceof ApiError)
+    assert.equal(error.code, 'SERVER_UNAVAILABLE')
+    return true
+  })
 })

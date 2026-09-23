@@ -18,6 +18,7 @@ export type OrganizerWorkspace = {
   readonly refunds: readonly OrganizerRefund[]
   readonly payouts: readonly OrganizerPayout[]
   readonly checkInActivities: readonly OrganizerCheckInActivity[]
+  readonly eventFinance: OrganizerWorkspaceFinance
 }
 
 export type OrganizerCheckInOutcome =
@@ -55,22 +56,26 @@ export type OrganizerOperationPayload =
 
 export type OrganizerOperationResult = OrganizerOperationPayload & OrganizerOperationBase
 
-export type OrganizerInitialTicketTierInput = {
-  readonly name: string
-  readonly price: number
-  readonly capacity: number
-}
+import type { OrganizerEventFinance } from './organizer-event.ts'
+import type { OrganizerTicketTierDraft } from '../helpers/validate-organizer-ticket-tier.ts'
+
+export type OrganizerInitialTicketTierInput = OrganizerTicketTierDraft
+
+export type OrganizerWorkspaceFinance = Readonly<Record<string, OrganizerEventFinance>>
 
 export type OrganizerWorkspaceAction =
   | {
       readonly type: 'create_event'
       readonly input: OrganizerEventInput
-      readonly initialTicketTier: OrganizerInitialTicketTierInput
+      readonly initialTicketTier?: OrganizerInitialTicketTierInput
+      readonly initialTicketTiers?: readonly OrganizerInitialTicketTierInput[]
+      readonly finance?: OrganizerEventFinance
     }
   | {
       readonly type: 'update_event'
       readonly eventId: string
       readonly patch: OrganizerEventPatch
+      readonly finance?: OrganizerEventFinance
     }
   | { readonly type: 'submit_event_review'; readonly eventId: string }
   | { readonly type: 'publish_event'; readonly eventId: string }

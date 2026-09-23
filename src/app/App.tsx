@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { AuthPage, useAttendeeAuth } from '../features/auth'
 import { PrimaryCheckoutPage, PrimaryOrderResultPage, type PrimaryCheckoutSubmission } from '../features/checkout'
 import { EventDetailPage, EventDiscoveryPage, SavedEventsPage } from '../features/events'
 import { AdminApplication } from './AdminApplication.tsx'
@@ -58,11 +59,16 @@ function AttendeePage({ route, pathname, state, actions }: { route: AttendeeRout
 }
 
 function App() {
+  return <AttendeeApplication />
+}
+
+function AttendeeApplication() {
   const adminWorkspace = useAdminWorkspace()
   const organizerWorkspace = useOrganizerWorkspace()
   const { clearLastOperation: clearAdminLastOperation } = adminWorkspace
   const { clearLastOperation: clearOrganizerLastOperation } = organizerWorkspace
   const [pathname, setPathname] = useState(() => window.location.pathname)
+  const attendeeAuth = useAttendeeAuth(true)
   const [route, setRoute] = useState(() => getAttendeeRoute(window.location.pathname))
   const [notice, setNotice] = useState('')
   const [profile, setProfile] = useState<CustomerProfile>({ ...MOCK_CUSTOMER_PROFILE })
@@ -176,7 +182,7 @@ function App() {
   const withdrawListing = useCallback((id: string) => { const listing = listings.find((item) => item.id === id); setListings((current) => updateResaleListingStatus(current, id, 'withdrawn')); if (listing?.sourceTicketId) setTickets((current) => updateOwnedTicketResaleStatus(current, listing.sourceTicketId!, 'eligible')); }, [listings])
 
   if (isAdminPath(pathname)) {
-    return <AdminApplication pathname={pathname} workspace={adminWorkspace} onPathnameChange={navigateAdmin} onExitToAttendee={() => navigate('/')} />
+    return <AdminApplication pathname={pathname} workspace={adminWorkspace} accessToken={attendeeAuth.accessToken} onPathnameChange={navigateAdmin} onExitToAttendee={() => navigate('/')} />
   }
 
   if (isOrganizerPath(pathname)) {
@@ -185,7 +191,17 @@ function App() {
 
   const state: State = { profile, tickets, orders, listings, selection, primaryOrder: orders.find((order) => order.id === primaryOrderId) ?? null, completedListingIds }
   const actions: Actions = { navigate, notice: setNotice, saveProfile: setProfile, startCheckout, completePrimary, completeResale, sellTicket: (ticket) => navigate(`/resale/sell/${ticket.id}`), publishListing, withdrawListing }
-  return <AttendeeLayout activeRoute={route} notice={notice} onNavigate={navigate} onNavigateToOrganizer={() => navigateToPath('/organizer/events/new')} profileName={profile.fullName}><AttendeePage route={route} pathname={pathname} state={state} actions={actions} /></AttendeeLayout>
+if (route === 'login' || route === 'register') {
+    return <AuthPage
+      key={route}
+      mode={route}
+      onAuthenticated={() => navigate('/')}
+      onLogin={attendeeAuth.login}
+      onNavigateMode={(mode) => navigate(`/${mode}`)}
+      onRegister={attendeeAuth.register}
+    />
+  }
+  return <AttendeeLayout activeRoute={route} notice={notice} onNavigate={navigate} onNavigateToOrganizer={() => navigateToPath('/organizer/events/new')} authStatus={attendeeAuth.status} authenticatedUser={attendeeAuth.user} authError={attendeeAuth.error?.message ?? ''} canRetryAuth={attendeeAuth.canRetry} onLogout={async () => { await attendeeAuth.logout(); navigate('/') }} onRetryAuth={attendeeAuth.refresh} profileName={profile.fullName}><AttendeePage route={route} pathname={pathname} state={state} actions={actions} /></AttendeeLayout>
 }
 
 export default App

@@ -99,3 +99,9 @@ test('uses client navigation only for unmodified primary clicks', () => {
   assert.equal(shouldUseClientNavigation({ button: 0, metaKey: false, ctrlKey: true, shiftKey: false, altKey: false }), false)
   assert.equal(shouldUseClientNavigation({ button: 1, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false }), false)
 })
+
+test('maps dedicated attendee authentication URLs before the home fallback', () => {
+  assert.equal(getAttendeeRoute('/login'), 'login')
+  assert.equal(getAttendeeRoute('/register/'), 'register')
+  assert.equal(getAttendeeRoute('/login/extra'), 'home')
+})

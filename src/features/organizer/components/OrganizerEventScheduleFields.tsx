@@ -5,7 +5,7 @@ import type { OrganizerEventFormValues } from '../hooks/use-organizer-event-form
 type Props = {
   disabled?: boolean
   errors: OrganizerEventErrors
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void
   registerField: (field: 'startsAt' | 'endsAt' | 'venue' | 'city') => (node: HTMLInputElement | null) => void
   values: OrganizerEventFormValues
 }

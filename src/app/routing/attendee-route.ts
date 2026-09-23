@@ -4,9 +4,10 @@ export type AttendeeRoute =
   | 'home' | 'saved-events' | 'profile' | 'tickets' | 'ticket-status' | 'orders' | 'order-detail'
   | 'event-detail' | 'primary-checkout' | 'primary-result'
   | 'resale' | 'resale-listing' | 'resale-checkout' | 'resale-result' | 'resale-sell' | 'my-resale-listings'
+  | 'login' | 'register'
 
 export type AttendeePath =
-  | '/' | '/saved-events' | '/profile' | '/tickets' | '/orders' | '/resale' | '/resale/my-listings'
+  | '/' | '/login' | '/register' | '/saved-events' | '/profile' | '/tickets' | '/orders' | '/resale' | '/resale/my-listings'
   | `/events/${string}` | `/events/${string}/checkout` | `/events/${string}/checkout/result`
   | `/tickets/${string}` | `/orders/${string}` | `/resale/sell/${string}`
   | `/resale/${string}` | `/resale/${string}/checkout` | `/resale/${string}/result`
@@ -41,6 +42,8 @@ export function isOrderRoute(route: AttendeeRoute) { return route === 'orders' |
 
 export function getAttendeeRoute(pathname: string): AttendeeRoute {
   const path = normalizePath(pathname)
+  if (path === '/login') return 'login'
+  if (path === '/register') return 'register'
   if (/^\/events\/[^/]+\/checkout\/result$/.test(path)) return 'primary-result'
   if (/^\/events\/[^/]+\/checkout$/.test(path)) return 'primary-checkout'
   if (path === '/orders') return 'orders'

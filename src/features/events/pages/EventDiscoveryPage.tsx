@@ -22,6 +22,9 @@ export function EventDiscoveryPage({ onNavigate, onNoticeChange }: EventDiscover
     filteredEvents,
     handleQueryChange: updateQuery,
     isFilterDrawerOpen,
+    isLoading,
+    loadError,
+    loadEvents,
     openFilterDrawer,
     query,
     removeAdvancedFilter,
@@ -71,7 +74,14 @@ export function EventDiscoveryPage({ onNavigate, onNoticeChange }: EventDiscover
         query={query}
         selectedCategory={selectedCategory}
       />
-      <EventDiscoveryGrid
+      {isLoading ? (
+        <p className="attendee-container py-12 text-center" role="status">Đang tải sự kiện...</p>
+      ) : loadError ? (
+        <div className="attendee-container py-12 text-center" role="alert">
+          <p>{loadError}</p>
+          <button type="button" className="mt-4 rounded-md bg-blue px-5 py-3 font-bold text-paper" onClick={() => void loadEvents()}>Thử lại</button>
+        </div>
+      ) : <EventDiscoveryGrid
         activeFilterChips={activeFilterChips}
         activeFilterCount={activeFilterCount}
         advancedFilters={advancedFilters}
@@ -86,8 +96,8 @@ export function EventDiscoveryPage({ onNavigate, onNoticeChange }: EventDiscover
         onResetDiscovery={resetDiscovery}
         onSuggestionSelect={handleRecentSearchSelect}
         onToggleFavorite={toggleFavorite}
-        onViewEvent={viewEvent}
-      />
+          onViewEvent={viewEvent}
+        />}
     </>
   )
 }

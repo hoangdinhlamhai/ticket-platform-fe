@@ -1,9 +1,14 @@
+import type { AttendeeUser } from '../../features/auth'
+import type { AuthStatus } from '../../features/auth/api/session-controller.ts'
 import { TicketIcon, TicketlyMark } from '../../components/icons/TicketlyIcons'
 import { getProfileInitials } from '../../features/profile'
 import { shouldUseClientNavigation, isOrderRoute, isResaleRoute, type AttendeePath, type AttendeeRoute } from '../routing/attendee-route'
 
 type AttendeeHeaderProps = {
   activeRoute: AttendeeRoute
+  authStatus: AuthStatus
+  authenticatedUser: AttendeeUser | null
+  onLogout: () => Promise<void>
   onNavigate: (path: AttendeePath) => void
   onNavigateToOrganizer: () => void
   profileName: string
@@ -33,7 +38,7 @@ function NavigationLink({ active, children, href, onNavigate }: NavigationLinkPr
   )
 }
 
-export function AttendeeHeader({ activeRoute, onNavigate, onNavigateToOrganizer, profileName }: AttendeeHeaderProps) {
+export function AttendeeHeader({ activeRoute, authStatus, authenticatedUser, onLogout, onNavigate, onNavigateToOrganizer, profileName }: AttendeeHeaderProps) {
   return (
     <header className="border-b border-line bg-paper">
       <div className="attendee-container flex min-h-[5.25rem] flex-wrap items-center justify-between gap-x-6 gap-y-3 py-3">
@@ -59,6 +64,31 @@ export function AttendeeHeader({ activeRoute, onNavigate, onNavigateToOrganizer,
         </nav>
 
         <div className="order-2 flex items-center gap-2">
+          {authStatus === 'restoring' ? <span className="text-xs font-bold text-ink-soft">Đang khôi phục phiên…</span> : null}
+          {authStatus === 'anonymous' ? (
+            <a className="flex min-h-11 items-center rounded-md border border-blue/40 bg-google-hover px-3 text-[0.8rem] font-extrabold text-blue-deep no-underline" href="/login" onClick={(event) => { if (!shouldUseClientNavigation(event)) return; event.preventDefault(); onNavigate('/login') }}>Đăng nhập</a>
+          ) : null}
+          {authStatus === 'authenticated' && authenticatedUser ? (
+            <>
+              <a
+                className="flex min-h-11 items-center rounded-md border border-pine/40 px-3 text-[0.8rem] font-extrabold text-pine no-underline hover:bg-pine/10"
+                href="/organizer/events/new"
+                onClick={(event) => {
+                  if (!shouldUseClientNavigation(event)) return
+                  event.preventDefault()
+                  onNavigateToOrganizer()
+                }}
+              >
+                Tạo sự kiện
+              </a>
+              <div className="flex min-h-11 items-center gap-2 rounded-md border border-blue/30 bg-google-hover px-2 text-left">
+                <span className="grid h-9 w-9 place-items-center rounded-md bg-pine text-[0.72rem] font-extrabold tracking-[0.06em] text-paper" aria-hidden="true">{getProfileInitials(authenticatedUser.fullName)}</span>
+                <span className="hidden text-[0.82rem] font-bold sm:block">{authenticatedUser.fullName}</span>
+                <span className="sr-only">Đã đăng nhập</span>
+              </div>
+              <button className="min-h-11 border border-line bg-paper px-3 text-[0.78rem] font-bold text-ink" type="button" onClick={() => void onLogout()}>Đăng xuất</button>
+            </>
+          ) : null}
           <a
             className={`flex min-h-11 items-center gap-2 rounded-md border px-1 text-left no-underline ${activeRoute === 'profile' ? 'border-blue/40 bg-google-hover text-blue-deep' : 'border-transparent text-ink hover:border-line/70'}`}
             href="/profile"
@@ -70,19 +100,8 @@ export function AttendeeHeader({ activeRoute, onNavigate, onNavigateToOrganizer,
             }}
           >
             <span className="grid h-9 w-9 place-items-center rounded-md bg-pine text-[0.72rem] font-extrabold tracking-[0.06em] text-paper" aria-hidden="true">{getProfileInitials(profileName)}</span>
-            <span className="hidden text-[0.82rem] font-bold sm:block">{profileName}</span>
-            <span className="sr-only">Mở hồ sơ khách hàng</span>
-          </a>
-          <a
-            className="flex min-h-11 items-center rounded-md border border-blue/40 px-3 text-[0.8rem] font-extrabold text-blue-deep no-underline hover:bg-google-hover"
-            href="/organizer/events/new"
-            onClick={(event) => {
-              if (!shouldUseClientNavigation(event)) return
-              event.preventDefault()
-              onNavigateToOrganizer()
-            }}
-          >
-            Tạo sự kiện
+            <span className="hidden text-[0.82rem] font-bold sm:block">Hồ sơ demo</span>
+            <span className="sr-only">Mở hồ sơ demo</span>
           </a>
           <a
             className="flex min-h-11 items-center gap-2 rounded-md border border-coral-dark/50 bg-coral px-3 text-[0.8rem] font-extrabold text-paper no-underline hover:bg-coral-dark"

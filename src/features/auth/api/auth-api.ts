@@ -1,34 +1,60 @@
-export type AuthUser = { readonly id: string; readonly fullName: string; readonly email: string }
-export type AuthSession = { readonly user: AuthUser; readonly accessToken: string; readonly expiresIn: number }
-export type EventCreateInput = { readonly title: string; readonly startsAt: string; readonly endsAt: string; readonly venue: string; readonly city: string }
+import { ApiError } from './api-error.ts'
+import type { AttendeeUser, AuthErrorResponse, AuthSessionResponse, LoginPayload, RegisterPayload } from './auth-contract.ts'
 
-type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+export type AuthApi = {
+  login: (payload: LoginPayload) => Promise<AuthSessionResponse>
+  register: (payload: RegisterPayload) => Promise<AuthSessionResponse>
+  refresh: () => Promise<AuthSessionResponse>
+  logout: () => Promise<void>
+  me: (accessToken: string) => Promise<AttendeeUser>
+}
 
-async function readResponse(response: Response) {
-  const body = await response.json().catch(() => ({})) as { message?: string | string[] }
-  if (!response.ok) {
-    const message = Array.isArray(body.message) ? body.message.join(' ') : body.message
-    throw new Error(message || `Request failed (${response.status})`)
+type AuthApiOptions = {
+  baseUrl: string
+  fetch: typeof globalThis.fetch
+}
+
+function join(baseUrl: string, path: string) {
+  return `${baseUrl.replace(/\/$/, '')}${path}`
+}
+
+async function parseError(response: Response) {
+  let payload: AuthErrorResponse | null = null
+  try { payload = await response.json() as AuthErrorResponse } catch { /* an unavailable proxy/server may return HTML */ }
+  return new ApiError({
+    status: response.status,
+    code: payload?.code ?? (response.status === 401 ? 'UNAUTHENTICATED' : response.status === 429 ? 'TOO_MANY_REQUESTS' : response.status >= 500 ? 'SERVER_UNAVAILABLE' : 'UNKNOWN_ERROR'),
+    message: payload?.message ?? 'Không thể kết nối máy chủ. Vui lòng thử lại.',
+    fieldErrors: payload?.fieldErrors,
+  })
+}
+
+async function request<T>(fetcher: typeof globalThis.fetch, url: string, init: RequestInit): Promise<T> {
+  let response: Response
+  try { response = await fetcher(url, init) } catch {
+    throw new ApiError({ status: 0, code: 'NETWORK_ERROR', message: 'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.' })
   }
-  return body
+  if (!response.ok) throw await parseError(response)
+  if (response.status === 204) return undefined as T
+  try { return await response.json() as T } catch {
+    throw new ApiError({ status: response.status, code: 'SERVER_UNAVAILABLE', message: 'Máy chủ trả về phản hồi không hợp lệ.' })
+  }
 }
 
-function slugify(title: string) {
-  return title.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'event'
-}
-
-export function createAuthApi(baseUrl = '/api', fetcher: FetchLike = fetch) {
-  const request = async (path: string, init: RequestInit = {}) => fetcher(`${baseUrl}${path}`, { ...init, headers: { 'content-type': 'application/json', ...init.headers } })
+export function createAuthApi({ baseUrl, fetch: fetcher }: AuthApiOptions): AuthApi {
+  const mutation = <T>(path: string, body: unknown) => request<T>(fetcher, join(baseUrl, path), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body),
+  })
   return {
-    async login(input: { email: string; password: string }) {
-      return readResponse(await request('/auth/login', { method: 'POST', credentials: 'include', body: JSON.stringify(input) })) as Promise<AuthSession>
-    },
-    async register(input: { fullName: string; email: string; password: string }) {
-      return readResponse(await request('/auth/register', { method: 'POST', credentials: 'include', body: JSON.stringify(input) })) as Promise<AuthSession>
-    },
-    async createEvent(accessToken: string, input: EventCreateInput) {
-      const body = { title: input.title, slug: slugify(input.title), startAt: input.startsAt, endAt: input.endsAt, venueName: input.venue, visibility: 'PUBLIC' }
-      return readResponse(await request('/events', { method: 'POST', headers: { authorization: `Bearer ${accessToken}` }, body: JSON.stringify(body) })) as Promise<{ event: unknown }>
+    login: (payload) => mutation<AuthSessionResponse>('/auth/login', payload),
+    register: (payload) => mutation<AuthSessionResponse>('/auth/register', payload),
+    refresh: () => mutation<AuthSessionResponse>('/auth/refresh', {}),
+    logout: () => mutation<void>('/auth/logout', {}),
+    me: async (accessToken) => {
+      const response = await request<{ user: AttendeeUser }>(fetcher, join(baseUrl, '/auth/me'), {
+        method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, credentials: 'include',
+      })
+      return response.user
     },
   }
 }

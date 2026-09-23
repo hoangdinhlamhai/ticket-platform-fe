@@ -96,14 +96,14 @@ export function OrganizerApplication({ pathname, workspace, onExitToAttendee, on
     onExitToAttendee()
   }, [discardOrContinue, onExitToAttendee, workspace])
 
-  const create = useCallback((value: OrganizerEventFormSave) => {
-    if (!value.initialTicketTier) return false
-    const result = workspace.createEvent(value.input, value.initialTicketTier)
+  const create = useCallback(async (value: OrganizerEventFormSave) => {
+    if (!value.initialTicketTiers?.length) return false
+    const result = await workspace.createEvent(value.input, value.initialTicketTiers, value.finance)
     return result?.kind === 'event_created'
   }, [workspace])
 
-  const update = useCallback((id: string, input: Parameters<typeof workspace.updateEvent>[1]) => {
-    const result = workspace.updateEvent(id, input)
+  const update = useCallback(async (id: string, input: Parameters<typeof workspace.updateEvent>[1], finance?: Parameters<typeof workspace.updateEvent>[2]) => {
+    const result = await workspace.updateEvent(id, input, finance)
     return result?.kind === 'event_updated'
   }, [workspace])
 
@@ -122,7 +122,7 @@ export function OrganizerApplication({ pathname, workspace, onExitToAttendee, on
   } else if (route === 'event-edit' && eventId) {
     page = <OrganizerEventEditPage activeRoute={route} eventId={eventId} onDirtyChange={setDirty} onNavigate={navigate} onUpdate={update} workspace={workspace.workspace} />
   } else if (route === 'event-tickets' && eventId) {
-    page = <OrganizerTicketInventoryPage activeRoute={route} eventId={eventId} onNavigate={navigate} onSaveTicketTier={workspace.saveTicketTier} onSetSaleStatus={workspace.setTicketSaleStatus} workspace={workspace.workspace} />
+    page = <OrganizerTicketInventoryPage activeRoute={route} eventId={eventId} onNavigate={navigate} onSaveTicketTier={async (tier) => { await workspace.saveTicketTier(tier) }} onSetSaleStatus={workspace.setTicketSaleStatus} onUpdateEventImage={workspace.updateEventImage} workspace={workspace.workspace} />
   } else if (route === 'event-orders' && eventId) {
     page = <OrganizerOrdersPage activeRoute={route} eventId={eventId} onNavigate={navigate} workspace={workspace.workspace} />
   } else if (route === 'event-attendees' && eventId) {
