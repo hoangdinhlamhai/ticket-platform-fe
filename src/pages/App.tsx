@@ -10,10 +10,10 @@ import { createAttendeeOrder, MOCK_ATTENDEE_ORDERS, OrderDetailPage, OrderHistor
 import { CustomerProfilePage, MOCK_CUSTOMER_PROFILE, type CustomerProfile } from '../features/profile'
 import { CreateResaleListingPage, MOCK_RESALE_LISTINGS, MyResaleListingsPage, ResaleCheckoutPage, ResaleListingPage, ResaleMarketplacePage, ResaleResultPage, updateResaleListingStatus, type ResaleCheckoutCompletion, type ResaleListing } from '../features/resale'
 import { issuePrimaryTickets, issueResaleTicket, MOCK_OWNED_TICKETS, OwnedTicketsPage, TicketStatusPage, updateOwnedTicketResaleStatus, type OwnedTicket } from '../features/tickets'
-import { AttendeeLayout } from './layouts/AttendeeLayout'
-import { getAttendeeEventId, getAttendeeOrderId, getAttendeeResaleListingId, getAttendeeRoute, getAttendeeTicketId, getPrimaryCheckoutEventId, getResaleSellTicketId, type AttendeePath, type AttendeeRoute } from './routing/attendee-route'
-import { isAdminPath, type AdminPath } from './routing/admin-route'
-import { isOrganizerPath, type OrganizerPath } from './routing/organizer-route'
+import { AttendeeLayout } from '../layouts/AttendeeLayout'
+import { getAttendeeEventId, getAttendeeOrderId, getAttendeeResaleListingId, getAttendeeRoute, getAttendeeTicketId, getPrimaryCheckoutEventId, getResaleSellTicketId, type AttendeePath, type AttendeeRoute } from '../routes/attendee-route'
+import { isAdminPath, type AdminPath } from '../routes/admin-route'
+import { isOrganizerPath, type OrganizerPath } from '../routes/organizer-route'
 
 type State = { profile: CustomerProfile; tickets: readonly OwnedTicket[]; orders: readonly AttendeeOrder[]; listings: readonly ResaleListing[]; selection: PrimaryCheckoutSelection | null; primaryOrder: AttendeeOrder | null; completedListingIds: ReadonlySet<string> }
 type Actions = { navigate: (path: AttendeePath) => void; notice: (value: string) => void; saveProfile: (value: CustomerProfile) => void; startCheckout: (value: PrimaryCheckoutSelection) => void; completePrimary: (value: PrimaryCheckoutSubmission) => void; completeResale: (value: ResaleCheckoutCompletion) => void; sellTicket: (ticket: OwnedTicket) => void; publishListing: (listing: ResaleListing) => void; withdrawListing: (id: string) => void }
@@ -83,6 +83,10 @@ function AttendeeApplication() {
   const historyIndexRef = useRef(0)
   const restoringHistoryIndexRef = useRef<number | null>(null)
   const organizerNavigationGuardRef = useRef<OrganizerNavigationGuard | null>(null)
+  // One-shot flag: a confirmed event_created redirect must keep the organizer success
+  // notice, but acceptNavigation normally clears it on every navigation. When set, the
+  // next acceptNavigation preserves the organizer lastOperation exactly once.
+  const preserveOrganizerNoticeRef = useRef(false)
 
   const acceptNavigation = useCallback((nextPath: string) => {
     acceptedPathRef.current = nextPath
@@ -90,7 +94,8 @@ function AttendeeApplication() {
     setRoute(getAttendeeRoute(nextPath))
     setNotice('')
     clearAdminLastOperation()
-    clearOrganizerLastOperation()
+    if (preserveOrganizerNoticeRef.current) preserveOrganizerNoticeRef.current = false
+    else clearOrganizerLastOperation()
     window.scrollTo(0, 0)
     window.requestAnimationFrame(() => document.getElementById('main-content')?.focus())
   }, [clearAdminLastOperation, clearOrganizerLastOperation])
@@ -106,6 +111,13 @@ function AttendeeApplication() {
   const navigate = useCallback((path: AttendeePath) => navigateToPath(path), [navigateToPath])
   const navigateAdmin = useCallback((path: AdminPath) => navigateToPath(path), [navigateToPath])
   const navigateOrganizer = useCallback((path: OrganizerPath) => navigateToPath(path), [navigateToPath])
+  // Navigate to the My-events list after a confirmed create while keeping the success
+  // notice; the flag is consumed by the next acceptNavigation, then falls back to normal.
+  const navigateOrganizerPreservingNotice = useCallback((path: OrganizerPath) => {
+    preserveOrganizerNoticeRef.current = true
+    navigateToPath(path)
+    preserveOrganizerNoticeRef.current = false
+  }, [navigateToPath])
   const registerOrganizerNavigationGuard = useCallback((guard: OrganizerNavigationGuard | null) => {
     organizerNavigationGuardRef.current = guard
   }, [])
@@ -186,7 +198,7 @@ function AttendeeApplication() {
   }
 
   if (isOrganizerPath(pathname)) {
-    return <OrganizerApplication pathname={pathname} workspace={organizerWorkspace} onPathnameChange={navigateOrganizer} onExitToAttendee={() => navigate('/')} registerNavigationGuard={registerOrganizerNavigationGuard} />
+    return <OrganizerApplication pathname={pathname} workspace={organizerWorkspace} onPathnameChange={navigateOrganizer} onNavigatePreservingNotice={navigateOrganizerPreservingNotice} onExitToAttendee={() => navigate('/')} registerNavigationGuard={registerOrganizerNavigationGuard} />
   }
 
   const state: State = { profile, tickets, orders, listings, selection, primaryOrder: orders.find((order) => order.id === primaryOrderId) ?? null, completedListingIds }

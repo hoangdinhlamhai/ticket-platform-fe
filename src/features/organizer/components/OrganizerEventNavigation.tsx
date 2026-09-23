@@ -1,5 +1,5 @@
-import { shouldUseClientNavigation } from '../../../app/routing/client-navigation'
-import type { OrganizerPath, OrganizerRoute } from '../../../app/routing/organizer-route'
+import { shouldUseClientNavigation } from '../../../routes/client-navigation'
+import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route'
 
 type OrganizerEventNavigationProps = {
   activeRoute: OrganizerRoute

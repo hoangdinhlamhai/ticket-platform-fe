@@ -125,7 +125,7 @@ test('keeps the reducer canonical for success, rejection, and rapid repeat', () 
 
 test('keeps the check-in console interaction scoped, resettable, and scanner-free', () => {
   const page = source('pages/OrganizerCheckInPage.tsx')
-  const application = readFileSync(resolve(projectRoot, 'src/app/OrganizerApplication.tsx'), 'utf8')
+  const application = readFileSync(resolve(projectRoot, 'src/pages/OrganizerApplication.tsx'), 'utf8')
   const activity = source('components/OrganizerCheckInActivity.tsx')
 
   assert.match(application, /<OrganizerCheckInPage key=\{eventId\}/)

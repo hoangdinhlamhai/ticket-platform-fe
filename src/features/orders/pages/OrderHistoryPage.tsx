@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import { filterAttendeeOrders } from '../helpers/filter-attendee-orders'
 import type { AttendeeOrder, OrderFilters } from '../types/order'
 import { OrderHistoryCard } from '../components/OrderHistoryCard'

@@ -1,4 +1,4 @@
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import type { ResaleListing } from '../types/resale'
 import { ResaleListingCard } from './ResaleListingCard'
 

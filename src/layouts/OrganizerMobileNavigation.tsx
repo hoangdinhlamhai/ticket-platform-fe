@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import type { OrganizerPath, OrganizerRoute } from '../routing/organizer-route'
+import type { OrganizerPath, OrganizerRoute } from '../routes/organizer-route'
 import { OrganizerSidebar } from './OrganizerSidebar'
 
 type OrganizerMobileNavigationProps = {

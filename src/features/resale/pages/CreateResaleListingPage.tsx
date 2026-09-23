@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import type { CustomerProfile } from '../../profile'
 import type { OwnedTicket } from '../../tickets'
 import { ResaleListingForm } from '../components/ResaleListingForm'

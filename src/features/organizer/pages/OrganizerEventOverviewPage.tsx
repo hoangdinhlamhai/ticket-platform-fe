@@ -4,7 +4,7 @@ import { OrganizerEventReviewPanel } from '../components/OrganizerEventReviewPan
 import { OrganizerPageHeader } from '../components/OrganizerPageHeader.tsx'
 import { OrganizerStatusBadge } from '../components/OrganizerStatusBadge.tsx'
 import { selectOrganizerEventMetrics } from '../helpers/select-organizer-metrics.ts'
-import type { OrganizerPath, OrganizerRoute } from '../../../app/routing/organizer-route.ts'
+import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route.ts'
 import type { OrganizerWorkspace } from '../types/organizer-workspace.ts'
 
 type Props = { activeRoute: OrganizerRoute; eventId: string; onNavigate: (path: OrganizerPath) => void; onPublish: (eventId: string) => void; onSubmitReview: (eventId: string) => void; workspace: OrganizerWorkspace }

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { OrganizerLayout } from './layouts/OrganizerLayout.tsx'
+import { OrganizerLayout } from '../layouts/OrganizerLayout.tsx'
 import {
   getOrganizerEventId,
   getOrganizerRoute,
   type OrganizerPath,
-} from './routing/organizer-route.ts'
+} from '../routes/organizer-route.ts'
 import {
   OrganizerAnalyticsPage,
   OrganizerAttendeesPage,
@@ -19,10 +19,10 @@ import {
   OrganizerOrdersPage,
   OrganizerOrganizationSettingsPage,
   OrganizerTicketInventoryPage,
-  OrganizerPrototypeNotice,
   type OrganizerEventFormSave,
 } from '../features/organizer/index.ts'
 import type { OrganizerWorkspaceController } from '../features/organizer/hooks/organizer-workspace-controller.ts'
+import { resolveOrganizerCreateRedirect } from '../features/organizer/helpers/resolve-organizer-create-redirect.ts'
 import type { OrganizerOperationResult } from '../features/organizer/types/organizer-workspace.ts'
 
 type Props = {
@@ -30,12 +30,15 @@ type Props = {
   workspace: OrganizerWorkspaceController
   onExitToAttendee: () => void
   onPathnameChange: (path: OrganizerPath) => void
+  // Navigates while keeping the workspace's lastOperation intact, so a confirmed
+  // event_created notice survives the redirect to the My-events list.
+  onNavigatePreservingNotice: (path: OrganizerPath) => void
   registerNavigationGuard: (guard: ((destination: string) => boolean) | null) => void
 }
 
 function getOperationNotice(operation: OrganizerOperationResult | null) {
   if (!operation) return ''
-  if (operation.kind === 'event_created') return 'Đã lưu bản nháp và hạng vé khởi tạo.'
+  if (operation.kind === 'event_created') return 'Đã gửi sự kiện. Sự kiện đang chờ Admin duyệt.'
   if (operation.kind === 'event_updated') return 'Đã lưu thay đổi sự kiện.'
   if (operation.kind === 'event_review_submitted') return 'Đã gửi sự kiện để Admin duyệt.'
   if (operation.kind === 'event_published') return 'Đã xuất bản sự kiện.'
@@ -51,7 +54,7 @@ function OrganizerMissingEventPage({ onNavigate }: { onNavigate: (path: Organize
   return <OrganizerNotFoundPage eventNotFound onNavigate={onNavigate} />
 }
 
-export function OrganizerApplication({ pathname, workspace, onExitToAttendee, onPathnameChange, registerNavigationGuard }: Props) {
+export function OrganizerApplication({ pathname, workspace, onExitToAttendee, onPathnameChange, onNavigatePreservingNotice, registerNavigationGuard }: Props) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const dirtyRef = useRef(false)
   const route = getOrganizerRoute(pathname)
@@ -97,10 +100,22 @@ export function OrganizerApplication({ pathname, workspace, onExitToAttendee, on
   }, [discardOrContinue, onExitToAttendee, workspace])
 
   const create = useCallback(async (value: OrganizerEventFormSave) => {
-    if (!value.initialTicketTiers?.length) return false
-    const result = await workspace.createEvent(value.input, value.initialTicketTiers, value.finance)
-    return result?.kind === 'event_created'
-  }, [workspace])
+    console.log('[OrganizerApplication] create nhan duoc value tu form:', value)
+    const result = await workspace.createEvent(value.input, value.initialTicketTiers ?? [], value.finance)
+    console.log('[OrganizerApplication] createEvent result:', result)
+    // Only a confirmed, server-persisted event_created redirects. A failed, null, or
+    // stale-account result keeps the user in the form with the visible error and its
+    // dirty state intact (no navigation, no unsaved-guard clear).
+    const redirect = resolveOrganizerCreateRedirect(result)
+    console.log('[OrganizerApplication] resolveOrganizerCreateRedirect:', redirect)
+    if (!redirect) return false
+    // Clear the unsaved guard ONLY after the confirmed create, before navigating, so the
+    // redirect never trips the "thay đổi chưa lưu" prompt. Preserve the success notice by
+    // routing through the notice-preserving navigate (the normal navigate clears it).
+    setDirty(redirect.clearDirtyFirst ? false : dirtyRef.current)
+    onNavigatePreservingNotice(redirect.path)
+    return true
+  }, [onNavigatePreservingNotice, setDirty, workspace])
 
   const update = useCallback(async (id: string, input: Parameters<typeof workspace.updateEvent>[1], finance?: Parameters<typeof workspace.updateEvent>[2]) => {
     const result = await workspace.updateEvent(id, input, finance)
@@ -112,9 +127,9 @@ export function OrganizerApplication({ pathname, workspace, onExitToAttendee, on
   if (route === 'dashboard') {
     page = <OrganizerDashboardPage workspace={workspace.workspace} onOpenEvent={(id) => navigate(`/organizer/events/${id}`)} onOpenEvents={() => navigate('/organizer/events')} />
   } else if (route === 'events') {
-    page = <OrganizerEventListPage workspace={workspace.workspace} onCreate={() => navigate('/organizer/events/new')} onOpenEvent={(id) => navigate(`/organizer/events/${id}`)} />
+    page = <OrganizerEventListPage workspace={workspace.workspace} loading={workspace.loading} loadError={workspace.loadError} onRetry={workspace.retry} onCreate={() => navigate('/organizer/events/new')} onOpenEvent={(id) => navigate(`/organizer/events/${id}`)} />
   } else if (route === 'event-create') {
-    page = <OrganizerEventCreatePage onCancel={() => navigate('/organizer/events')} onCreate={create} onDirtyChange={setDirty} />
+    page = <OrganizerEventCreatePage onCancel={() => navigate('/organizer/events')} onCreate={create} onDirtyChange={setDirty} saving={workspace.isSaving} error={workspace.saveError} />
   } else if (!eventExists && route.startsWith('event-')) {
     page = <OrganizerMissingEventPage onNavigate={navigate} />
   } else if (route === 'event-overview' && eventId) {
@@ -141,9 +156,6 @@ export function OrganizerApplication({ pathname, workspace, onExitToAttendee, on
 
   const notice = workspace.lastOperation?.kind === 'check_in' ? '' : getOperationNotice(workspace.lastOperation)
   return <OrganizerLayout activeRoute={route} notice={notice} onAcknowledgeNotice={workspace.clearLastOperation} onExitToAttendee={exitToAttendee} onNavigate={navigate} organizationName={workspace.workspace.organization.name}>
-    <div className="space-y-6">
-      <OrganizerPrototypeNotice />
-      {page}
-    </div>
+    {page}
   </OrganizerLayout>
 }

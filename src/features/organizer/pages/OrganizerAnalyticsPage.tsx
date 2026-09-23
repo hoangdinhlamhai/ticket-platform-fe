@@ -6,7 +6,7 @@ import { OrganizerEventNavigation } from '../components/OrganizerEventNavigation
 import { OrganizerPageHeader } from '../components/OrganizerPageHeader.tsx'
 import { OrganizerTicketSalesBreakdown } from '../components/OrganizerTicketSalesBreakdown.tsx'
 import { selectOrganizerEventAnalytics } from '../helpers/select-organizer-metrics.ts'
-import type { OrganizerPath, OrganizerRoute } from '../../../app/routing/organizer-route.ts'
+import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route.ts'
 import type { OrganizerWorkspace } from '../types/organizer-workspace.ts'
 
 type Props = {

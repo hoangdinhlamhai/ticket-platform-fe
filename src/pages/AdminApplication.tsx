@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from 'react'
-import { AdminLayout } from './layouts/AdminLayout.tsx'
-import { getAdminCaseId, getAdminEventId, getAdminRoute, type AdminPath } from './routing/admin-route.ts'
+import { AdminLayout } from '../layouts/AdminLayout.tsx'
+import { getAdminCaseId, getAdminEventId, getAdminRoute, type AdminPath } from '../routes/admin-route.ts'
 import {
   AdminAuditLogPage,
   AdminCaseDetailPage,

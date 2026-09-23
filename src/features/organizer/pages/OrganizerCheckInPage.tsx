@@ -9,7 +9,7 @@ import { OrganizerEventNavigation } from '../components/OrganizerEventNavigation
 import { OrganizerPageHeader } from '../components/OrganizerPageHeader.tsx'
 import { classifyOrganizerCheckInLookup } from '../helpers/find-organizer-check-in-candidates.ts'
 import { selectOrganizerEventMetrics } from '../helpers/select-organizer-metrics.ts'
-import type { OrganizerPath, OrganizerRoute } from '../../../app/routing/organizer-route.ts'
+import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route.ts'
 import type { OrganizerOperationResult, OrganizerWorkspace } from '../types/organizer-workspace.ts'
 
 type Props = {

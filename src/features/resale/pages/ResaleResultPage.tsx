@@ -1,4 +1,4 @@
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import { TicketIcon } from '../../../components/icons/TicketlyIcons'
 import { formatTicketPrice } from '../../events'
 import type { AttendeeOrder } from '../../orders'

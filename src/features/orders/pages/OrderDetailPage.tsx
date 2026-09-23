@@ -1,4 +1,4 @@
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import { formatTicketPrice } from '../../events'
 import type { AttendeeOrder } from '../types/order'
 import { OrderDetailTimeline } from '../components/OrderDetailTimeline'

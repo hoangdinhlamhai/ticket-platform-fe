@@ -10,7 +10,7 @@ const attendee: AttendeeUser = {
   email: 'linh@example.com',
   fullName: 'Linh Nguyễn',
   phone: null,
-  role: 'ATTENDEE',
+  role: 'USER',
   status: 'ACTIVE',
 }
 
@@ -277,9 +277,9 @@ test('does not clear a newly refreshed session when an older me request fails', 
   assert.equal(controller.getSnapshot().status, 'authenticated')
 })
 
-test('me clears identity when the backend revokes attendee privileges', async () => {
+test('me clears identity when the backend rejects the role', async () => {
   const controller = createAuthSessionController({
-    api: authApi({ me: async () => { throw new ApiError({ status: 403, code: 'ATTENDEE_ONLY', message: 'Role changed' }) } }),
+    api: authApi({ me: async () => { throw new ApiError({ status: 403, code: 'ROLE_NOT_ALLOWED', message: 'Role changed' }) } }),
     timer: timerHarness().timer,
   })
   await controller.login({ email: attendee.email, password: 'correct-horse' })

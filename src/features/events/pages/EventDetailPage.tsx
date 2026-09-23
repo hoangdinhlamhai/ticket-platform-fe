@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import { createEventApi } from '../../auth/api/event-api.ts'
 import type { PrimaryCheckoutSelection } from '../../orders'
 import { EventActions } from '../components/EventActions'

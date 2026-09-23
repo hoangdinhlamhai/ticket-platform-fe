@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
-import { TicketlyMark } from '../../components/icons/TicketlyIcons'
-import { shouldUseClientNavigation } from '../routing/client-navigation'
-import type { OrganizerPath } from '../routing/organizer-route'
+import { TicketlyMark } from '../components/icons/TicketlyIcons'
+import { shouldUseClientNavigation } from '../routes/client-navigation'
+import type { OrganizerPath } from '../routes/organizer-route'
 
 type OrganizerHeaderProps = {
   isNavigationOpen: boolean
@@ -24,7 +24,6 @@ export function OrganizerHeader({ isNavigationOpen, menuButtonRef, onMenuClick, 
           </a>
         </div>
         <div className="flex min-w-0 items-center gap-3">
-          <span className="hidden rounded-full border border-blue/35 bg-google-hover px-3 py-1 text-xs font-extrabold text-blue-deep sm:inline">Prototype · dữ liệu minh họa</span>
           <span className="max-w-48 truncate text-sm font-bold text-ink">{organizationName}</span>
         </div>
       </div>

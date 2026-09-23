@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import type { CustomerProfile } from '../../profile'
 import { applyResaleSessionAvailability } from '../helpers/apply-resale-session-availability'
 import { getResaleListingById } from '../helpers/get-resale-listing-by-id'

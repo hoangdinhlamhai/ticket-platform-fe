@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import type { AdminPath, AdminRoute } from '../routing/admin-route.ts'
+import type { AdminPath, AdminRoute } from '../routes/admin-route.ts'
 import { ADMIN_NAVIGATION } from './admin-navigation.ts'
 
 type AdminMobileNavigationProps = {

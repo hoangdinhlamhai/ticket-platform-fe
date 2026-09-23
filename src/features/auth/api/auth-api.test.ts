@@ -8,7 +8,7 @@ const attendee = {
   email: 'linh@example.com',
   fullName: 'Linh Nguyễn',
   phone: null,
-  role: 'ATTENDEE' as const,
+  role: 'USER' as const,
   status: 'ACTIVE' as const,
 }
 

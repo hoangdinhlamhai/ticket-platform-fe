@@ -1,4 +1,4 @@
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import type { OwnedTicket } from '../../tickets'
 import { CustomerProfileForm } from '../components/CustomerProfileForm'
 import { ProfileAvatar } from '../components/ProfileAvatar'

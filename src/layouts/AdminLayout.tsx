@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import type { AdminPath, AdminRoute } from '../routing/admin-route.ts'
+import type { AdminPath, AdminRoute } from '../routes/admin-route.ts'
 import { AdminHeader } from './AdminHeader.tsx'
 import { AdminMobileNavigation } from './AdminMobileNavigation.tsx'
 import { AdminSidebar } from './AdminSidebar.tsx'

@@ -32,6 +32,12 @@ function assertNoExternalSideEffects(path: string) {
   }
 }
 
+test('requires a ticket tier before the event wizard can advance', () => {
+  const form = source('components/OrganizerEventForm.tsx')
+
+  assert.match(form, /if \(!wizard\) return true; if \(!tiers\.length\) \{ setTierMessage\('Thêm ít nhất một loại vé\.'\); return false \}/)
+})
+
 test('keeps ticket sale policy deterministic and caller-clock driven', () => {
   const transitions = source('helpers/organizer-inventory-transitions.ts')
   const reducer = source('helpers/organizer-workspace-reducer.ts')
@@ -87,7 +93,7 @@ test('keeps event-list paid revenue derived by a canonical reporting selector', 
 })
 
 test('keeps reporting, settings, and chart text sourced from canonical session helpers', () => {
-  const application = readFileSync(resolve(projectRoot, 'src/app/OrganizerApplication.tsx'), 'utf8')
+  const application = readFileSync(resolve(projectRoot, 'src/pages/OrganizerApplication.tsx'), 'utf8')
   const settings = source('pages/OrganizerOrganizationSettingsPage.tsx')
   const analytics = source('pages/OrganizerAnalyticsPage.tsx')
   const finance = source('pages/OrganizerFinancePage.tsx')

@@ -1,4 +1,4 @@
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import { formatResalePrice } from '../helpers/format-resale-price'
 import type { ResaleListing } from '../types/resale'
 type Props = { listing: ResaleListing; onNavigate: (path: AttendeePath) => void; onWithdraw: (id: string) => void }

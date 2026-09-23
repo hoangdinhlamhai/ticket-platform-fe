@@ -38,7 +38,7 @@ test('keeps only the topmost nested Admin dialog active and restores focus in or
 
 test('keeps Admin dialogs keyboard accessible and prototype-only', () => {
   const common = read('src/features/admin/components/AdminCommon.tsx')
-  const mobileNavigation = read('src/app/layouts/AdminMobileNavigation.tsx')
+  const mobileNavigation = read('src/layouts/AdminMobileNavigation.tsx')
   const sources = [
     common,
     mobileNavigation,
@@ -101,7 +101,7 @@ test('keeps dashboard charts and audit records accessible and actionable', () =>
   const dashboard = read('src/features/admin/components/AdminDashboardPage.tsx')
   const moderation = read('src/features/admin/components/AdminModerationPages.tsx')
   const finance = read('src/features/admin/components/AdminFinancePages.tsx')
-  const header = read('src/app/layouts/AdminHeader.tsx')
+  const header = read('src/layouts/AdminHeader.tsx')
 
   assert.match(dashboard, /<svg/)
   assert.match(dashboard, /<polyline/)

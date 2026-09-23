@@ -1,4 +1,4 @@
-import type { AdminPath, AdminRoute } from '../routing/admin-route.ts'
+import type { AdminPath, AdminRoute } from '../routes/admin-route.ts'
 import { ADMIN_NAVIGATION } from './admin-navigation.ts'
 
 export function AdminSidebar({ activeRoute, onNavigate }: { readonly activeRoute: AdminRoute; readonly onNavigate: (path: AdminPath) => void }) {

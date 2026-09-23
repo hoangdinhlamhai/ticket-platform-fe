@@ -6,7 +6,7 @@ import { OrganizerOrderFilters } from '../components/OrganizerOrderFilters.tsx'
 import { OrganizerOrderTable } from '../components/OrganizerOrderTable.tsx'
 import { OrganizerPageHeader } from '../components/OrganizerPageHeader.tsx'
 import { filterOrganizerOrders, type OrganizerOrderFilters as FilterState } from '../helpers/filter-organizer-orders.ts'
-import type { OrganizerPath, OrganizerRoute } from '../../../app/routing/organizer-route.ts'
+import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route.ts'
 import type { OrganizerWorkspace } from '../types/organizer-workspace.ts'
 
 type Props = {

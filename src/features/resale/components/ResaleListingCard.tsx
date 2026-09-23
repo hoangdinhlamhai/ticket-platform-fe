@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import { ArrowUpRightIcon, CalendarIcon, PinIcon } from '../../../components/icons/TicketlyIcons'
-import { shouldUseClientNavigation, type AttendeePath } from '../../../app/routing/attendee-route'
+import { shouldUseClientNavigation, type AttendeePath } from '../../../routes/attendee-route'
 import { formatResaleDateTime } from '../helpers/format-resale-date-time'
 import { formatResalePrice } from '../helpers/format-resale-price'
 import type { ResaleListing, ResalePosterTone } from '../types/resale'

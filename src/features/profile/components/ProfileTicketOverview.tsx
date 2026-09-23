@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import { CalendarIcon, TicketIcon } from '../../../components/icons/TicketlyIcons'
-import { shouldUseClientNavigation, type AttendeePath } from '../../../app/routing/attendee-route'
+import { shouldUseClientNavigation, type AttendeePath } from '../../../routes/attendee-route'
 import { getTicketProfileSummary, type OwnedTicket } from '../../tickets'
 
 type ProfileTicketOverviewProps = {

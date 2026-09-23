@@ -1,5 +1,5 @@
 export { AuthPage } from './pages/AuthPage'
 export { useAttendeeAuth } from './hooks/use-attendee-auth.ts'
 export { createEventApi } from './api/event-api.ts'
-export type { EventApi, EventCreatePayload } from './api/event-api.ts'
-export type { AttendeeUser } from './api/auth-contract.ts'
+export type { EventApi, EventCreatePayload, OrganizerEventOwnerDetail, OrganizerEventOwnerTicketType } from './api/event-api.ts'
+export type { AttendeeUser, AuthUserRole } from './api/auth-contract.ts'

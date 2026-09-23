@@ -6,7 +6,7 @@ import { OrganizerEmptyState } from '../components/OrganizerEmptyState.tsx'
 import { OrganizerEventNavigation } from '../components/OrganizerEventNavigation.tsx'
 import { OrganizerPageHeader } from '../components/OrganizerPageHeader.tsx'
 import { filterOrganizerAttendees, type OrganizerAttendeeFilters as FilterState } from '../helpers/filter-organizer-attendees.ts'
-import type { OrganizerPath, OrganizerRoute } from '../../../app/routing/organizer-route.ts'
+import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route.ts'
 import type { OrganizerWorkspace } from '../types/organizer-workspace.ts'
 
 type Props = {

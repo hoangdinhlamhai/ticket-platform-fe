@@ -3,7 +3,7 @@ import { filterAdminCases, filterAdminEvents } from '../helpers/filter-admin-rec
 import { adminStatusLabel as statusLabel, adminStatusTone as tone, formatAdminMoney as money } from '../helpers/admin-display.ts'
 import type { AdminSensitiveOperation } from '../helpers/admin-transitions.ts'
 import type { AdminWorkspaceController } from '../hooks/admin-workspace-controller.ts'
-import { shouldUseClientNavigation } from '../../../app/routing/client-navigation.ts'
+import { shouldUseClientNavigation } from '../../../routes/client-navigation.ts'
 import type { AdminCase, AdminEvent, AdminReviewDecision, AdminSubjectType } from '../types/admin-records.ts'
 import { AdminDataTable } from './AdminDataTable.tsx'
 import { AdminDecisionDialog, AdminFilterToolbar, AdminPageHeader, AdminStatusBadge } from './AdminCommon.tsx'

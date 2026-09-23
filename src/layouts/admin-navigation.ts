@@ -1,4 +1,4 @@
-import type { AdminPath, AdminRoute } from '../routing/admin-route.ts'
+import type { AdminPath, AdminRoute } from '../routes/admin-route.ts'
 
 export const ADMIN_NAVIGATION: readonly { readonly group: string; readonly items: readonly { readonly label: string; readonly path: Extract<AdminPath, string>; readonly routes: readonly AdminRoute[] }[] }[] = [
   { group: 'TỔNG QUAN', items: [{ label: 'Tổng quan', path: '/admin', routes: ['dashboard'] }] },

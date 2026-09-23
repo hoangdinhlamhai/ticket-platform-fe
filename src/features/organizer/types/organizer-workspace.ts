@@ -29,7 +29,7 @@ export type OrganizerCheckInOutcome =
   | 'not_found'
 
 type OrganizerTargetIds = Readonly<Record<string, string>>
-type OrganizerOperationName = Exclude<OrganizerWorkspaceAction['type'], 'clear_last_operation'>
+export type OrganizerOperationName = Exclude<OrganizerWorkspaceAction['type'], 'clear_last_operation'>
 type OrganizerOperationBase = {
   readonly operation: OrganizerOperationName
   readonly targetIds: OrganizerTargetIds

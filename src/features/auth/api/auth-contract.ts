@@ -1,9 +1,13 @@
+// Canonical backend roles are USER and ADMIN (ROLE_NOT_ALLOWED for a wrong-role call).
+// The type name is retained to avoid churn across the attendee UI; the role union is canonical.
+export type AuthUserRole = 'USER' | 'ADMIN'
+
 export type AttendeeUser = {
   id: string
   email: string
   fullName: string
   phone: string | null
-  role: 'ATTENDEE'
+  role: AuthUserRole
   status: 'ACTIVE'
 }
 
@@ -31,7 +35,7 @@ export type AuthErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'UNAUTHENTICATED'
   | 'ACCOUNT_INACTIVE'
-  | 'ATTENDEE_ONLY'
+  | 'ROLE_NOT_ALLOWED'
   | 'TOO_MANY_REQUESTS'
   | 'NETWORK_ERROR'
   | 'SERVER_UNAVAILABLE'

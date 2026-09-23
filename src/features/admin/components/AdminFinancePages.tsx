@@ -3,8 +3,8 @@ import { adminStatusLabel, adminStatusTone, formatAdminMoney } from '../helpers/
 import { matchesAdminQuery } from '../helpers/filter-admin-records.ts'
 import type { AdminSensitiveOperation } from '../helpers/admin-transitions.ts'
 import type { AdminWorkspaceController } from '../hooks/admin-workspace-controller.ts'
-import type { AdminPath } from '../../../app/routing/admin-route.ts'
-import { shouldUseClientNavigation } from '../../../app/routing/client-navigation.ts'
+import type { AdminPath } from '../../../routes/admin-route.ts'
+import { shouldUseClientNavigation } from '../../../routes/client-navigation.ts'
 import { AdminDataTable } from './AdminDataTable.tsx'
 import { AdminDecisionDialog, AdminFilterToolbar, AdminPageHeader, AdminRecordDrawer, AdminStatusBadge } from './AdminCommon.tsx'
 

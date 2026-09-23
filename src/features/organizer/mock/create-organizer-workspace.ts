@@ -16,3 +16,34 @@ export function createOrganizerWorkspace(): OrganizerWorkspace {
     checkInActivities: ORGANIZER_CHECK_IN_ACTIVITY_FIXTURES.map((activity) => ({ ...activity })),
     eventFinance: {},  }
 }
+
+// Neutral, non-persisted organization shell. The backend exposes no organization
+// profile API yet, so this must NOT reuse the "Sự kiện Sao Việt" demo fixture —
+// showing that name would imply a saved account that does not exist. Blank fields
+// signal "chưa có" state; nothing here is ever sent to or claimed as saved on the server.
+const BLANK_ORGANIZATION: OrganizerWorkspace['organization'] = {
+  id: 'organizer-workspace',
+  name: '',
+  publicEmail: '',
+  publicPhone: '',
+  address: '',
+  payoutAccountLabel: '',
+  businessIdentifier: '',
+  defaultRefundPolicy: '',
+}
+
+// Server-backed workspace: no seeded events or business collections, and a blank
+// organization shell — never the demo fixture.
+export function createEmptyOrganizerWorkspace(): OrganizerWorkspace {
+  return {
+    organization: { ...BLANK_ORGANIZATION },
+    events: [],
+    ticketTiers: [],
+    orders: [],
+    attendees: [],
+    refunds: [],
+    payouts: [],
+    checkInActivities: [],
+    eventFinance: {},
+  }
+}

@@ -1,5 +1,5 @@
 import { OrganizerEmptyState } from '../components/OrganizerEmptyState.tsx'
-import type { OrganizerPath } from '../../../app/routing/organizer-route.ts'
+import type { OrganizerPath } from '../../../routes/organizer-route.ts'
 
 type Props = {
   eventNotFound?: boolean

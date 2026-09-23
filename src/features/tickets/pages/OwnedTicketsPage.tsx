@@ -1,5 +1,5 @@
 import { useCallback, type MouseEvent } from 'react'
-import { shouldUseClientNavigation, type AttendeePath } from '../../../app/routing/attendee-route'
+import { shouldUseClientNavigation, type AttendeePath } from '../../../routes/attendee-route'
 import { OwnedTicketSummary } from '../components/OwnedTicketSummary'
 import type { OwnedTicket } from '../types/ticket'
 

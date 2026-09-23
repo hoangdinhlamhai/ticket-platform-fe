@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react'
-import { shouldUseClientNavigation, type AttendeePath } from '../../../app/routing/attendee-route'
+import { shouldUseClientNavigation, type AttendeePath } from '../../../routes/attendee-route'
 import { formatTicketPrice } from '../../events'
 import type { AttendeeOrder } from '../types/order'
 import { OrderStatusBadge } from './OrderStatusBadge'

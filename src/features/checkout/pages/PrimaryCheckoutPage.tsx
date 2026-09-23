@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import type { CustomerProfile } from '../../profile'
 import type { AttendeeOrderBuyer, DemoPaymentOutcome, PrimaryCheckoutSelection } from '../../orders'
 import { DemoPaymentOutcomeSelector } from '../components/DemoPaymentOutcomeSelector'

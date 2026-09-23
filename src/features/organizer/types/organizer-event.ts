@@ -12,7 +12,9 @@ export type OrganizerEvent = {
   readonly status: OrganizerEventStatus
   readonly reviewFeedback: string | null
   readonly thumbnail?: string
+  readonly coverImage?: string
   readonly category?: string
+  readonly categoryId?: string
   readonly provinceId?: string
   readonly wardId?: string
   readonly street?: string

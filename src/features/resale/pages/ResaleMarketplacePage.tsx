@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import { ResaleFilterPanel } from '../components/ResaleFilterPanel'
 import { ResaleListingGrid } from '../components/ResaleListingGrid'
 import { ResaleMarketplaceHero } from '../components/ResaleMarketplaceHero'

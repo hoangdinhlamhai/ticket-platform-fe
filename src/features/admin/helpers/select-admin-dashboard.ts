@@ -1,6 +1,6 @@
 import type { AdminCaseSeverity, AdminDailyMetric, AdminSubjectType } from '../types/admin-records.ts'
 import type { AdminWorkspace } from '../types/admin-workspace.ts'
-import type { AdminPath } from '../../../app/routing/admin-route.ts'
+import type { AdminPath } from '../../../routes/admin-route.ts'
 
 export type AdminDashboardMetric = { readonly id: string; readonly label: string; readonly value: number; readonly detail: string; readonly path: AdminPath }
 export type AdminWorkPriority = 'critical' | 'high' | 'medium' | 'low'

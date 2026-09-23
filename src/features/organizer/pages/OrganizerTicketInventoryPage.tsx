@@ -6,7 +6,7 @@ import { OrganizerPageHeader } from '../components/OrganizerPageHeader.tsx'
 import { OrganizerTicketTierForm } from '../components/OrganizerTicketTierForm.tsx'
 import { OrganizerTicketTierList } from '../components/OrganizerTicketTierList.tsx'
 import { selectOrganizerEventMetrics } from '../helpers/select-organizer-metrics.ts'
-import type { OrganizerPath, OrganizerRoute } from '../../../app/routing/organizer-route.ts'
+import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route.ts'
 import type { OrganizerTicketTier } from '../types/organizer-commerce.ts'
 import type { OrganizerWorkspace } from '../types/organizer-workspace.ts'
 

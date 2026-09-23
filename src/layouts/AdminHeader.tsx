@@ -1,7 +1,7 @@
 import { useState, type RefObject } from 'react'
-import { TicketlyMark } from '../../components/icons/TicketlyIcons.tsx'
-import { shouldUseClientNavigation } from '../routing/client-navigation.ts'
-import type { AdminPath } from '../routing/admin-route.ts'
+import { TicketlyMark } from '../components/icons/TicketlyIcons.tsx'
+import { shouldUseClientNavigation } from '../routes/client-navigation.ts'
+import type { AdminPath } from '../routes/admin-route.ts'
 
 type AdminHeaderProps = {
   readonly isNavigationOpen: boolean

@@ -1,4 +1,4 @@
-import type { AttendeePath } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
 import { MyResaleListingCard } from '../components/MyResaleListingCard'
 import type { ResaleListing } from '../types/resale'
 type Props = { listings: readonly ResaleListing[]; onNavigate: (path: AttendeePath) => void; onWithdraw: (id: string) => void }

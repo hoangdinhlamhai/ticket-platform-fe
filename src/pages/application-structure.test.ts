@@ -3,11 +3,11 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import test from 'node:test'
 
 const expectedFiles = [
-  'src/app/App.tsx',
-  'src/app/routing/attendee-route.ts',
-  'src/app/routing/attendee-route.test.ts',
-  'src/app/layouts/AttendeeHeader.tsx',
-  'src/app/layouts/AttendeeLayout.tsx',
+  'src/pages/App.tsx',
+  'src/routes/attendee-route.ts',
+  'src/routes/attendee-route.test.ts',
+  'src/layouts/AttendeeHeader.tsx',
+  'src/layouts/AttendeeLayout.tsx',
   'src/features/events/pages/EventDiscoveryPage.tsx',
   'src/features/events/pages/EventDetailPage.tsx',
   'src/features/events/pages/SavedEventsPage.tsx',
@@ -44,12 +44,12 @@ const expectedFiles = [
   'src/features/profile/pages/CustomerProfilePage.tsx',
   'src/features/profile/hooks/use-customer-profile.ts',
   'src/features/profile/helpers/validate-customer-profile.ts',
-  'src/app/OrganizerApplication.tsx',
-  'src/app/AdminApplication.tsx',
-  'src/app/routing/admin-route.ts',
-  'src/app/layouts/AdminLayout.tsx',
-  'src/app/layouts/AdminHeader.tsx',
-  'src/app/layouts/AdminSidebar.tsx',
+  'src/pages/OrganizerApplication.tsx',
+  'src/pages/AdminApplication.tsx',
+  'src/routes/admin-route.ts',
+  'src/layouts/AdminLayout.tsx',
+  'src/layouts/AdminHeader.tsx',
+  'src/layouts/AdminSidebar.tsx',
   'src/features/admin/components/AdminDashboardPage.tsx',
   'src/features/admin/components/AdminModerationPages.tsx',
   'src/features/admin/components/AdminOperationsPages.tsx',
@@ -57,9 +57,9 @@ const expectedFiles = [
   'src/features/admin/components/AdminCommon.tsx',
   'src/features/admin/components/AdminDataTable.tsx',
   'src/features/admin/mock/admin-record-data.ts',
-  'src/app/routing/organizer-route.ts',
-  'src/app/layouts/OrganizerLayout.tsx',
-  'src/app/layouts/OrganizerSidebar.tsx',
+  'src/routes/organizer-route.ts',
+  'src/layouts/OrganizerLayout.tsx',
+  'src/layouts/OrganizerSidebar.tsx',
   'src/features/organizer/pages/OrganizerDashboardPage.tsx',
   'src/features/organizer/pages/OrganizerEventListPage.tsx',
   'src/features/organizer/pages/OrganizerEventCreatePage.tsx',
@@ -129,8 +129,8 @@ test('keeps mobile event filters modal for keyboard users', () => {
 })
 
 test('wires the saved events route through the header and app shell', () => {
-  const header = readFileSync('src/app/layouts/AttendeeHeader.tsx', 'utf8')
-  const app = readFileSync('src/app/App.tsx', 'utf8')
+  const header = readFileSync('src/layouts/AttendeeHeader.tsx', 'utf8')
+  const app = readFileSync('src/pages/App.tsx', 'utf8')
 
   assert.match(header, /href="\/saved-events"/)
   assert.match(header, /activeRoute === 'saved-events'/)
@@ -149,10 +149,10 @@ test('uses informational semantics for non-mutating saved-event heart controls',
 })
 
 test('wires Organizer routes, shell accessibility, and prototype boundaries', () => {
-  const app = readFileSync('src/app/App.tsx', 'utf8')
-  const organizerApp = readFileSync('src/app/OrganizerApplication.tsx', 'utf8')
-  const layout = readFileSync('src/app/layouts/OrganizerLayout.tsx', 'utf8')
-  const route = readFileSync('src/app/routing/organizer-route.ts', 'utf8')
+  const app = readFileSync('src/pages/App.tsx', 'utf8')
+  const organizerApp = readFileSync('src/pages/OrganizerApplication.tsx', 'utf8')
+  const layout = readFileSync('src/layouts/OrganizerLayout.tsx', 'utf8')
+  const route = readFileSync('src/routes/organizer-route.ts', 'utf8')
 
   assert.match(app, /const organizerWorkspace = useOrganizerWorkspace\(\)/)
   assert.match(app, /if \(isOrganizerPath\(pathname\)\)/)
@@ -166,7 +166,7 @@ test('wires Organizer routes, shell accessibility, and prototype boundaries', ()
 })
 
 test('keeps Organizer prototype free of production-only browser and network APIs', () => {
-  const directories = ['src/features/organizer', 'src/app/OrganizerApplication.tsx', 'src/app/layouts/OrganizerLayout.tsx']
+  const directories = ['src/features/organizer', 'src/pages/OrganizerApplication.tsx', 'src/layouts/OrganizerLayout.tsx']
   const forbidden = /localStorage|sessionStorage|indexedDB|fetch\(|supabase|WebSocket|mediaDevices|BarcodeDetector|QRCode|qrcode/
 
   function readSources(path: string): string[] {
@@ -179,9 +179,9 @@ test('keeps Organizer prototype free of production-only browser and network APIs
 })
 
 test('wires all Admin surfaces before Organizer and attendee fallback', () => {
-  const app = readFileSync('src/app/App.tsx', 'utf8')
-  const adminApp = readFileSync('src/app/AdminApplication.tsx', 'utf8')
-  const route = readFileSync('src/app/routing/admin-route.ts', 'utf8')
+  const app = readFileSync('src/pages/App.tsx', 'utf8')
+  const adminApp = readFileSync('src/pages/AdminApplication.tsx', 'utf8')
+  const route = readFileSync('src/routes/admin-route.ts', 'utf8')
   const adminDispatch = app.indexOf('if (isAdminPath(pathname))')
   const organizerDispatch = app.indexOf('if (isOrganizerPath(pathname))')
 
@@ -212,9 +212,9 @@ test('wires all Admin surfaces before Organizer and attendee fallback', () => {
 })
 
 test('keeps Admin shell accessible and source-only prototype boundaries intact', () => {
-  const layout = readFileSync('src/app/layouts/AdminLayout.tsx', 'utf8')
-  const sidebar = readFileSync('src/app/layouts/AdminSidebar.tsx', 'utf8')
-  const directories = ['src/features/admin', 'src/app/AdminApplication.tsx', 'src/app/layouts/AdminLayout.tsx', 'src/app/layouts/AdminHeader.tsx', 'src/app/layouts/AdminMobileNavigation.tsx', 'src/app/layouts/AdminSidebar.tsx']
+  const layout = readFileSync('src/layouts/AdminLayout.tsx', 'utf8')
+  const sidebar = readFileSync('src/layouts/AdminSidebar.tsx', 'utf8')
+  const directories = ['src/features/admin', 'src/pages/AdminApplication.tsx', 'src/layouts/AdminLayout.tsx', 'src/layouts/AdminHeader.tsx', 'src/layouts/AdminMobileNavigation.tsx', 'src/layouts/AdminSidebar.tsx']
   const forbidden = /fetch\s*\(|WebSocket|localStorage|sessionStorage|indexedDB|document\.cookie|Authorization|apiKey|secret/
 
   function readSources(path: string): string[] {
@@ -243,8 +243,8 @@ test('keeps shared attendee gutters and desktop discovery columns stable', () =>
   const toolbar = readFileSync('src/features/events/components/EventDiscoveryToolbar.tsx', 'utf8')
   const filterDrawer = readFileSync('src/features/events/components/EventFilterDrawer.tsx', 'utf8')
   const wideAttendeeSources = [
-    'src/app/layouts/AttendeeHeader.tsx',
-    'src/app/layouts/AttendeeLayout.tsx',
+    'src/layouts/AttendeeHeader.tsx',
+    'src/layouts/AttendeeLayout.tsx',
     'src/features/events',
     'src/features/profile',
     'src/features/checkout',

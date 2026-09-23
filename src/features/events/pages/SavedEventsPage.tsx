@@ -1,6 +1,6 @@
 import { useCallback, type MouseEvent } from 'react'
-import type { AttendeePath } from '../../../app/routing/attendee-route'
-import { shouldUseClientNavigation } from '../../../app/routing/attendee-route'
+import type { AttendeePath } from '../../../routes/attendee-route'
+import { shouldUseClientNavigation } from '../../../routes/attendee-route'
 import { SavedEventsGrid } from '../components/SavedEventsGrid'
 import { SavedEventsHero } from '../components/SavedEventsHero'
 import { MOCK_EVENTS } from '../mock/eventData'

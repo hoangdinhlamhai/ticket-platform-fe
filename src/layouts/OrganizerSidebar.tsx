@@ -1,5 +1,5 @@
-import { shouldUseClientNavigation } from '../routing/client-navigation'
-import type { OrganizerPath, OrganizerRoute } from '../routing/organizer-route'
+import { shouldUseClientNavigation } from '../routes/client-navigation'
+import type { OrganizerPath, OrganizerRoute } from '../routes/organizer-route'
 
 type OrganizerSidebarProps = {
   activeRoute: OrganizerRoute
@@ -13,7 +13,7 @@ type NavigationItem = { currentRoutes: readonly OrganizerRoute[]; highlightRoute
 const eventRoutes: readonly OrganizerRoute[] = ['events', 'event-create', 'event-overview', 'event-edit', 'event-tickets', 'event-orders', 'event-attendees', 'event-check-in', 'event-analytics']
 const navigationGroups: readonly { label: string; items: readonly NavigationItem[] }[] = [
   { label: 'TỔNG QUAN', items: [{ href: '/organizer', label: 'Tổng quan', currentRoutes: ['dashboard'], highlightRoutes: ['dashboard'] }] },
-  { label: 'QUẢN LÝ', items: [{ href: '/organizer/events', label: 'Sự kiện', currentRoutes: ['events'], highlightRoutes: eventRoutes }, { href: '/organizer/finance', label: 'Tài chính', currentRoutes: ['finance'], highlightRoutes: ['finance'] }] },
+  { label: 'QUẢN LÝ', items: [{ href: '/organizer/events', label: 'Sự kiện của tôi', currentRoutes: ['events'], highlightRoutes: eventRoutes }, { href: '/organizer/finance', label: 'Tài chính', currentRoutes: ['finance'], highlightRoutes: ['finance'] }] },
   { label: 'TỔ CHỨC', items: [{ href: '/organizer/settings', label: 'Cài đặt tổ chức', currentRoutes: ['settings'], highlightRoutes: ['settings'] }] },
 ]
 

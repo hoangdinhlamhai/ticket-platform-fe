@@ -1,47 +1,415 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { OrganizerEventBasicFields } from './OrganizerEventBasicFields.tsx'
-import { OrganizerEventPolicyFields } from './OrganizerEventPolicyFields.tsx'
 import { OrganizerEventPreview } from './OrganizerEventPreview.tsx'
 import { OrganizerEventScheduleFields } from './OrganizerEventScheduleFields.tsx'
 import { OrganizerEventWizardProgress } from './OrganizerEventWizardProgress.tsx'
+import { OrganizerImagePicker } from './OrganizerImagePicker.tsx'
+import { OrganizerEventTierDialog } from './OrganizerEventTierDialog.tsx'
 import { useOrganizerEventForm } from '../hooks/use-organizer-event-form.ts'
-import { validateOrganizerTicketTier, type OrganizerTicketTierDraft } from '../helpers/validate-organizer-ticket-tier.ts'
-import type { OrganizerEvent, OrganizerEventFinance, OrganizerEventInput } from '../types/organizer-event.ts'
+import {
+  validateOrganizerTicketTier,
+  type OrganizerTicketTierDraft,
+} from '../helpers/validate-organizer-ticket-tier.ts'
+import type {
+  OrganizerEvent,
+  OrganizerEventFinance,
+  OrganizerEventInput,
+} from '../types/organizer-event.ts'
 
-export type OrganizerEventFormSave = { readonly initialTicketTiers?: readonly OrganizerTicketTierDraft[]; readonly finance?: OrganizerEventFinance; readonly input: OrganizerEventInput }
-type Props = { event?: OrganizerEvent; locked?: boolean; onCancel?: () => void; onDirtyChange?: (hasUnsavedChanges: boolean) => void; onSave: (value: OrganizerEventFormSave) => boolean | Promise<boolean>; submitLabel: string; wizard?: boolean }
-const inputClass = 'min-h-12 w-full rounded-md border border-line bg-paper px-3 text-base outline-none disabled:bg-paper-deep'
-
-type TierDraftFields = { name: string; price: string; capacity: string; minPerOrder: string; perOrderLimit: string; salesStartAt: string; salesEndAt: string; description: string; image: string }
-const emptyTier = (): TierDraftFields => ({ name: '', price: '0', capacity: '1', minPerOrder: '1', perOrderLimit: '4', salesStartAt: '', salesEndAt: '', description: '', image: '' })
-
-function ImageInput({ value, onChange, label, disabled, maxMb = 1 }: { value?: string; onChange: (value: string) => void; label: string; disabled?: boolean; maxMb?: number }) {
-  return <label className="block text-sm font-bold">{label}<input className="mt-2 block w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled} onChange={(event) => { const file = event.target.files?.[0]; if (!file || file.size > maxMb * 1024 * 1024 || !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return; const reader = new FileReader(); reader.onload = () => typeof reader.result === 'string' && onChange(reader.result); reader.readAsDataURL(file) }} />{value && <span className="mt-2 flex items-center gap-3"><img className="h-20 w-28 rounded object-cover" src={value} alt={`${label} xem trước`} /><button type="button" className="text-sm text-coral-dark" onClick={() => onChange('')} disabled={disabled}>Xóa ảnh</button></span>}</label>
+export type OrganizerEventFormSave = {
+  readonly initialTicketTiers?: readonly OrganizerTicketTierDraft[]
+  readonly finance?: OrganizerEventFinance
+  readonly input: OrganizerEventInput
 }
 
-export function OrganizerEventForm({ event, locked = false, onCancel, onDirtyChange, onSave, submitLabel, wizard = false }: Props) {
+type Props = {
+  event?: OrganizerEvent
+  locked?: boolean
+  saving?: boolean
+  error?: string | null
+  onCancel?: () => void
+  onDirtyChange?: (hasUnsavedChanges: boolean) => void
+  onSave: (value: OrganizerEventFormSave) => boolean | Promise<boolean>
+  submitLabel: string
+  wizard?: boolean
+}
+
+const inputClass =
+  'min-h-12 w-full rounded-md border border-line bg-paper px-3 text-base outline-none disabled:bg-paper-deep'
+
+export function OrganizerEventForm({
+  event,
+  locked = false,
+  saving = false,
+  error = null,
+  onCancel,
+  onDirtyChange,
+  onSave,
+  submitLabel,
+  wizard = false,
+}: Props) {
   const form = useOrganizerEventForm(event, { onDirtyChange })
   const [step, setStep] = useState(0)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [tierDraft, setTierDraft] = useState<TierDraftFields>(emptyTier)
+  const [tierOpen, setTierOpen] = useState(false)
+  const [editingTier, setEditingTier] = useState<number | null>(null)
+  const [tierReturnFocus, setTierReturnFocus] = useState<HTMLElement | null>(null)
   const [tierMessage, setTierMessage] = useState('')
   const previewRef = useRef<HTMLButtonElement>(null)
-  const tiers = useMemo(() => form.values.tiers, [form.values.tiers])
+  const tiers = form.values.tiers
+
   const update = (name: string, value: string) => form.setField(name, value)
-  const updateTierDraft = (name: keyof TierDraftFields, value: string) => setTierDraft((current) => ({ ...current, [name]: value }))
-  const addTier = () => {
-    const draft: OrganizerTicketTierDraft = { name: tierDraft.name, price: Number(tierDraft.price), capacity: Number(tierDraft.capacity), minPerOrder: Number(tierDraft.minPerOrder), perOrderLimit: Number(tierDraft.perOrderLimit), salesStartAt: tierDraft.salesStartAt || form.values.startsAt, salesEndAt: tierDraft.salesEndAt || form.values.endsAt, description: tierDraft.description, ...(tierDraft.image ? { image: tierDraft.image } : {}) }
-    const validation = validateOrganizerTicketTier(draft)
-    if (!validation.valid) { setTierMessage(Object.values(validation.errors)[0] ?? 'Kiểm tra lại loại vé.'); return }
-    form.setValues((current) => ({ ...current, tiers: [...current.tiers, draft] }))
-    setTierDraft(emptyTier()); setTierMessage('')
+
+  const saveTier = (draft: OrganizerTicketTierDraft) => {
+    form.setValues((current) => ({
+      ...current,
+      tiers:
+        editingTier === null
+          ? [...current.tiers, draft]
+          : current.tiers.map((tier, index) => (index === editingTier ? draft : tier)),
+    }))
+    setTierMessage('')
   }
-  const removeTier = (index: number) => form.setValues((current) => ({ ...current, tiers: current.tiers.filter((_, itemIndex) => itemIndex !== index) }))
-  const validateTiers = () => { if (!tiers.length) { setTierMessage('Thêm ít nhất một loại vé.'); return false } const invalid = tiers.map(validateOrganizerTicketTier).find((item) => !item.valid); setTierMessage(invalid ? Object.values(invalid.errors)[0] ?? 'Kiểm tra lại loại vé.' : ''); return !invalid }
-  const save = async () => { if (locked || !form.validate() || !validateTiers()) return; if (await onSave({ input: form.toInput(), initialTicketTiers: tiers, finance: form.values.finance })) form.markSaved() }
-  const submit = (eventValue: FormEvent) => { eventValue.preventDefault(); void save() }
-  const next = () => { if (step === 0 && !form.validate(['title'])) return; if (step === 1 && (!form.validate(['startsAt', 'endsAt', 'venue', 'city']) || !validateTiers())) return; setStep((value) => Math.min(3, value + 1)) }
-  const tierFields = <fieldset disabled={locked} className="mt-6 space-y-4"><div className="flex items-center justify-between gap-3"><legend className="text-xl font-extrabold">Loại vé</legend><span className="text-sm text-ink-soft">{tiers.length} loại vé</span></div>{tiers.map((tier, index) => <div key={`${tier.name}-${index}`} className="flex items-center justify-between gap-3 rounded-md border border-line p-3"><span><strong>{tier.name}</strong> · {tier.price === 0 ? 'Miễn phí' : `${tier.price.toLocaleString('vi-VN')} đ`} · {tier.capacity} vé · {tier.minPerOrder ?? 1}-{tier.perOrderLimit}/đơn</span><button type="button" className="text-sm font-bold text-coral-dark" onClick={() => removeTier(index)}>Xóa</button></div>)}<div className="rounded-md border border-line bg-paper-deep p-4"><h3 className="m-0 font-extrabold">Tạo loại vé mới</h3><div className="mt-3 grid gap-4 sm:grid-cols-2"><label className="text-sm font-bold">Tên vé<input className={inputClass} value={tierDraft.name} onChange={(event) => updateTierDraft('name', event.target.value)} /></label><label className="text-sm font-bold">Giá (0 = miễn phí)<input className={inputClass} type="number" min="0" value={tierDraft.price} onChange={(event) => updateTierDraft('price', event.target.value)} /></label><label className="text-sm font-bold">Tổng số lượng<input className={inputClass} type="number" min="0" value={tierDraft.capacity} onChange={(event) => updateTierDraft('capacity', event.target.value)} /></label><label className="text-sm font-bold">Tối thiểu mỗi đơn<input className={inputClass} type="number" min="1" value={tierDraft.minPerOrder} onChange={(event) => updateTierDraft('minPerOrder', event.target.value)} /></label><label className="text-sm font-bold">Tối đa mỗi đơn<input className={inputClass} type="number" min="1" value={tierDraft.perOrderLimit} onChange={(event) => updateTierDraft('perOrderLimit', event.target.value)} /></label><label className="text-sm font-bold">Mở bán<input className={inputClass} type="datetime-local" value={tierDraft.salesStartAt} onChange={(event) => updateTierDraft('salesStartAt', event.target.value)} /></label><label className="text-sm font-bold">Kết thúc bán<input className={inputClass} type="datetime-local" value={tierDraft.salesEndAt} onChange={(event) => updateTierDraft('salesEndAt', event.target.value)} /></label></div><label className="mt-3 block text-sm font-bold">Mô tả vé<textarea className={inputClass} value={tierDraft.description} onChange={(event) => updateTierDraft('description', event.target.value)} /></label><div className="mt-3"><ImageInput label="Ảnh vé (tối đa 1MB)" value={tierDraft.image} onChange={(value) => updateTierDraft('image', value)} disabled={locked} /></div><button type="button" className="mt-4 min-h-10 rounded-md border border-blue px-4 font-bold text-blue-deep" onClick={addTier}>+ Thêm loại vé</button></div>{tierMessage && <p className="text-sm font-bold text-error" role="alert">{tierMessage}</p>}<ImageInput label="Ảnh sơ đồ chỗ ngồi (tùy chọn, tối đa 3MB)" value={form.values.seatingChartImage} onChange={(value) => update('seatingChartImage', value)} disabled={locked} maxMb={3} /></fieldset>
-  const fields = step === 0 ? <OrganizerEventBasicFields disabled={locked} errors={form.errors} onChange={form.onChange} registerField={form.registerField} values={form.values} onFieldChange={update} /> : step === 1 ? <><OrganizerEventScheduleFields disabled={locked} errors={form.errors} onChange={form.onChange} registerField={form.registerField} values={form.values} />{tierFields}</> : step === 2 ? <OrganizerEventPolicyFields disabled={locked} onChange={form.onChange} values={form.values} /> : <fieldset disabled={locked} className="space-y-4"><legend className="text-xl font-extrabold">Thông tin thanh toán và hóa đơn</legend>{(['accountHolder', 'accountNumber', 'bankName', 'branch', 'invoiceName', 'invoiceAddress', 'taxCode'] as const).map((key) => <label className="block text-sm font-bold" key={key}>{key === 'accountHolder' ? 'Chủ tài khoản' : key === 'accountNumber' ? 'Số tài khoản' : key === 'bankName' ? 'Tên ngân hàng' : key === 'branch' ? 'Chi nhánh' : key === 'invoiceName' ? 'Tên xuất hóa đơn' : key === 'invoiceAddress' ? 'Địa chỉ hóa đơn' : 'Mã số thuế'}<input className={inputClass} value={form.values.finance[key]} onChange={(event) => form.setValues((current) => ({ ...current, finance: { ...current.finance, [key]: event.target.value } }))} /></label>)}</fieldset>
-  return <><form noValidate onSubmit={submit} className="space-y-5">{wizard && <OrganizerEventWizardProgress currentStep={step} />}<section className="rounded-lg border border-line bg-surface p-5 sm:p-6">{fields}{!wizard && <div className="mt-6 flex gap-3"><button className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper" type="submit">{submitLabel}</button>{onCancel && <button className="min-h-12 rounded-md border border-line px-5 font-extrabold" type="button" onClick={onCancel}>Hủy</button>}</div>}</section>{wizard && <div className="flex justify-between gap-3"><button className="min-h-12 rounded-md border border-line px-5 font-extrabold" type="button" disabled={step === 0} onClick={() => setStep((value) => value - 1)}>Quay lại</button><div className="flex gap-3"><button ref={previewRef} className="min-h-12 rounded-md border border-blue px-5 font-extrabold text-blue-deep" type="button" onClick={() => setPreviewOpen(true)}>Xem trước</button>{step < 3 ? <button className="min-h-12 rounded-md bg-blue px-5 font-extrabold text-paper" type="button" onClick={next}>Tiếp tục</button> : <button className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper" type="submit">{submitLabel}</button>}</div></div>}</form><OrganizerEventPreview open={previewOpen} onClose={() => setPreviewOpen(false)} returnFocus={previewRef} values={form.values} /></>
+
+  const removeTier = (index: number) =>
+    form.setValues((current) => ({
+      ...current,
+      tiers: current.tiers.filter((_, itemIndex) => itemIndex !== index),
+    }))
+
+  const validateTiers = () => {
+    if (!wizard) return true; if (!tiers.length) { setTierMessage('Thêm ít nhất một loại vé.'); return false }
+    const invalid = tiers.map(validateOrganizerTicketTier).find((item) => !item.valid)
+    setTierMessage(invalid ? Object.values(invalid.errors)[0] ?? 'Kiểm tra lại loại vé.' : '')
+    return !invalid
+  }
+
+  const next = () => {
+    if (step === 0 && !form.validate(['title', 'categoryId', 'provinceId', 'street'])) return
+    if (step === 1 && (!form.validate(['startsAt', 'endsAt']) || !validateTiers())) return
+    setStep((value) => Math.min(3, value + 1))
+  }
+
+  const save = async () => {
+    if (locked || saving) return
+
+    if (wizard && step < 3) {
+      next()
+      return
+    }
+
+    const step0Valid = form.validate(['title', 'categoryId', 'provinceId', 'street'])
+    if (!step0Valid) {
+      setStep(0)
+      return
+    }
+
+    const step1Valid = form.validate(['startsAt', 'endsAt'])
+    if (!step1Valid) {
+      setStep(1)
+      return
+    }
+
+    const tiersValid = validateTiers()
+    if (!tiersValid) {
+      setStep(1)
+      return
+    }
+
+    const savePayload: OrganizerEventFormSave = {
+      input: form.toInput(),
+      initialTicketTiers: wizard ? tiers : undefined,
+      finance: form.values.finance,
+    }
+
+    const ok = await onSave(savePayload)
+    if (ok) form.markSaved()
+  }
+
+  const submit = (eventValue: FormEvent) => {
+    eventValue.preventDefault()
+    void save()
+  }
+
+  let fields = null
+  if (step === 0) {
+    fields = (
+      <OrganizerEventBasicFields
+        disabled={locked}
+        errors={form.errors}
+        onChange={form.onChange}
+        registerField={form.registerField}
+        values={form.values}
+        onFieldChange={update}
+      />
+    )
+  } else if (step === 1) {
+    fields = (
+      <>
+        <OrganizerEventScheduleFields
+          disabled={locked}
+          errors={form.errors}
+          onChange={form.onChange}
+          registerField={form.registerField}
+          values={form.values}
+        />
+        {wizard && (
+          <fieldset disabled={locked} className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <legend className="text-xl font-extrabold">Loại vé</legend>
+              <span className="text-sm text-ink-soft">{tiers.length} loại vé</span>
+            </div>
+            {tiers.map((tier, index) => (
+              <div
+                key={`${tier.name}-${index}`}
+                className="flex items-center justify-between gap-3 rounded-md border border-line p-3"
+              >
+                <button
+                  type="button"
+                  className="text-left"
+                  onClick={(clickEvent) => {
+                    setEditingTier(index)
+                    setTierReturnFocus(clickEvent.currentTarget)
+                    setTierOpen(true)
+                  }}
+                >
+                  <strong>{tier.name}</strong> ·{' '}
+                  {tier.price === 0 ? 'Miễn phí' : `${tier.price.toLocaleString('vi-VN')} đ`} ·{' '}
+                  {tier.capacity} vé
+                </button>
+                <button
+                  type="button"
+                  className="text-sm font-bold text-coral-dark"
+                  onClick={() => removeTier(index)}
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="min-h-10 rounded-md border border-blue px-4 font-bold text-blue-deep"
+              onClick={(clickEvent) => {
+                setEditingTier(null)
+                setTierReturnFocus(clickEvent.currentTarget)
+                setTierOpen(true)
+              }}
+            >
+              + Thêm loại vé
+            </button>
+            {tierMessage && (
+              <p className="text-sm font-bold text-error" role="alert">
+                {tierMessage}
+              </p>
+            )}
+            <OrganizerImagePicker
+              label="Ảnh sơ đồ chỗ ngồi (tùy chọn)"
+              value={form.values.seatingChartImage}
+              onChange={(value) => update('seatingChartImage', value)}
+              disabled={locked}
+              maxMb={3}
+            />
+          </fieldset>
+        )}
+      </>
+    )
+  } else if (step === 2) {
+    fields = (
+      <fieldset disabled={locked} className="space-y-4">
+        <legend className="text-xl font-extrabold">Xác nhận sau khi mua</legend>
+        <label className="block text-sm font-bold" htmlFor="organizer-confirmation-message">
+          Tin nhắn xác nhận
+          <textarea
+            id="organizer-confirmation-message"
+            name="confirmationMessage"
+            maxLength={500}
+            className={inputClass}
+            value={form.values.confirmationMessage}
+            onChange={form.onChange}
+          />
+        </label>
+        <p className="text-right text-xs text-ink-soft">
+          {form.values.confirmationMessage.length}/500
+        </p>
+      </fieldset>
+    )
+  } else {
+    fields = (
+      <fieldset disabled={locked} className="space-y-4">
+        <legend className="text-xl font-extrabold">Thông tin thanh toán và hóa đơn</legend>
+        <label className="block text-sm font-bold">
+          Loại hình kinh doanh
+          <select
+            className={inputClass}
+            name="businessType"
+            value={form.values.finance.businessType}
+            onChange={(selectEvent) =>
+              form.setValues((current) => ({
+                ...current,
+                finance: { ...current.finance, businessType: selectEvent.target.value },
+              }))
+            }
+          >
+            <option value="INDIVIDUAL">Cá nhân</option>
+            <option value="ORGANIZATION">Tổ chức</option>
+          </select>
+        </label>
+        {(
+          [
+            'accountHolder',
+            'accountNumber',
+            'bankName',
+            'branch',
+            'invoiceName',
+            'invoiceAddress',
+            'taxCode',
+          ] as const
+        ).map((key) => (
+          <label className="block text-sm font-bold" key={key}>
+            {(
+              {
+                accountHolder: 'Chủ tài khoản',
+                accountNumber: 'Số tài khoản',
+                bankName: 'Tên ngân hàng',
+                branch: 'Chi nhánh',
+                invoiceName: 'Tên xuất hóa đơn',
+                invoiceAddress: 'Địa chỉ hóa đơn',
+                taxCode: 'Mã số thuế',
+              } as const
+            )[key]}
+            <input
+              className={inputClass}
+              value={form.values.finance[key]}
+              onChange={(inputEvent) =>
+                form.setValues((current) => ({
+                  ...current,
+                  finance: { ...current.finance, [key]: inputEvent.target.value },
+                }))
+              }
+            />
+          </label>
+        ))}
+      </fieldset>
+    )
+  }
+
+  return (
+    <>
+      <form
+        noValidate
+        onSubmit={submit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+            e.preventDefault()
+            if (wizard && step < 3) next()
+          }
+        }}
+        className="space-y-5"
+      >
+        {error && (
+          <div
+            className="rounded-md border border-red-500 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+
+        {wizard && <OrganizerEventWizardProgress currentStep={step} />}
+
+        <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">
+          {fields}
+          {!wizard && (
+            <div className="mt-6 flex gap-3">
+              <button
+                className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper"
+                type="submit"
+                disabled={saving}
+              >
+                {saving ? 'Đang lưu…' : submitLabel}
+              </button>
+              {onCancel && (
+                <button
+                  className="min-h-12 rounded-md border border-line px-5 font-extrabold"
+                  type="button"
+                  onClick={onCancel}
+                >
+                  Hủy
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+
+        {error && (
+          <div
+            className="rounded-md border border-red-500 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+
+        {wizard && (
+          <div className="flex justify-between gap-3">
+            <button
+              className="min-h-12 rounded-md border border-line px-5 font-extrabold"
+              type="button"
+              disabled={step === 0}
+              onClick={() => setStep((value) => value - 1)}
+            >
+              Quay lại
+            </button>
+            <div className="flex gap-3">
+              <button
+                ref={previewRef}
+                className="min-h-12 rounded-md border border-blue px-5 font-extrabold text-blue-deep"
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+              >
+                Xem trước
+              </button>
+              {step < 3 ? (
+                <button
+                  key="step-next-btn"
+                  className="min-h-12 rounded-md bg-blue px-5 font-extrabold text-paper"
+                  type="button"
+                  onClick={next}
+                >
+                  Tiếp tục
+                </button>
+              ) : (
+                <button
+                  key="step-submit-btn"
+                  className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper"
+                  type="submit"
+                  disabled={saving}
+                >
+                  {saving ? 'Đang lưu…' : submitLabel}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </form>
+
+      <OrganizerEventPreview
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        returnFocus={previewRef}
+        values={form.values}
+      />
+
+      <OrganizerEventTierDialog
+        key={`${tierOpen}-${editingTier ?? 'new'}`}
+        open={tierOpen}
+        tier={editingTier === null ? null : tiers[editingTier]}
+        onClose={() => setTierOpen(false)}
+        onSave={saveTier}
+        returnFocus={tierReturnFocus}
+        startsAt={form.values.startsAt}
+        endsAt={form.values.endsAt}
+      />
+    </>
+  )
 }

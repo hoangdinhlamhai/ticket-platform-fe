@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import { ArrowUpRightIcon, TicketIcon } from '../../../components/icons/TicketlyIcons'
-import { shouldUseClientNavigation, type AttendeePath } from '../../../app/routing/attendee-route'
+import { shouldUseClientNavigation, type AttendeePath } from '../../../routes/attendee-route'
 import { applyResaleSessionAvailability } from '../helpers/apply-resale-session-availability'
 import { getResaleListingById } from '../helpers/get-resale-listing-by-id'
 import type { ResaleListing } from '../types/resale'

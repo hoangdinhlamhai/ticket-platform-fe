@@ -23,7 +23,15 @@ function errorDetail(error: unknown, fallback: string): SessionError {
 
 export function createAuthSessionController({ api, timer, now = () => Date.now(), refreshSkewMs = 60_000, withCookieLock = (operation) => operation() }: Options) {
   let snapshot: SessionSnapshot = { status: 'anonymous', user: null, error: null, canRetry: false }
-  let accessToken: string | null = null
+  let accessToken: string | null = (() => {
+    try {
+      return typeof window !== 'undefined' && window.sessionStorage
+        ? window.sessionStorage.getItem('ticketly_access_token')
+        : null
+    } catch {
+      return null
+    }
+  })()
   let expiresAt = 0
   let generation = 0
   let refreshPromise: Promise<void> | null = null
@@ -52,6 +60,11 @@ export function createAuthSessionController({ api, timer, now = () => Date.now()
   function clearSession(error: SessionError | null = null) {
     clearTimer()
     accessToken = null
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.removeItem('ticketly_access_token')
+      }
+    } catch { /* ignore */ }
     expiresAt = 0
     set({ status: 'anonymous', user: null, error, canRetry: Boolean(error?.kind === 'retryable') })
   }
@@ -64,6 +77,12 @@ export function createAuthSessionController({ api, timer, now = () => Date.now()
   function applySession(result: AuthSessionResponse, currentGeneration: number) {
     if (currentGeneration !== generation) return false
     accessToken = result.accessToken
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage && result.accessToken) {
+        window.sessionStorage.setItem('ticketly_access_token', result.accessToken)
+      }
+    } catch { /* ignore */ }
+    console.log('[session-controller] applySession luu accessToken thanh cong:', Boolean(result.accessToken))
     blockedRestore = false
     expiresAt = now() + result.expiresIn * 1_000
     set({ status: 'authenticated', user: result.user, error: null, canRetry: false })
@@ -110,7 +129,16 @@ export function createAuthSessionController({ api, timer, now = () => Date.now()
   }
 
   return {
-    getAccessToken: () => accessToken,
+    getAccessToken: () => {
+      if (!accessToken) {
+        try {
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            accessToken = window.sessionStorage.getItem('ticketly_access_token')
+          }
+        } catch { /* ignore */ }
+      }
+      return accessToken
+    },
     getSnapshot: () => snapshot,
     subscribe(listener: () => void) { listeners.add(listener); return () => listeners.delete(listener) },
     restore: () => refresh(true),
