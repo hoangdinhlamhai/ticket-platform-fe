@@ -6,7 +6,7 @@ import {
   AdminCaseDetailPage,
   AdminCaseListPage,
   AdminDashboardPage,
-  AdminEventReviewDetailPage,
+  AdminEventReviewDetailPage as PrototypeAdminEventReviewDetailPage,
   AdminEventReviewListPage,
   AdminMissingRecord,
   AdminOrderPage,
@@ -22,7 +22,8 @@ import {
 import { selectAdminDashboard } from '../features/admin/helpers/select-admin-dashboard.ts'
 import type { AdminWorkspaceController } from '../features/admin/hooks/admin-workspace-controller.ts'
 import type { AdminOperationResult } from '../features/admin/types/admin-workspace.ts'
-import { RealAdminEventReviews } from '../features/admin/components/RealAdminEventReviews.tsx'
+import { AdminEventListPage, AdminEventReviewDetailPage } from '../features/admin/event/index.ts'
+import { RealAdminPage } from '../features/admin/components/RealAdminPage.tsx'
 
 type Props = {
   readonly pathname: string
@@ -61,11 +62,21 @@ export function AdminApplication({ pathname, workspace, onPathnameChange, onExit
   }, [navigate])
 
   let page: ReactNode
-  if (route === 'dashboard') page = <AdminDashboardPage workspace={workspace.workspace} navigate={navigatePage} />
-  else if (route === 'event-reviews' && accessToken) page = <RealAdminEventReviews accessToken={accessToken} navigate={navigatePage} />
-  else if (route === 'event-review-detail' && accessToken) page = <RealAdminEventReviews accessToken={accessToken} eventId={eventId ?? undefined} navigate={navigatePage} />
+  if (route === 'dashboard' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="dashboard" />
+  else if (route === 'users' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="users" />
+  else if (route === 'events-all' && accessToken) page = <AdminEventListPage accessToken={accessToken} mode="all" navigate={navigatePage} />
+  else if (route === 'organizers' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="organizers" />
+  else if (route === 'orders' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="orders" />
+  else if (route === 'payments' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="payments" />
+  else if (route === 'refunds' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="refunds" />
+  else if (route === 'categories' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="categories" />
+  else if (route === 'resale' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="resale" />
+  else if (route === 'resale-transactions' && accessToken) page = <RealAdminPage accessToken={accessToken} kind="resale-transactions" />
+  else if (route === 'dashboard') page = <AdminDashboardPage workspace={workspace.workspace} navigate={navigatePage} />
+  else if (route === 'event-reviews' && accessToken) page = <AdminEventListPage accessToken={accessToken} mode="pending" navigate={navigatePage} />
+  else if (route === 'event-review-detail' && accessToken && eventId) page = <AdminEventReviewDetailPage accessToken={accessToken} eventId={eventId} navigate={navigatePage} />
   else if (route === 'event-reviews') page = <AdminEventReviewListPage controller={workspace} navigate={navigatePage} />
-  else if (route === 'event-review-detail') page = eventId && workspace.workspace.events.some((event) => event.id === eventId) ? <AdminEventReviewDetailPage controller={workspace} eventId={eventId} navigate={navigatePage} /> : <AdminMissingRecord title="Không tìm thấy sự kiện" navigate={navigatePage} />
+  else if (route === 'event-review-detail') page = eventId && workspace.workspace.events.some((event) => event.id === eventId) ? <PrototypeAdminEventReviewDetailPage controller={workspace} eventId={eventId} navigate={navigatePage} /> : <AdminMissingRecord title="Không tìm thấy sự kiện" navigate={navigatePage} />
   else if (route === 'cases') page = <AdminCaseListPage controller={workspace} navigate={navigatePage} />
   else if (route === 'case-detail') page = caseId && workspace.workspace.cases.some((item) => item.id === caseId) ? <AdminCaseDetailPage controller={workspace} caseId={caseId} navigate={navigatePage} /> : <AdminMissingRecord title="Không tìm thấy vụ việc" navigate={navigatePage} />
   else if (route === 'organizers') page = <AdminOrganizerPage controller={workspace} />

@@ -55,11 +55,15 @@ export function OrganizerEventEditPage({
   }
 
   const editable = canSubmitOrganizerEventForReview(event.status)
-  const save = ({ input, finance }: OrganizerEventFormSave) =>
-    onUpdate(event.id, input, finance)
+  // Seed the form's payout fields from the owner-detail finance the controller hydrated,
+  // so editing does not blank a previously saved payout. Finance is saved through the
+  // dedicated payout endpoint by the controller, never inside the event PATCH.
+  const finance = workspace.eventFinance[event.id]
+  const save = ({ input, finance: nextFinance }: OrganizerEventFormSave) =>
+    onUpdate(event.id, input, nextFinance)
 
   return (
-    <div className="mx-auto max-w-4xl space-y-7">
+    <div className="mx-auto max-w-7xl space-y-7">
       <OrganizerPageHeader eyebrow="THÔNG TIN SỰ KIỆN" title={event.title}>
         <p>
           {editable
@@ -80,6 +84,7 @@ export function OrganizerEventEditPage({
       <OrganizerEventForm
         key={event.id}
         event={event}
+        finance={finance}
         locked={!editable}
         onCancel={() => onNavigate(`/organizer/events/${event.id}`)}
         onDirtyChange={onDirtyChange}

@@ -107,7 +107,11 @@ test('keeps reporting, settings, and chart text sourced from canonical session h
   assert.match(settings, /finance\.payoutsByStatus\.pending/)
   assert.match(settings, /organization\.businessIdentifier/)
   assert.doesNotMatch(settings, /<dd>••••••••••<\/dd>/)
-  assert.match(analytics, /selectOrganizerEventAnalytics\(workspace, eventId\)/)
+  // Analytics now renders the real owner-scoped report from the backend, not mock
+  // orders: it must not derive metrics from selectOrganizerEventAnalytics anymore.
+  assert.match(analytics, /loadEventReport\(eventId/)
+  assert.match(analytics, /report\.data/)
+  assert.doesNotMatch(analytics, /selectOrganizerEventAnalytics/)
   assert.match(finance, /selectOrganizerFinanceSummary\(workspace\)/)
   assert.match(organizationValidation, /valuesFromOrganizerOrganization/)
   assert.match(organizationValidation, /reconcileOrganizerOrganizationDraft/)
@@ -129,6 +133,28 @@ test('keeps reporting, settings, and chart text sourced from canonical session h
     assertNoExternalSideEffects(path)
   }
 })
+test('lets the event overview filter its report by a sale-window-bounded range', () => {
+  const overview = source('pages/OrganizerEventOverviewPage.tsx')
+
+  // The overview reuses the shared range picker rather than duplicating date UI.
+  assert.match(overview, /import \{ OrganizerReportingRangePicker \} from '\.\.\/components\/OrganizerReportingRangePicker\.tsx'/)
+  // Local range state, reset per event via the render-time adjustment pattern (no
+  // setState-in-effect cascade), mirroring the analytics page.
+  assert.match(overview, /useState<OrganizerReportRangeInput \| null>\(null\)/)
+  assert.match(overview, /if \(rangeEventId !== eventId\) \{[\s\S]*setRangeEventId\(eventId\)[\s\S]*setRange\(null\)[\s\S]*\}/)
+  // Initial load fetches the full sale window; applying a range narrows it.
+  assert.match(overview, /void loadEventReport\(eventId\)/)
+  assert.match(overview, /const applyRange = \(next: OrganizerReportRangeInput\) => \{[\s\S]*loadEventReport\(eventId, next\)[\s\S]*\}/)
+  // Picker only renders when report data exists and is bounded by the sale window.
+  assert.match(overview, /data && \(\s*<OrganizerReportingRangePicker/)
+  assert.match(overview, /saleWindow=\{data\.saleWindow\}/)
+  assert.match(overview, /value=\{range \?\? \{ from: data\.saleWindow\.startAt, to: data\.saleWindow\.endAt \} \}/)
+  assert.match(overview, /onApply=\{applyRange\}/)
+  // Retry preserves the current range instead of resetting to the full window.
+  assert.match(overview, /loadEventReport\(eventId, range \?\? undefined\)/)
+  assertNoExternalSideEffects('pages/OrganizerEventOverviewPage.tsx')
+})
+
 test('keeps CSV actions as notices without export, network, or payment side effects', () => {
   const pages = [
     'pages/OrganizerOrdersPage.tsx',

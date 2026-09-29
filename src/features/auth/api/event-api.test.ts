@@ -98,6 +98,71 @@ test('event API returns null owner detail for a 404 or 409', async () => {
   assert.equal(await conflict.findMineById('t', 'not-mine'), null)
 })
 
+test('ticket type mutations unwrap the nested ticketType response', async () => {
+  const api = createEventApi({
+    baseUrl: '/api',
+    fetch: async () => Response.json({ ticketType: { id: 'server-tier-7', name: 'VIP', price: 250000, quantity: 20 } }),
+  })
+
+  const created = await api.createTicketType('t', { eventId: 'evt-1', name: 'VIP', price: 250000, quantity: 20, minPerOrder: 1, maxPerOrder: 4, saleStartAt: '', saleEndAt: '' })
+  const updated = await api.updateTicketType('t', 'server-tier-7', { name: 'VIP sửa' })
+
+  assert.equal(created.id, 'server-tier-7')
+  assert.equal(updated.id, 'server-tier-7')
+})
+
+test('reporting API sends encoded range query and maps decimal strings to numbers', async () => {
+  const requests: string[] = []
+  const api = createEventApi({
+    baseUrl: 'https://api.example.test/api',
+    fetch: async (url, init) => {
+      requests.push(String(url))
+      assert.equal((init?.headers as Headers | undefined)?.get?.('Authorization'), 'Bearer owner-token')
+      // Backend wraps the report in { report: {...} } with Decimal-like numeric strings.
+      return Response.json({
+        report: {
+          eventId: 'evt-9',
+          saleWindow: { startAt: '2026-01-01T00:00:00.000Z', endAt: '2026-02-01T00:00:00.000Z' },
+          range: { startAt: '2026-01-05T00:00:00.000Z', endAt: '2026-01-10T00:00:00.000Z' },
+          summary: { revenue: '1500000.50', paidOrderCount: '3', soldTicketCount: '12', capacity: '100', remainingTicketCount: '88', checkInCount: '4' },
+          timeline: [{ startAt: '2026-01-05T00:00:00.000Z', endAt: '2026-01-06T00:00:00.000Z', revenue: '500000', soldTicketCount: '4' }],
+          ticketTypes: [{ id: 'tt-1', name: 'Vé thường', price: '150000', capacity: '50', soldTicketCount: '8', revenue: '1200000' }],
+        },
+      })
+    },
+  })
+
+  const report = await api.reporting('owner-token', 'evt-9', { from: '2026-01-05T00:00:00.000Z', to: '2026-01-10T00:00:00.000Z' })
+
+  assert.equal(requests[0], 'https://api.example.test/api/events/evt-9/reporting?from=2026-01-05T00%3A00%3A00.000Z&to=2026-01-10T00%3A00%3A00.000Z')
+  assert.equal(report.summary.revenue, 1500000.5)
+  assert.equal(typeof report.summary.revenue, 'number')
+  assert.equal(report.summary.paidOrderCount, 3)
+  assert.equal(report.summary.remainingTicketCount, 88)
+  assert.equal(report.timeline[0]?.revenue, 500000)
+  assert.equal(report.timeline[0]?.soldTicketCount, 4)
+  assert.equal(typeof report.timeline[0]?.soldTicketCount, 'number')
+  assert.equal(report.ticketTypes[0]?.price, 150000)
+  assert.equal(report.ticketTypes[0]?.revenue, 1200000)
+  assert.equal(report.saleWindow.startAt, '2026-01-01T00:00:00.000Z')
+  assert.equal(report.range.endAt, '2026-01-10T00:00:00.000Z')
+})
+
+test('reporting API omits query params when no range is given', async () => {
+  const requests: string[] = []
+  const api = createEventApi({
+    baseUrl: 'https://api.example.test/api',
+    fetch: async (url) => {
+      requests.push(String(url))
+      return Response.json({ report: { eventId: 'evt-9', saleWindow: { startAt: '2026-01-01T00:00:00.000Z', endAt: '2026-02-01T00:00:00.000Z' }, range: { startAt: '2026-01-01T00:00:00.000Z', endAt: '2026-02-01T00:00:00.000Z' }, summary: { revenue: '0', paidOrderCount: '0', soldTicketCount: '0', capacity: '0', remainingTicketCount: '0', checkInCount: '0' }, timeline: [], ticketTypes: [] } })
+    },
+  })
+
+  await api.reporting('owner-token', 'evt-9')
+
+  assert.equal(requests[0], 'https://api.example.test/api/events/evt-9/reporting')
+})
+
 test('event update omits payoutInfo and location, which UpdateEventDto rejects', async () => {
   const bodies: string[] = []
   const api = createEventApi({

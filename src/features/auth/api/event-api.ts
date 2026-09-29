@@ -7,12 +7,49 @@ export type EventCreatePayload = OrganizerEventInput & { readonly slug?: string;
 export type EventCategory = { readonly id: string; readonly name?: string; readonly label?: string }
 export type EventLocation = { readonly id: string; readonly name?: string; readonly label?: string }
 export type TicketTypePayload = { readonly eventId: string; readonly name: string; readonly price: number; readonly quantity: number; readonly description?: string; readonly image?: string; readonly maxPerOrder: number; readonly minPerOrder: number; readonly saleStartAt: string; readonly saleEndAt: string }
+export type TicketTypeMutationResult = { readonly id: string; readonly name?: string; readonly price?: number; readonly quantity?: number; readonly description?: string | null; readonly image?: string | null; readonly minPerOrder?: number; readonly maxPerOrder?: number; readonly saleStartAt?: string | null; readonly saleEndAt?: string | null }
 
 // Owner detail: the extra nested data GET /events/mine/:id returns beyond the summary
 // (its `event` fields normalize into OrganizerEvent). Typed for Task5 edit flows so
 // saved ticket tiers and payout finance are not overwritten with empty defaults.
 export type OrganizerEventOwnerTicketType = { readonly id: string; readonly name: string; readonly price: number; readonly quantity: number; readonly description?: string | null; readonly image?: string | null; readonly minPerOrder?: number; readonly maxPerOrder?: number; readonly saleStartAt?: string | null; readonly saleEndAt?: string | null }
 export type OrganizerEventOwnerDetail = { readonly event: OrganizerEvent; readonly ticketTypes: readonly OrganizerEventOwnerTicketType[]; readonly seatMap: { readonly imageUrl: string | null } | null; readonly payoutInfo: import('../../organizer/types/organizer-event.ts').OrganizerEventFinance | null }
+
+// Owner-scoped reporting: mirrors the backend GET /events/:id/reporting response.
+// All numeric fields arrive as Prisma Decimal-like strings and are normalized to
+// numbers here so callers can render real, server-computed metrics — never mock orders.
+export type OrganizerReportRange = { readonly startAt: string; readonly endAt: string }
+export type OrganizerReportSummary = {
+  readonly revenue: number
+  readonly paidOrderCount: number
+  readonly soldTicketCount: number
+  readonly capacity: number
+  readonly remainingTicketCount: number
+  readonly checkInCount: number
+}
+export type OrganizerReportTimelineBucket = {
+  readonly startAt: string
+  readonly endAt: string
+  readonly revenue: number
+  readonly soldTicketCount: number
+}
+export type OrganizerReportTicketType = {
+  readonly id: string
+  readonly name: string
+  readonly price: number
+  readonly capacity: number
+  readonly soldTicketCount: number
+  readonly revenue: number
+}
+export type OrganizerEventReport = {
+  readonly eventId: string
+  readonly saleWindow: OrganizerReportRange
+  readonly range: OrganizerReportRange
+  readonly summary: OrganizerReportSummary
+  readonly timeline: readonly OrganizerReportTimelineBucket[]
+  readonly ticketTypes: readonly OrganizerReportTicketType[]
+}
+export type OrganizerReportRangeInput = { readonly from: string; readonly to: string }
 
 export type EventApi = {
   create: (accessToken: string, payload: EventCreatePayload) => Promise<OrganizerEvent>
@@ -21,14 +58,15 @@ export type EventApi = {
   setPayout: (accessToken: string, eventId: string, finance: import('../../organizer/types/organizer-event.ts').OrganizerEventFinance) => Promise<import('../../organizer/types/organizer-event.ts').OrganizerEventFinance>
   findMine: (accessToken: string) => Promise<readonly OrganizerEvent[]>
   findMineById: (accessToken: string, eventId: string) => Promise<OrganizerEventOwnerDetail | null>
+  reporting: (accessToken: string, eventId: string, range?: OrganizerReportRangeInput) => Promise<OrganizerEventReport>
   findPending: (accessToken: string) => Promise<readonly OrganizerEvent[]>
   review: (accessToken: string, eventId: string, decision: 'APPROVED' | 'REJECTED', reason?: string) => Promise<OrganizerEvent>
   categories: (accessToken?: string) => Promise<readonly EventCategory[]>
   locations: (accessToken?: string) => Promise<readonly EventLocation[]>
   wards: (provinceId: string, accessToken?: string) => Promise<readonly EventLocation[]>
   uploadImage: (accessToken: string, file: File, onProgress?: (progress: number) => void) => Promise<string>
-  createTicketType: (accessToken: string, payload: TicketTypePayload) => Promise<unknown>
-  updateTicketType: (accessToken: string, ticketTypeId: string, payload: Partial<TicketTypePayload>) => Promise<unknown>
+  createTicketType: (accessToken: string, payload: TicketTypePayload) => Promise<TicketTypeMutationResult>
+  updateTicketType: (accessToken: string, ticketTypeId: string, payload: Partial<TicketTypePayload>) => Promise<TicketTypeMutationResult>
   findPublic: () => Promise<readonly MockEvent[]>
   findPublicById: (eventId: string) => Promise<import('../../events/types/event.ts').MockEventDetail | null>
 }
@@ -262,6 +300,39 @@ function normalizeEvent(value: unknown): OrganizerEvent {
   }
 }
 
+function normalizeReport(value: Record<string, unknown>): OrganizerEventReport {
+  const num = (input: unknown) => { const parsed = Number(input); return Number.isFinite(parsed) ? parsed : 0 }
+  const iso = (input: unknown) => String(input ?? '')
+  const rangeOf = (input: unknown): OrganizerReportRange => {
+    const record = (input ?? {}) as Record<string, unknown>
+    return { startAt: iso(record.startAt), endAt: iso(record.endAt) }
+  }
+  const summary = (value.summary ?? {}) as Record<string, unknown>
+  const timeline = Array.isArray(value.timeline) ? value.timeline : []
+  const ticketTypes = Array.isArray(value.ticketTypes) ? value.ticketTypes : []
+  return {
+    eventId: String(value.eventId ?? ''),
+    saleWindow: rangeOf(value.saleWindow),
+    range: rangeOf(value.range),
+    summary: {
+      revenue: num(summary.revenue),
+      paidOrderCount: num(summary.paidOrderCount),
+      soldTicketCount: num(summary.soldTicketCount),
+      capacity: num(summary.capacity),
+      remainingTicketCount: num(summary.remainingTicketCount),
+      checkInCount: num(summary.checkInCount),
+    },
+    timeline: timeline.map((bucket) => {
+      const record = bucket as Record<string, unknown>
+      return { startAt: iso(record.startAt), endAt: iso(record.endAt), revenue: num(record.revenue), soldTicketCount: num(record.soldTicketCount) }
+    }),
+    ticketTypes: ticketTypes.map((type) => {
+      const record = type as Record<string, unknown>
+      return { id: String(record.id ?? ''), name: String(record.name ?? ''), price: num(record.price), capacity: num(record.capacity), soldTicketCount: num(record.soldTicketCount), revenue: num(record.revenue) }
+    }),
+  }
+}
+
 export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
   const collection = async <T>(path: string, token?: string) => {
     const body = await request<Record<string, T[]>>(fetcher, join(baseUrl, path), token)
@@ -390,6 +461,14 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
         throw error
       }
     },
+    reporting: async (token, id, range) => {
+      const params = new URLSearchParams()
+      if (range) { params.set('from', range.from); params.set('to', range.to) }
+      const query = params.toString()
+      const path = `/events/${encodeURIComponent(id)}/reporting${query ? `?${query}` : ''}`
+      const body = await request<{ report: Record<string, unknown> }>(fetcher, join(baseUrl, path), token)
+      return normalizeReport(body.report ?? {})
+    },
     findPending: async (token) => (await request<{ events: unknown[] }>(fetcher, join(baseUrl, '/events/pending-review'), token)).events.map(normalizeEvent),
     review: async (token, id, decision, reason) => normalizeEvent((await request<{ event: unknown }>(fetcher, join(baseUrl, `/events/${id}/review`), token, { method: 'POST', body: JSON.stringify({ decision, reason }) })).event),
     categories: (token) => collection<EventCategory>('/categories', token),
@@ -402,11 +481,13 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
     },
     createTicketType: async (token, payload) => {
       const resolved = await resolveTicketImage(token, payload, (accessToken, file) => uploadEventImage(fetcher, baseUrl, accessToken, file))
-      return request(fetcher, join(baseUrl, '/ticket-types'), token, { method: 'POST', body: JSON.stringify(resolved) })
+      const result = await request<{ ticketType: TicketTypeMutationResult }>(fetcher, join(baseUrl, '/ticket-types'), token, { method: 'POST', body: JSON.stringify(resolved) })
+      return result.ticketType
     },
     updateTicketType: async (token, id, payload) => {
       const resolved = await resolveTicketImage(token, payload, (accessToken, file) => uploadEventImage(fetcher, baseUrl, accessToken, file))
-      return request(fetcher, join(baseUrl, `/ticket-types/${id}`), token, { method: 'PATCH', body: JSON.stringify(resolved) })
+      const result = await request<{ ticketType: TicketTypeMutationResult }>(fetcher, join(baseUrl, `/ticket-types/${id}`), token, { method: 'PATCH', body: JSON.stringify(resolved) })
+      return result.ticketType
     },
     findPublic: async () => (await request<{ events: unknown[] }>(fetcher, join(baseUrl, '/events'), undefined)).events.map(normalizePublicEvent),
     findPublicById: async (eventId) => {

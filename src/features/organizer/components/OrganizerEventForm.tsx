@@ -24,6 +24,7 @@ export type OrganizerEventFormSave = {
 
 type Props = {
   event?: OrganizerEvent
+  finance?: OrganizerEventFinance
   locked?: boolean
   saving?: boolean
   error?: string | null
@@ -39,6 +40,7 @@ const inputClass =
 
 export function OrganizerEventForm({
   event,
+  finance,
   locked = false,
   saving = false,
   error = null,
@@ -48,7 +50,7 @@ export function OrganizerEventForm({
   submitLabel,
   wizard = false,
 }: Props) {
-  const form = useOrganizerEventForm(event, { onDirtyChange })
+  const form = useOrganizerEventForm(event, { onDirtyChange, finance })
   const [step, setStep] = useState(0)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [tierOpen, setTierOpen] = useState(false)
@@ -131,29 +133,27 @@ export function OrganizerEventForm({
     void save()
   }
 
-  let fields = null
-  if (step === 0) {
-    fields = (
-      <OrganizerEventBasicFields
+  const basicSection = (
+    <OrganizerEventBasicFields
+      disabled={locked}
+      errors={form.errors}
+      onChange={form.onChange}
+      registerField={form.registerField}
+      values={form.values}
+      onFieldChange={update}
+    />
+  )
+
+  const scheduleSection = (
+    <>
+      <OrganizerEventScheduleFields
         disabled={locked}
         errors={form.errors}
         onChange={form.onChange}
         registerField={form.registerField}
         values={form.values}
-        onFieldChange={update}
       />
-    )
-  } else if (step === 1) {
-    fields = (
-      <>
-        <OrganizerEventScheduleFields
-          disabled={locked}
-          errors={form.errors}
-          onChange={form.onChange}
-          registerField={form.registerField}
-          values={form.values}
-        />
-        {wizard && (
+      {wizard && (
           <fieldset disabled={locked} className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
               <legend className="text-xl font-extrabold">Loại vé</legend>
@@ -213,85 +213,87 @@ export function OrganizerEventForm({
         )}
       </>
     )
-  } else if (step === 2) {
-    fields = (
-      <fieldset disabled={locked} className="space-y-4">
-        <legend className="text-xl font-extrabold">Xác nhận sau khi mua</legend>
-        <label className="block text-sm font-bold" htmlFor="organizer-confirmation-message">
-          Tin nhắn xác nhận
-          <textarea
-            id="organizer-confirmation-message"
-            name="confirmationMessage"
-            maxLength={500}
+  const confirmationSection = (
+    <fieldset disabled={locked} className="space-y-4">
+      <legend className="text-xl font-extrabold">Xác nhận sau khi mua</legend>
+      <label className="block text-sm font-bold" htmlFor="organizer-confirmation-message">
+        Tin nhắn xác nhận
+        <textarea
+          id="organizer-confirmation-message"
+          name="confirmationMessage"
+          maxLength={500}
+          className={inputClass}
+          value={form.values.confirmationMessage}
+          onChange={form.onChange}
+        />
+      </label>
+      <p className="text-right text-xs text-ink-soft">
+        {form.values.confirmationMessage.length}/500
+      </p>
+    </fieldset>
+  )
+
+  const paymentSection = (
+    <fieldset disabled={locked} className="space-y-4">
+      <legend className="text-xl font-extrabold">Thông tin thanh toán và hóa đơn</legend>
+      <label className="block text-sm font-bold">
+        Loại hình kinh doanh
+        <select
+          className={inputClass}
+          name="businessType"
+          value={form.values.finance.businessType}
+          onChange={(selectEvent) =>
+            form.setValues((current) => ({
+              ...current,
+              finance: { ...current.finance, businessType: selectEvent.target.value },
+            }))
+          }
+        >
+          <option value="INDIVIDUAL">Cá nhân</option>
+          <option value="ORGANIZATION">Tổ chức</option>
+        </select>
+      </label>
+      {(
+        [
+          'accountHolder',
+          'accountNumber',
+          'bankName',
+          'branch',
+          'invoiceName',
+          'invoiceAddress',
+          'taxCode',
+        ] as const
+      ).map((key) => (
+        <label className="block text-sm font-bold" key={key}>
+          {(
+            {
+              accountHolder: 'Chủ tài khoản',
+              accountNumber: 'Số tài khoản',
+              bankName: 'Tên ngân hàng',
+              branch: 'Chi nhánh',
+              invoiceName: 'Tên xuất hóa đơn',
+              invoiceAddress: 'Địa chỉ hóa đơn',
+              taxCode: 'Mã số thuế',
+            } as const
+          )[key]}
+          <input
             className={inputClass}
-            value={form.values.confirmationMessage}
-            onChange={form.onChange}
-          />
-        </label>
-        <p className="text-right text-xs text-ink-soft">
-          {form.values.confirmationMessage.length}/500
-        </p>
-      </fieldset>
-    )
-  } else {
-    fields = (
-      <fieldset disabled={locked} className="space-y-4">
-        <legend className="text-xl font-extrabold">Thông tin thanh toán và hóa đơn</legend>
-        <label className="block text-sm font-bold">
-          Loại hình kinh doanh
-          <select
-            className={inputClass}
-            name="businessType"
-            value={form.values.finance.businessType}
-            onChange={(selectEvent) =>
+            value={form.values.finance[key]}
+            onChange={(inputEvent) =>
               form.setValues((current) => ({
                 ...current,
-                finance: { ...current.finance, businessType: selectEvent.target.value },
+                finance: { ...current.finance, [key]: inputEvent.target.value },
               }))
             }
-          >
-            <option value="INDIVIDUAL">Cá nhân</option>
-            <option value="ORGANIZATION">Tổ chức</option>
-          </select>
+          />
         </label>
-        {(
-          [
-            'accountHolder',
-            'accountNumber',
-            'bankName',
-            'branch',
-            'invoiceName',
-            'invoiceAddress',
-            'taxCode',
-          ] as const
-        ).map((key) => (
-          <label className="block text-sm font-bold" key={key}>
-            {(
-              {
-                accountHolder: 'Chủ tài khoản',
-                accountNumber: 'Số tài khoản',
-                bankName: 'Tên ngân hàng',
-                branch: 'Chi nhánh',
-                invoiceName: 'Tên xuất hóa đơn',
-                invoiceAddress: 'Địa chỉ hóa đơn',
-                taxCode: 'Mã số thuế',
-              } as const
-            )[key]}
-            <input
-              className={inputClass}
-              value={form.values.finance[key]}
-              onChange={(inputEvent) =>
-                form.setValues((current) => ({
-                  ...current,
-                  finance: { ...current.finance, [key]: inputEvent.target.value },
-                }))
-              }
-            />
-          </label>
-        ))}
-      </fieldset>
-    )
-  }
+      ))}
+    </fieldset>
+  )
+
+  // Wizard mode shows one section per step. Edit mode (non-wizard) has no stepper, so
+  // it must expose every section at once — otherwise confirmation and payout stay hidden.
+  const wizardSection = step === 0 ? basicSection : step === 1 ? scheduleSection : step === 2 ? confirmationSection : paymentSection
 
   return (
     <>
@@ -317,10 +319,17 @@ export function OrganizerEventForm({
 
         {wizard && <OrganizerEventWizardProgress currentStep={step} />}
 
-        <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">
-          {fields}
-          {!wizard && (
-            <div className="mt-6 flex gap-3">
+        {wizard ? (
+          <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">
+            {wizardSection}
+          </section>
+        ) : (
+          <div className="space-y-5">
+            <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">{basicSection}</section>
+            <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">{scheduleSection}</section>
+            <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">{confirmationSection}</section>
+            <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">{paymentSection}</section>
+            <div className="flex gap-3">
               <button
                 className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper"
                 type="submit"
@@ -338,8 +347,8 @@ export function OrganizerEventForm({
                 </button>
               )}
             </div>
-          )}
-        </section>
+          </div>
+        )}
 
         {error && (
           <div

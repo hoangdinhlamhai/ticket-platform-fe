@@ -1,11 +1,11 @@
 import { useRef, type MouseEvent } from 'react'
-import type { EventDiscoveryFilters, EventFilterChip, EventSortOption } from '../helpers/event-discovery-filter-state'
-import type { MockEvent } from '../types/event'
-import { AdvancedEventFilterSidebar } from './AdvancedEventFilterSidebar'
+import type { EventDiscoveryFilters, EventFilterChip, EventSortOption } from '../../helpers/event-discovery-filter-state'
+import type { MockEvent } from '../../types/event'
+import { AdvancedEventFilterSidebar } from '../AdvancedEventFilterSidebar'
 import { EventDiscoveryCard } from './EventDiscoveryCard'
 import { EventDiscoveryEmptyState } from './EventDiscoveryEmptyState'
 import { EventDiscoveryToolbar } from './EventDiscoveryToolbar'
-import { EventFilterDrawer } from './EventFilterDrawer'
+import { EventFilterDrawer } from '../EventFilterDrawer'
 
 type EventDiscoveryGridProps = {
   activeFilterChips: readonly EventFilterChip[]

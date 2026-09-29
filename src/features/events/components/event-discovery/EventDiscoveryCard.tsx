@@ -1,7 +1,7 @@
-import { eventPosterAccentClasses, eventPosterToneClasses } from '../helpers/eventPosterStyles'
-import type { MockEvent } from '../types/event'
+import { eventPosterAccentClasses, eventPosterToneClasses } from '../../helpers/eventPosterStyles'
+import type { MockEvent } from '../../types/event'
 import type { MouseEvent } from 'react'
-import { ArrowUpRightIcon, CalendarIcon, HeartIcon, PinIcon } from '../../../components/icons/TicketlyIcons'
+import { ArrowUpRightIcon, CalendarIcon, HeartIcon, PinIcon } from '../../../../components/icons/TicketlyIcons'
 
 type EventDiscoveryCardProps = {
   event: MockEvent

@@ -36,6 +36,7 @@ function stubApi(over: Partial<EventApi> = {}): EventApi {
     submitReview: notImpl,
     findMine: async () => [],
     findMineById: async () => null,
+    reporting: notImpl,
     findPending: notImpl,
     review: notImpl,
     categories: async () => [],
@@ -266,6 +267,134 @@ test('does not drop a just-created event when an in-flight mine load resolves la
   assert.equal(controller.getSnapshot().workspace.events.some((item) => item.id === 'created-1'), true, 'the created event must survive a stale load')
 })
 
+test('hydrates owned event ticket tiers from detail responses', async () => {
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      findMine: async () => [event('evt-1')],
+      findMineById: async () => ({
+        event: event('evt-1'),
+        ticketTypes: [{ id: 'server-tier-1', name: 'VIP', price: 250000, quantity: 40, description: 'Gần sân khấu', image: 'vip.png', minPerOrder: 2, maxPerOrder: 5, saleStartAt: '2026-10-01T00:00:00.000Z', saleEndAt: '2026-11-01T00:00:00.000Z' }],
+        seatMap: null,
+        payoutInfo: null,
+      }),
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  await flush()
+
+  assert.deepEqual(controller.getSnapshot().workspace.ticketTiers, [{
+    id: 'server-tier-1', eventId: 'evt-1', name: 'VIP', price: 250000, capacity: 40,
+    soldCount: 0, saleStatus: 'scheduled', salesStartAt: '2026-10-01T00:00:00.000Z',
+    salesEndAt: '2026-11-01T00:00:00.000Z', minPerOrder: 2, perOrderLimit: 5,
+    description: 'Gần sân khấu', image: 'vip.png',
+  }])
+})
+
+test('publishes the event list when a per-event detail request fails, without a false whole-list error', async () => {
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({ findMine: async () => [event('evt-1')], findMineById: async () => { throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được vé.' }) } }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  await flush()
+
+  // Best-effort detail hydration: a single detail 500 must not blank the whole event
+  // list or read as a whole-list failure. The event still shows; only its tiers are absent.
+  assert.equal(controller.getSnapshot().workspace.events.length, 1, 'the event list must survive a single detail failure')
+  assert.equal(controller.getSnapshot().workspace.events[0]?.id, 'evt-1')
+  assert.equal(controller.getSnapshot().workspace.ticketTiers.length, 0)
+  assert.equal(controller.getSnapshot().loadError, null, 'a single detail 500 is not a whole-list failure')
+  assert.equal(controller.getSnapshot().loading, false)
+})
+
+test('hydrates the details that succeed while tolerating one that fails', async () => {
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      findMine: async () => [event('evt-ok'), event('evt-bad')],
+      findMineById: async (_token, id) => {
+        if (id === 'evt-bad') throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được vé.' })
+        return { event: event('evt-ok'), ticketTypes: [{ id: 'tier-ok', name: 'VIP', price: 250000, quantity: 40 }], seatMap: null, payoutInfo: null }
+      },
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  await flush()
+
+  const snapshot = controller.getSnapshot()
+  assert.deepEqual(snapshot.workspace.events.map((item) => item.id).sort(), ['evt-bad', 'evt-ok'], 'both events remain published')
+  assert.equal(snapshot.workspace.ticketTiers.filter((tier) => tier.eventId === 'evt-ok').length, 1, 'the successful detail is hydrated')
+  assert.equal(snapshot.workspace.ticketTiers.some((tier) => tier.id === 'tier-ok'), true)
+  assert.equal(snapshot.loadError, null, 'a partial detail failure is not a whole-list failure')
+})
+
+test('surfaces a whole-list load error when findMine itself fails', async () => {
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({ findMine: async () => { throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được danh sách.' }) } }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  await flush()
+
+  assert.equal(controller.getSnapshot().workspace.events.length, 0)
+  assert.equal(controller.getSnapshot().loadError, 'Không tải được danh sách.')
+})
+
+test('drops a detail hydration after the signed-in user changes', async () => {
+  const pendingDetail = deferred<import('../../auth/api/event-api.ts').OrganizerEventOwnerDetail | null>()
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      findMine: async (token) => token === 't1' ? [event('u1-event')] : [event('u2-event')],
+      findMineById: async (token) => token === 't1' ? pendingDetail.promise : null,
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  controller.sync({ userId: 'u2', accessToken: 't2', status: 'authenticated' })
+  await flush()
+  pendingDetail.resolve({ event: event('u1-event'), ticketTypes: [{ id: 'leaked-tier', name: 'Không được lộ', price: 1, quantity: 1 }], seatMap: null, payoutInfo: null })
+  await flush()
+
+  assert.deepEqual(controller.getSnapshot().workspace.events.map((item) => item.id), ['u2-event'])
+  assert.equal(controller.getSnapshot().workspace.ticketTiers.some((item) => item.id === 'leaked-tier'), false)
+})
+
+test('keeps a created event once when its follow-up detail read fails', async () => {
+  let createCalls = 0
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      create: async () => { createCalls += 1; return event('created-1') },
+      findMineById: async (_token, id) => id === 'created-1' ? Promise.reject(new Error('detail unavailable')) : null,
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  const result = await controller.createEvent(input(), [tier], finance)
+
+  assert.equal(result?.kind, 'event_created')
+  assert.equal(createCalls, 1)
+  assert.equal(controller.getSnapshot().workspace.events.filter((item) => item.id === 'created-1').length, 1)
+})
+
+test('hydrates newly created event tiers without creating it a second time', async () => {
+  let createCalls = 0
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      create: async () => { createCalls += 1; return event('created-1') },
+      findMineById: async () => ({ event: event('created-1'), ticketTypes: [{ id: 'created-tier', name: 'Vé mới', price: 100000, quantity: 10 }], seatMap: null, payoutInfo: null }),
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  await controller.createEvent(input(), [tier], finance)
+  await flush()
+
+  assert.equal(createCalls, 1)
+  assert.equal(controller.getSnapshot().workspace.events.filter((item) => item.id === 'created-1').length, 1)
+  assert.equal(controller.getSnapshot().workspace.ticketTiers[0]?.id, 'created-tier')
+})
+
 test('snapshot carries its owning userId so a stale view can be detected before effects flush', async () => {
   const controller = createOrganizerWorkspaceController({ api: stubApi({ findMine: async () => [event('e1')] }) })
   controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
@@ -301,6 +430,95 @@ test('maskOrganizerWorkspaceView passes a matching-owner snapshot through unchan
 
   assert.equal(masked.workspace.events.length, 1)
   assert.equal(masked, snapshot, 'a matching view is returned as-is')
+})
+
+const report = {
+  eventId: 'evt-1',
+  saleWindow: { startAt: '2026-01-01T00:00:00.000Z', endAt: '2026-02-01T00:00:00.000Z' },
+  range: { startAt: '2026-01-05T00:00:00.000Z', endAt: '2026-01-10T00:00:00.000Z' },
+  summary: { revenue: 1500000, paidOrderCount: 3, soldTicketCount: 12, capacity: 100, remainingTicketCount: 88, checkInCount: 4 },
+  timeline: [{ startAt: '2026-01-05T00:00:00.000Z', endAt: '2026-01-06T00:00:00.000Z', revenue: 500000, soldTicketCount: 4 }],
+  ticketTypes: [{ id: 'tt-1', name: 'Vé thường', price: 150000, capacity: 50, soldTicketCount: 8, revenue: 1200000 }],
+} as const
+
+test('loadEventReport calls the API with the exact ISO bounds and stores the response', async () => {
+  let captured: { id: string; range?: { from: string; to: string } } | null = null
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      findMine: async () => [event('evt-1')],
+      reporting: (async (_token: string, id: string, range?: { from: string; to: string }) => { captured = { id, range }; return report }) as never,
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+
+  const result = await controller.loadEventReport('evt-1', { from: '2026-01-05T00:00:00.000Z', to: '2026-01-10T00:00:00.000Z' })
+
+  assert.equal(result?.summary.revenue, 1500000)
+  assert.equal(captured!.id, 'evt-1')
+  assert.deepEqual(captured!.range, { from: '2026-01-05T00:00:00.000Z', to: '2026-01-10T00:00:00.000Z' })
+  assert.equal(controller.getSnapshot().report?.data?.eventId, 'evt-1')
+  assert.equal(controller.getSnapshot().report?.error, null)
+  assert.equal(controller.getSnapshot().report?.loading, false)
+})
+
+test('loadEventReport surfaces an API error without reverting to workspace mock metrics', async () => {
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      findMine: async () => [event('evt-1')],
+      reporting: (async () => { throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được báo cáo.' }) }) as never,
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+
+  const result = await controller.loadEventReport('evt-1')
+
+  assert.equal(result, null)
+  assert.equal(controller.getSnapshot().report?.error, 'Không tải được báo cáo.')
+  assert.equal(controller.getSnapshot().report?.data, null)
+})
+
+test('loadEventReport ignores a stale result after a newer report request starts', async () => {
+  const first = deferred<typeof report>()
+  let call = 0
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      findMine: async () => [event('evt-1')],
+      reporting: (async () => { call += 1; return call === 1 ? first.promise : { ...report, summary: { ...report.summary, revenue: 999 } } }) as never,
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+
+  const stale = controller.loadEventReport('evt-1', { from: report.range.startAt, to: report.range.endAt })
+  const fresh = await controller.loadEventReport('evt-1', { from: report.range.startAt, to: report.range.endAt })
+  first.resolve(report)
+  await stale
+
+  assert.equal(fresh?.summary.revenue, 999)
+  assert.equal(controller.getSnapshot().report?.data?.summary.revenue, 999, 'the late stale result must not overwrite the fresh one')
+})
+
+test('owner detail maps confirmationMessage into the event and payout into eventFinance', async () => {
+  const controller = createOrganizerWorkspaceController({
+    api: stubApi({
+      findMine: async () => [event('evt-1')],
+      findMineById: async () => ({
+        event: event('evt-1', { confirmationMessage: 'Cảm ơn bạn đã mua vé.' }),
+        ticketTypes: [],
+        seatMap: null,
+        payoutInfo: { accountHolder: 'Nguyễn A', accountNumber: '123', bankName: 'VCB', branch: 'HCM', businessType: 'INDIVIDUAL', invoiceName: '', invoiceAddress: '', taxCode: '' },
+      }),
+    }),
+  })
+  controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
+  await flush()
+  await flush()
+
+  const snapshot = controller.getSnapshot()
+  assert.equal(snapshot.workspace.events[0]?.confirmationMessage, 'Cảm ơn bạn đã mua vé.')
+  assert.equal(snapshot.workspace.eventFinance['evt-1']?.accountHolder, 'Nguyễn A')
 })
 
 test('maskOrganizerWorkspaceView blanks an anonymous view when no auth user is present', async () => {

@@ -94,6 +94,8 @@ export function useOrganizerWorkspace(): OrganizerWorkspaceController {
       saveError: identityStale ? NO_ACTIVE_IDENTITY_MESSAGE : snapshot.saveError,
       loading: snapshot.loading,
       loadError: snapshot.loadError,
+      report: snapshot.report,
+      loadEventReport: identityStale ? blockedAsync : controller.loadEventReport,
       retry: identityStale ? blockedSync : controller.retry,
       createEvent: identityStale ? blockedAsync : controller.createEvent,
       updateEvent: identityStale ? blockedAsync : controller.updateEvent,

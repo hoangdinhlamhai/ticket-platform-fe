@@ -1,5 +1,5 @@
 import { ApiError } from '../../auth/api/api-error.ts'
-import type { EventApi } from '../../auth/api/event-api.ts'
+import type { EventApi, OrganizerEventOwnerDetail, OrganizerEventReport, OrganizerReportRangeInput } from '../../auth/api/event-api.ts'
 import { createEmptyOrganizerWorkspace } from '../mock/create-organizer-workspace.ts'
 import { organizerWorkspaceReducer } from '../helpers/organizer-workspace-reducer.ts'
 import type { OrganizerTicketTier } from '../types/organizer-commerce.ts'
@@ -12,6 +12,15 @@ import type {
   OrganizerWorkspace,
 } from '../types/organizer-workspace.ts'
 
+// Report state is kept separate from the mock business workspace so a connected,
+// server-computed report never falls back to mock orders on error or while loading.
+export type OrganizerReportState = {
+  readonly eventId: string | null
+  readonly loading: boolean
+  readonly error: string | null
+  readonly data: OrganizerEventReport | null
+}
+
 export type OrganizerWorkspaceController = {
   readonly workspace: OrganizerWorkspace
   readonly lastOperation: OrganizerOperationResult | null
@@ -19,6 +28,8 @@ export type OrganizerWorkspaceController = {
   readonly saveError: string | null
   readonly loading: boolean
   readonly loadError: string | null
+  readonly report: OrganizerReportState
+  readonly loadEventReport: (eventId: string, range?: OrganizerReportRangeInput) => Promise<OrganizerEventReport | null>
   readonly retry: () => void
   readonly createEvent: (input: OrganizerEventInput, initialTicketTiers: readonly OrganizerInitialTicketTierInput[], finance?: OrganizerEventFinance) => Promise<OrganizerOperationResult | null>
   readonly updateEvent: (eventId: string, patch: OrganizerEventPatch, finance?: OrganizerEventFinance) => Promise<OrganizerOperationResult | null>
@@ -47,7 +58,10 @@ export type OrganizerWorkspaceSnapshot = {
   readonly saveError: string | null
   readonly loading: boolean
   readonly loadError: string | null
+  readonly report: OrganizerReportState
 }
+
+const EMPTY_REPORT_STATE: OrganizerReportState = { eventId: null, loading: false, error: null, data: null }
 
 const NO_TOKEN_MESSAGE = 'Bạn cần đăng nhập bằng tài khoản người dùng để thực hiện thao tác này.'
 const UNSUPPORTED_MESSAGE = 'Thao tác này chưa được hỗ trợ trên máy chủ.'
@@ -76,6 +90,7 @@ export function maskOrganizerWorkspaceView(
     saveError: null,
     loading: currentUserId !== null,
     loadError: null,
+    report: EMPTY_REPORT_STATE,
   }
 }
 
@@ -99,6 +114,9 @@ export function createOrganizerWorkspaceController({ api }: Options) {
   // revision is unchanged; otherwise a load that began before a successful create
   // would resolve late and drop the just-created event.
   let loadRevision = 0
+  // Bumped on every report request; a resolving load applies only if it is still the
+  // latest so switching events/accounts or ranges never shows a stale report.
+  let reportRequest = 0
   let snapshot: OrganizerWorkspaceSnapshot = {
     userId: null,
     workspace: createEmptyOrganizerWorkspace(),
@@ -107,26 +125,60 @@ export function createOrganizerWorkspaceController({ api }: Options) {
     saveError: null,
     loading: false,
     loadError: null,
+    report: EMPTY_REPORT_STATE,
   }
   const listeners = new Set<() => void>()
 
   function emit() { listeners.forEach((listener) => listener()) }
   function set(next: Partial<OrganizerWorkspaceSnapshot>) { snapshot = { ...snapshot, ...next }; emit() }
 
+  function hydrateDetail(detail: OrganizerEventOwnerDetail, workspace: OrganizerWorkspace): OrganizerWorkspace {
+    const event = detail.event
+    const ticketTiers = detail.ticketTypes.map((ticket) => ({
+      id: ticket.id,
+      eventId: event.id,
+      name: ticket.name,
+      price: ticket.price,
+      capacity: ticket.quantity,
+      soldCount: 0,
+      saleStatus: ticket.saleStartAt && new Date(ticket.saleStartAt).getTime() > Date.now() ? 'scheduled' as const : ticket.saleEndAt && new Date(ticket.saleEndAt).getTime() <= Date.now() ? 'ended' as const : 'on_sale' as const,
+      salesStartAt: ticket.saleStartAt ?? event.startsAt,
+      salesEndAt: ticket.saleEndAt ?? event.endsAt,
+      perOrderLimit: ticket.maxPerOrder ?? 4,
+      ...(ticket.minPerOrder === undefined ? {} : { minPerOrder: ticket.minPerOrder }),
+      ...(ticket.description == null ? {} : { description: ticket.description }),
+      ...(ticket.image == null ? {} : { image: ticket.image }),
+    }))
+    return {
+      ...workspace,
+      events: workspace.events.map((item) => item.id === event.id ? event : item),
+      ticketTiers: [...workspace.ticketTiers.filter((tier) => tier.eventId !== event.id), ...ticketTiers],
+      eventFinance: detail.payoutInfo ? { ...workspace.eventFinance, [event.id]: detail.payoutInfo } : workspace.eventFinance,
+    }
+  }
+
   function loadMine(currentGeneration: number, token: string) {
     const startedRevision = loadRevision
     set({ loading: true, loadError: null })
-    void api.findMine(token).then((events) => {
+    void api.findMine(token).then(async (events) => {
       if (currentGeneration !== generation) return
-      // A local mutation (e.g. a successful create) happened after this load began,
-      // so its response is stale for the events list — keep the mutated list. Still
-      // clear the loading flag so the UI does not appear stuck.
       if (loadRevision !== startedRevision) { set({ loading: false, loadError: null }); return }
-      set({ workspace: { ...snapshot.workspace, events: events.map((event) => ({ ...event })) }, loading: false, loadError: null })
+      let hydrated: OrganizerWorkspace = { ...snapshot.workspace, events: events.map((event) => ({ ...event })) }
+      // Per-event detail hydration is best-effort: a single detail request failing must
+      // not blank the whole event list or read as a whole-list failure. The event list
+      // from findMine is published regardless; only the details that resolve are
+      // hydrated, and a failed detail simply leaves that event without its tiers/finance.
+      const details = await Promise.allSettled(events.map((event) => api.findMineById(token, event.id)))
+      if (currentGeneration !== generation || loadRevision !== startedRevision) return
+      for (const outcome of details) {
+        if (outcome.status === 'fulfilled' && outcome.value) hydrated = hydrateDetail(outcome.value, hydrated)
+      }
+      set({ workspace: hydrated, loading: false, loadError: null })
     }).catch((error) => {
       if (currentGeneration !== generation) return
       if (loadRevision !== startedRevision) { set({ loading: false }); return }
-      // Never silently seed mock events on a load failure — surface it and keep the list empty.
+      // A findMine failure is a genuine whole-list failure: never silently seed mock
+      // events — surface it and keep the list empty.
       set({ loading: false, loadError: errorMessage(error, DEFAULT_LOAD_ERROR) })
     })
   }
@@ -142,6 +194,7 @@ export function createOrganizerWorkspaceController({ api }: Options) {
     // Clear previously visible account data immediately, before any async load resolves.
     // The snapshot's userId records the account it belongs to so a stale view can be
     // detected and masked before the consuming component's sync effect runs.
+    reportRequest += 1 // invalidate any in-flight report load for the previous account
     snapshot = {
       userId: next.status === 'authenticated' ? next.userId : null,
       workspace: createEmptyOrganizerWorkspace(),
@@ -150,6 +203,7 @@ export function createOrganizerWorkspaceController({ api }: Options) {
       saveError: null,
       loading: false,
       loadError: null,
+      report: EMPTY_REPORT_STATE,
     }
     console.log('[WorkspaceController] sync identity received:', next)
     emit()
@@ -201,6 +255,14 @@ export function createOrganizerWorkspaceController({ api }: Options) {
       loadRevision += 1 // invalidate any in-flight load so it can't drop this created event
       const lastOperation: OrganizerOperationResult = { operation: 'create_event', targetIds: { eventId: created.id }, kind: 'event_created' }
       set({ isSaving: false, workspace: { ...snapshot.workspace, events: [created, ...snapshot.workspace.events] }, lastOperation })
+      try {
+        const detail = await api.findMineById(token, created.id)
+        if (currentGeneration === generation && detail) {
+          set({ workspace: hydrateDetail(detail, snapshot.workspace) })
+        }
+      } catch {
+        // The event was already created. Keep it visible if its follow-up detail read fails.
+      }
       return lastOperation
     } catch (error) {
       console.error('[WorkspaceController] api.create BI LOI:', error)
@@ -305,6 +367,26 @@ export function createOrganizerWorkspaceController({ api }: Options) {
     }
   }
 
+  async function loadEventReport(eventId: string, range?: OrganizerReportRangeInput): Promise<OrganizerEventReport | null> {
+    const token = requireToken()
+    if (!token) return null
+    const currentGeneration = generation
+    const requestId = (reportRequest += 1)
+    // Preserve any existing data while reloading so the picker selection and chart do
+    // not flash empty between requests; only overwrite once the fresh result arrives.
+    set({ report: { ...snapshot.report, eventId, loading: true, error: null } })
+    try {
+      const data = await api.reporting(token, eventId, range)
+      if (currentGeneration !== generation || requestId !== reportRequest) return null
+      set({ report: { eventId, loading: false, error: null, data } })
+      return data
+    } catch (error) {
+      if (currentGeneration !== generation || requestId !== reportRequest) return null
+      set({ report: { eventId, loading: false, error: errorMessage(error, DEFAULT_LOAD_ERROR), data: null } })
+      return null
+    }
+  }
+
   function reportUnsupported(operation: OrganizerOperationName, targetIds: Readonly<Record<string, string>>) {
     const result = unsupported(operation, targetIds)
     set({ lastOperation: result })
@@ -323,6 +405,7 @@ export function createOrganizerWorkspaceController({ api }: Options) {
     submitEventReview,
     saveTicketTier,
     updateEventImage,
+    loadEventReport,
     // No backend for these operations — never claim persistence, never mutate data.
     publishEvent: (eventId: string) => reportUnsupported('publish_event', { eventId }),
     setTicketSaleStatus: (tierId: string) => reportUnsupported('set_ticket_sale_status', { ticketTierId: tierId }),

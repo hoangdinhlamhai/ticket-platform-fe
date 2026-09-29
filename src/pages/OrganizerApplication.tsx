@@ -133,7 +133,7 @@ export function OrganizerApplication({ pathname, workspace, onExitToAttendee, on
   } else if (!eventExists && route.startsWith('event-')) {
     page = <OrganizerMissingEventPage onNavigate={navigate} />
   } else if (route === 'event-overview' && eventId) {
-    page = <OrganizerEventOverviewPage activeRoute={route} eventId={eventId} onNavigate={navigate} onPublish={workspace.publishEvent} onSubmitReview={workspace.submitEventReview} workspace={workspace.workspace} />
+    page = <OrganizerEventOverviewPage activeRoute={route} eventId={eventId} onNavigate={navigate} onPublish={workspace.publishEvent} onSubmitReview={workspace.submitEventReview} workspace={workspace.workspace} report={workspace.report} loadEventReport={workspace.loadEventReport} />
   } else if (route === 'event-edit' && eventId) {
     page = <OrganizerEventEditPage activeRoute={route} eventId={eventId} onDirtyChange={setDirty} onNavigate={navigate} onUpdate={update} workspace={workspace.workspace} />
   } else if (route === 'event-tickets' && eventId) {
@@ -145,7 +145,7 @@ export function OrganizerApplication({ pathname, workspace, onExitToAttendee, on
   } else if (route === 'event-check-in' && eventId) {
     page = <OrganizerCheckInPage key={eventId} activeRoute={route} eventId={eventId} lastOperation={workspace.lastOperation} onCheckInAttendee={workspace.checkInAttendee} onClearLastOperation={workspace.clearLastOperation} onNavigate={navigate} workspace={workspace.workspace} />
   } else if (route === 'event-analytics' && eventId) {
-    page = <OrganizerAnalyticsPage activeRoute={route} eventId={eventId} onNavigate={navigate} workspace={workspace.workspace} />
+    page = <OrganizerAnalyticsPage activeRoute={route} eventId={eventId} onNavigate={navigate} workspace={workspace.workspace} report={workspace.report} loadEventReport={workspace.loadEventReport} />
   } else if (route === 'finance') {
     page = <OrganizerFinancePage workspace={workspace.workspace} />
   } else if (route === 'settings') {

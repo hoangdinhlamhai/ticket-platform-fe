@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import type { EventDiscoveryFilters, EventFilterChip, EventSortOption } from '../helpers/event-discovery-filter-state'
+import type { EventDiscoveryFilters, EventFilterChip, EventSortOption } from '../../helpers/event-discovery-filter-state'
 
 type EventDiscoveryToolbarProps = {
   activeFilterCount: number
