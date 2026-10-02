@@ -139,7 +139,7 @@ test('wires the saved events route through the header and app shell', () => {
 })
 
 test('uses informational semantics for non-mutating saved-event heart controls', () => {
-  const eventCard = readFileSync('src/features/events/components/EventDiscoveryCard.tsx', 'utf8')
+  const eventCard = readFileSync('src/features/events/components/event-discovery/EventDiscoveryCard.tsx', 'utf8')
   const savedGrid = readFileSync('src/features/events/components/SavedEventsGrid.tsx', 'utf8')
 
   assert.match(eventCard, /favoriteControlMode\?: 'toggle' \| 'informational'/)

@@ -1,7 +1,8 @@
-import { ApiError } from './api-error.ts'
+import axios from 'axios'
+import axiosClient from '../../../api/axiosClient.ts'
 import type { OrganizerEvent, OrganizerEventInput } from '../../organizer/types/organizer-event.ts'
-import type { MockEvent, EventCategory as AttendeeEventCategory, EventPosterTone } from '../../events/types/event.ts'
-import { mapEventDetail, type PublicEventDetailResponse } from '../../events/helpers/map-event-detail.ts'
+import type { MockEvent, EventCategory as AttendeeEventCategory, EventPosterTone } from '../types/event.ts'
+import { mapEventDetail, type PublicEventDetailResponse } from '../helpers/map-event-detail.ts'
 
 export type EventCreatePayload = OrganizerEventInput & { readonly slug?: string; readonly categoryId: string; readonly locationId?: string; readonly location?: { address: string; provinceId: string; wardId?: string }; readonly initialTicketTiers?: readonly { name: string; price: number; capacity: number; minPerOrder?: number; perOrderLimit?: number; salesStartAt?: string; salesEndAt?: string; description?: string; image?: string }[]; readonly finance?: import('../../organizer/types/organizer-event.ts').OrganizerEventFinance }
 export type EventCategory = { readonly id: string; readonly name?: string; readonly label?: string }
@@ -68,39 +69,15 @@ export type EventApi = {
   createTicketType: (accessToken: string, payload: TicketTypePayload) => Promise<TicketTypeMutationResult>
   updateTicketType: (accessToken: string, ticketTypeId: string, payload: Partial<TicketTypePayload>) => Promise<TicketTypeMutationResult>
   findPublic: () => Promise<readonly MockEvent[]>
-  findPublicById: (eventId: string) => Promise<import('../../events/types/event.ts').MockEventDetail | null>
+  findPublicById: (eventId: string) => Promise<import('../types/event.ts').MockEventDetail | null>
 }
 
-type Options = { baseUrl: string; fetch: typeof globalThis.fetch }
+type Options = { baseUrl: string; fetch?: typeof globalThis.fetch }
 function join(baseUrl: string, path: string) { return `${baseUrl.replace(/\/$/, '')}${path}` }
 function slugify(value: string) { return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 110) || 'event' }
-async function request<T>(fetcher: typeof globalThis.fetch, url: string, token: string | undefined, init: RequestInit = {}): Promise<T> {
-  let response: Response
-  console.log('[event-api] Gui request:', { url, method: init.method ?? 'GET', hasToken: Boolean(token), body: init.body })
-  try {
-    const headers = new Headers(init.headers)
-    if (token) headers.set('Authorization', `Bearer ${token}`)
-    if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
-    response = await fetcher(url, { ...init, headers })
-  } catch (netErr) {
-    console.error('[event-api] Network error:', netErr)
-    throw new ApiError({ status: 0, code: 'NETWORK_ERROR', message: 'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.' })
-  }
-  console.log('[event-api] Nhan response:', { url, status: response.status, ok: response.ok })
-  if (!response.ok) {
-    let message = 'Không thể lưu sự kiện. Vui lòng thử lại.'
-    try {
-      const body = await response.json() as { message?: string | string[] }
-      console.error('[event-api] Response error body:', body)
-      message = Array.isArray(body.message) ? body.message.join(', ') : body.message ?? message
-    } catch {
-      console.error('[event-api] Response non-json error status:', response.status)
-    }
-    throw new ApiError({ status: response.status, code: response.status === 401 ? 'UNAUTHENTICATED' : 'EVENT_REQUEST_FAILED', message })
-  }
-  const data = await response.json() as T
-  console.log('[event-api] Response data success:', { url, data })
-  return data
+async function request<T>(url: string, token: string | undefined, init: { method?: string; data?: unknown } = {}): Promise<T> {
+  const response = await axiosClient.request<T>({ url, method: init.method ?? 'GET', data: init.data, headers: token ? { Authorization: `Bearer ${token}` } : undefined })
+  return response.data
 }
 function visibilityValue(visibility: EventCreatePayload['visibility']) { return visibility === 'link_only' ? 'LINK_ONLY' : visibility === 'public' ? 'PUBLIC' : undefined }
 // Create body: POST /events accepts the nested location object, initial tickets and
@@ -220,10 +197,10 @@ async function resolveTicketImage(token: string, payload: Partial<TicketTypePayl
   return file ? { ...payload, image: await upload(token, file) } : payload
 }
 
-function uploadEventImage(fetcher: typeof globalThis.fetch, baseUrl: string, token: string, file: File) {
+function uploadEventImage(baseUrl: string, token: string, file: File) {
   const body = new FormData()
   body.append('file', file)
-  return request<{ url: string }>(fetcher, join(baseUrl, '/uploads/events'), token, { method: 'POST', body }).then((result) => result.url)
+  return request<{ url: string }>(join(baseUrl, '/uploads/events'), token, { method: 'POST', data: body }).then((result) => result.url)
 }
 function normalizePublicEvent(value: unknown, index: number): MockEvent {
   const event = value as Record<string, unknown>
@@ -333,9 +310,9 @@ function normalizeReport(value: Record<string, unknown>): OrganizerEventReport {
   }
 }
 
-export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
+export function createEventApi({ baseUrl }: Options): EventApi {
   const collection = async <T>(path: string, token?: string) => {
-    const body = await request<Record<string, T[]>>(fetcher, join(baseUrl, path), token)
+    const body = await request<Record<string, T[]>>(join(baseUrl, path), token)
     const key = path.includes('/wards')
       ? 'wards'
       : path.includes('categories')
@@ -355,18 +332,16 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
         body.append('file', file)
         return (
           await request<{ url: string }>(
-            fetcher,
             join(baseUrl, '/uploads/events'),
             accessToken,
-            { method: 'POST', body },
+            { method: 'POST', data: body },
           )
         ).url
       })
       const result = await request<{ event: unknown }>(
-        fetcher,
         join(baseUrl, '/events'),
         token,
-        { method: 'POST', body: JSON.stringify(createEventBody(resolved)) },
+        { method: 'POST', data: createEventBody(resolved) },
       )
       return normalizeEvent(result.event)
     },
@@ -377,18 +352,16 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
         body.append('file', file)
         return (
           await request<{ url: string }>(
-            fetcher,
             join(baseUrl, '/uploads/events'),
             accessToken,
-            { method: 'POST', body },
+            { method: 'POST', data: body },
           )
         ).url
       })
       const result = await request<{ event: unknown }>(
-        fetcher,
         join(baseUrl, `/events/${id}`),
         token,
-        { method: 'PATCH', body: JSON.stringify(updateEventBody(resolved)) },
+        { method: 'PATCH', data: updateEventBody(resolved) },
       )
       return normalizeEvent(result.event)
     },
@@ -396,10 +369,9 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
     setPayout: async (token, id, finance) =>
       (
         await request<{ payoutInfo: unknown }>(
-          fetcher,
           join(baseUrl, `/events/${encodeURIComponent(id)}/payout`),
           token,
-          { method: 'POST', body: JSON.stringify(finance) },
+          { method: 'POST', data: finance },
         )
       ).payoutInfo as import('../../organizer/types/organizer-event.ts').OrganizerEventFinance,
 
@@ -407,7 +379,6 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
       normalizeEvent(
         (
           await request<{ event: unknown }>(
-            fetcher,
             join(baseUrl, `/events/${id}/submit-review`),
             token,
             { method: 'POST' },
@@ -416,14 +387,13 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
       ),
 
     findMine: async (token) =>
-      (await request<{ events: unknown[] }>(fetcher, join(baseUrl, '/events/mine'), token)).events.map(
+      (await request<{ events: unknown[] }>(join(baseUrl, '/events/mine'), token)).events.map(
         normalizeEvent,
       ),
 
     findMineById: async (token, id) => {
       try {
         const body = await request<{ event: Record<string, unknown> }>(
-          fetcher,
           join(baseUrl, `/events/mine/${encodeURIComponent(id)}`),
           token,
         )
@@ -456,7 +426,7 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
           payoutInfo: (detail.payoutInfo ?? null) as import('../../organizer/types/organizer-event.ts').OrganizerEventFinance | null,
         }
       } catch (error) {
-        if (error instanceof ApiError && (error.status === 404 || error.status === 409))
+        if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 409))
           return null
         throw error
       }
@@ -466,36 +436,36 @@ export function createEventApi({ baseUrl, fetch: fetcher }: Options): EventApi {
       if (range) { params.set('from', range.from); params.set('to', range.to) }
       const query = params.toString()
       const path = `/events/${encodeURIComponent(id)}/reporting${query ? `?${query}` : ''}`
-      const body = await request<{ report: Record<string, unknown> }>(fetcher, join(baseUrl, path), token)
+      const body = await request<{ report: Record<string, unknown> }>(join(baseUrl, path), token)
       return normalizeReport(body.report ?? {})
     },
-    findPending: async (token) => (await request<{ events: unknown[] }>(fetcher, join(baseUrl, '/events/pending-review'), token)).events.map(normalizeEvent),
-    review: async (token, id, decision, reason) => normalizeEvent((await request<{ event: unknown }>(fetcher, join(baseUrl, `/events/${id}/review`), token, { method: 'POST', body: JSON.stringify({ decision, reason }) })).event),
+    findPending: async (token) => (await request<{ events: unknown[] }>(join(baseUrl, '/events/pending-review'), token)).events.map(normalizeEvent),
+    review: async (token, id, decision, reason) => normalizeEvent((await request<{ event: unknown }>(join(baseUrl, `/events/${id}/review`), token, { method: 'POST', data: { decision, reason } })).event),
     categories: (token) => collection<EventCategory>('/categories', token),
     locations: (token) => collection<EventLocation>('/locations/provinces', token),
     wards: (provinceId, token) => collection<EventLocation>(`/locations/provinces/${encodeURIComponent(provinceId)}/wards`, token),
     uploadImage: async (token, file) => {
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) throw new ApiError({ status: 400, code: 'VALIDATION_ERROR', message: 'Ảnh phải là JPEG, PNG hoặc WebP và không quá 5MB.' })
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) throw new Error('Ảnh phải là JPEG, PNG hoặc WebP và không quá 5MB.')
       const body = new FormData(); body.append('file', file)
-      return (await request<{ url: string }>(fetcher, join(baseUrl, '/uploads/events'), token, { method: 'POST', body })).url
+      return (await request<{ url: string }>(join(baseUrl, '/uploads/events'), token, { method: 'POST', data: body })).url
     },
     createTicketType: async (token, payload) => {
-      const resolved = await resolveTicketImage(token, payload, (accessToken, file) => uploadEventImage(fetcher, baseUrl, accessToken, file))
-      const result = await request<{ ticketType: TicketTypeMutationResult }>(fetcher, join(baseUrl, '/ticket-types'), token, { method: 'POST', body: JSON.stringify(resolved) })
+      const resolved = await resolveTicketImage(token, payload, (accessToken, file) => uploadEventImage(baseUrl, accessToken, file))
+      const result = await request<{ ticketType: TicketTypeMutationResult }>(join(baseUrl, '/ticket-types'), token, { method: 'POST', data: resolved })
       return result.ticketType
     },
     updateTicketType: async (token, id, payload) => {
-      const resolved = await resolveTicketImage(token, payload, (accessToken, file) => uploadEventImage(fetcher, baseUrl, accessToken, file))
-      const result = await request<{ ticketType: TicketTypeMutationResult }>(fetcher, join(baseUrl, `/ticket-types/${id}`), token, { method: 'PATCH', body: JSON.stringify(resolved) })
+      const resolved = await resolveTicketImage(token, payload, (accessToken, file) => uploadEventImage(baseUrl, accessToken, file))
+      const result = await request<{ ticketType: TicketTypeMutationResult }>(join(baseUrl, `/ticket-types/${id}`), token, { method: 'PATCH', data: resolved })
       return result.ticketType
     },
-    findPublic: async () => (await request<{ events: unknown[] }>(fetcher, join(baseUrl, '/events'), undefined)).events.map(normalizePublicEvent),
+    findPublic: async () => (await request<{ events: unknown[] }>(join(baseUrl, '/events'), undefined)).events.map(normalizePublicEvent),
     findPublicById: async (eventId) => {
       try {
-        const response = await request<{ event: unknown }>(fetcher, join(baseUrl, `/events/${encodeURIComponent(eventId)}`), undefined)
+        const response = await request<{ event: unknown }>(join(baseUrl, `/events/${encodeURIComponent(eventId)}`), undefined)
         return mapEventDetail(response.event as PublicEventDetailResponse)
       } catch (error) {
-        if (error instanceof ApiError && (error.status === 404 || error.status === 400)) return null
+        if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 400)) return null
         throw error
       }
     },

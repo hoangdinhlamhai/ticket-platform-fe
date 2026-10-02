@@ -1,7 +1,7 @@
 import { useCallback, type MouseEvent } from 'react'
 import type { AttendeePath } from '../../../routes/attendee-route'
 import { shouldUseClientNavigation } from '../../../routes/attendee-route'
-import { EventDiscoveryGrid } from '../components/EventDiscoveryGrid'
+import { EventDiscoveryGrid } from '../components/event-discovery/EventDiscoveryGrid'
 import { EventSearchHero } from '../components/EventSearchHero'
 import { useEventDiscovery } from '../hooks/useEventDiscovery'
 import type { MockEvent } from '../types/event'

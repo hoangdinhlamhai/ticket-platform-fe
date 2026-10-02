@@ -1,5 +1,5 @@
 import { isoToDateTimeLocal, dateTimeLocalToIso } from './organizer-datetime-local.ts'
-import type { OrganizerReportRange, OrganizerReportRangeInput } from '../../auth/api/event-api.ts'
+import type { OrganizerReportRange, OrganizerReportRangeInput } from '../../events/api/event-api.ts'
 
 export type ReportingLocalInputs = { readonly from: string; readonly to: string }
 

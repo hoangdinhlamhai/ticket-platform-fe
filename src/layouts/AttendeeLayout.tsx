@@ -1,5 +1,5 @@
 import type { AttendeeUser } from '../features/auth'
-import type { AuthStatus } from '../features/auth/api/session-controller.ts'
+import type { AuthStatus } from '../features/auth/hooks/useAuth.ts'
 import type { ReactNode } from 'react'
 import type { AttendeePath, AttendeeRoute } from '../routes/attendee-route'
 import { AttendeeHeader } from './AttendeeHeader'

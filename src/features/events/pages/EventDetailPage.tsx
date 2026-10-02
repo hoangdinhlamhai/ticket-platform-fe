@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AttendeePath } from '../../../routes/attendee-route'
-import { createEventApi } from '../../auth/api/event-api.ts'
+import { createEventApi } from '../api/event-api.ts'
 import type { PrimaryCheckoutSelection } from '../../orders'
 import { EventActions } from '../components/EventActions'
 import { EventDetailHero } from '../components/EventDetailHero'

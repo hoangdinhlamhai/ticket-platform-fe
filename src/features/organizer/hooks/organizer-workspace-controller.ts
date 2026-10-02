@@ -1,5 +1,5 @@
-import { ApiError } from '../../auth/api/api-error.ts'
-import type { EventApi, OrganizerEventOwnerDetail, OrganizerEventReport, OrganizerReportRangeInput } from '../../auth/api/event-api.ts'
+import axios from 'axios'
+import type { EventApi, OrganizerEventOwnerDetail, OrganizerEventReport, OrganizerReportRangeInput } from '../../events/api/event-api.ts'
 import { createEmptyOrganizerWorkspace } from '../mock/create-organizer-workspace.ts'
 import { organizerWorkspaceReducer } from '../helpers/organizer-workspace-reducer.ts'
 import type { OrganizerTicketTier } from '../types/organizer-commerce.ts'
@@ -95,7 +95,7 @@ export function maskOrganizerWorkspaceView(
 }
 
 function errorMessage(error: unknown, fallback: string) {
-  if (error instanceof ApiError) return error.message || fallback
+  if (axios.isAxiosError(error)) return (error.response?.data as { message?: string } | undefined)?.message || error.message || fallback
   if (error instanceof Error) return error.message || fallback
   return fallback
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createAdminApi } from '../../auth/api/admin-api.ts'
+import { createAdminApi } from '../api/admin-api.ts'
 
 type Props = { readonly accessToken: string; readonly kind: 'dashboard' | 'users' | 'events' | 'organizers' | 'orders' | 'payments' | 'refunds' | 'categories' | 'resale' | 'resale-transactions' }
 const api = createAdminApi({ baseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api', fetch: globalThis.fetch })

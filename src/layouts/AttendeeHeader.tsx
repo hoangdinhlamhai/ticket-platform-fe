@@ -1,5 +1,5 @@
 import type { AttendeeUser } from '../features/auth'
-import type { AuthStatus } from '../features/auth/api/session-controller.ts'
+import type { AuthStatus } from '../features/auth/hooks/useAuth.ts'
 import { TicketIcon, TicketlyMark } from '../components/icons/TicketlyIcons'
 import { getProfileInitials } from '../features/profile'
 import { shouldUseClientNavigation, isOrderRoute, isResaleRoute, type AttendeePath, type AttendeeRoute } from '../routes/attendee-route'

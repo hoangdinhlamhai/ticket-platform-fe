@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import type { OrganizerReportRange, OrganizerReportRangeInput } from '../../auth/api/event-api.ts'
+import type { OrganizerReportRange, OrganizerReportRangeInput } from '../../events/api/event-api.ts'
 import {
   localInputsToReportingRange,
   normalizeReportingRange,

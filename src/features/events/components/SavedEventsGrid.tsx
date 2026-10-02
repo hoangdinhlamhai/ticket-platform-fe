@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import type { MockEvent } from '../types/event'
-import { EventDiscoveryCard } from './EventDiscoveryCard'
+import { EventDiscoveryCard } from './event-discovery/EventDiscoveryCard'
 
 type SavedEventsGridProps = {
   events: readonly MockEvent[]

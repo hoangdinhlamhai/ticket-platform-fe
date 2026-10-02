@@ -7,7 +7,7 @@ import { OrganizerReportingRangePicker } from '../components/OrganizerReportingR
 import { OrganizerRevenueTicketsChart } from '../components/OrganizerRevenueTicketsChart.tsx'
 import { OrganizerStatusBadge } from '../components/OrganizerStatusBadge.tsx'
 import type { OrganizerReportState } from '../hooks/organizer-workspace-controller.ts'
-import type { OrganizerReportRangeInput } from '../../auth/api/event-api.ts'
+import type { OrganizerReportRangeInput } from '../../events/api/event-api.ts'
 import type { OrganizerPath, OrganizerRoute } from '../../../routes/organizer-route.ts'
 import type { OrganizerWorkspace } from '../types/organizer-workspace.ts'
 

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { OrganizerEventErrors } from '../helpers/validate-organizer-event.ts'
 import type { OrganizerEventFormValues } from '../hooks/use-organizer-event-form.ts'
 import { sanitizeOrganizerHtml } from '../helpers/sanitize-organizer-html.ts'
-import { createEventApi } from '../../auth/api/event-api.ts'
+import { createEventApi } from '../../events/api/event-api.ts'
 import { OrganizerImagePicker } from './OrganizerImagePicker.tsx'
 
 type Props = {

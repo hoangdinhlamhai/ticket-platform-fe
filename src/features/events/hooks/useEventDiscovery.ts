@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { EVENT_CATEGORIES } from '../mock/eventData'
-import { createEventApi } from '../../auth/api/event-api.ts'
+import { createEventApi } from '../api/event-api.ts'
 import {
   countActiveEventFilters,
   createDefaultEventDiscoveryFilters,

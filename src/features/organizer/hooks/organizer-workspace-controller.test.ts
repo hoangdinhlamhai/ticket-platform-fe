@@ -1,8 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { ApiError } from '../../auth/api/api-error.ts'
+import axios from 'axios'
+const apiError = (message: string, status = 500) => new axios.AxiosError(message, undefined, undefined, undefined, { status, data: { message }, headers: {}, config: { headers: {} } })
 import { createOrganizerWorkspaceController, maskOrganizerWorkspaceView } from './organizer-workspace-controller.ts'
-import type { EventApi } from '../../auth/api/event-api.ts'
+import type { EventApi } from '../../events/api/event-api.ts'
 import type { OrganizerEvent, OrganizerEventInput } from '../types/organizer-event.ts'
 
 function flush() {
@@ -66,7 +67,7 @@ test('rejects a create when the API fails and preserves prior server state', asy
   const controller = createOrganizerWorkspaceController({
     api: stubApi({
       findMine: async () => [event('e1')],
-      create: async () => { throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Máy chủ lỗi.' }) },
+      create: async () => { throw apiError('Máy chủ lỗi.') },
     }),
   })
   controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
@@ -162,7 +163,7 @@ test('surfaces a load error instead of silently seeding mock events', async () =
   let attempt = 0
   const controller = createOrganizerWorkspaceController({
     api: stubApi({
-      findMine: async () => { attempt += 1; if (attempt === 1) throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được.' }); return [event('e1')] },
+      findMine: async () => { attempt += 1; if (attempt === 1) throw apiError('Không tải được.'); return [event('e1')] },
     }),
   })
   controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
@@ -231,7 +232,7 @@ test('surfaces a payout failure on update instead of reporting a false full succ
     api: stubApi({
       findMine: async () => [event('e1')],
       update: async () => event('e1', { title: 'Đã sửa' }),
-      setPayout: async () => { throw new ApiError({ status: 400, code: 'EVENT_REQUEST_FAILED', message: 'Không lưu được thông tin thanh toán.' }) },
+      setPayout: async () => { throw apiError('Không lưu được thông tin thanh toán.', 400) },
     }),
   })
   controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
@@ -293,7 +294,7 @@ test('hydrates owned event ticket tiers from detail responses', async () => {
 
 test('publishes the event list when a per-event detail request fails, without a false whole-list error', async () => {
   const controller = createOrganizerWorkspaceController({
-    api: stubApi({ findMine: async () => [event('evt-1')], findMineById: async () => { throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được vé.' }) } }),
+    api: stubApi({ findMine: async () => [event('evt-1')], findMineById: async () => { throw apiError('Không tải được vé.') } }),
   })
   controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
   await flush()
@@ -313,7 +314,7 @@ test('hydrates the details that succeed while tolerating one that fails', async 
     api: stubApi({
       findMine: async () => [event('evt-ok'), event('evt-bad')],
       findMineById: async (_token, id) => {
-        if (id === 'evt-bad') throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được vé.' })
+        if (id === 'evt-bad') throw apiError('Không tải được vé.')
         return { event: event('evt-ok'), ticketTypes: [{ id: 'tier-ok', name: 'VIP', price: 250000, quantity: 40 }], seatMap: null, payoutInfo: null }
       },
     }),
@@ -331,7 +332,7 @@ test('hydrates the details that succeed while tolerating one that fails', async 
 
 test('surfaces a whole-list load error when findMine itself fails', async () => {
   const controller = createOrganizerWorkspaceController({
-    api: stubApi({ findMine: async () => { throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được danh sách.' }) } }),
+    api: stubApi({ findMine: async () => { throw apiError('Không tải được danh sách.') } }),
   })
   controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })
   await flush()
@@ -342,7 +343,7 @@ test('surfaces a whole-list load error when findMine itself fails', async () => 
 })
 
 test('drops a detail hydration after the signed-in user changes', async () => {
-  const pendingDetail = deferred<import('../../auth/api/event-api.ts').OrganizerEventOwnerDetail | null>()
+  const pendingDetail = deferred<import('../../events/api/event-api.ts').OrganizerEventOwnerDetail | null>()
   const controller = createOrganizerWorkspaceController({
     api: stubApi({
       findMine: async (token) => token === 't1' ? [event('u1-event')] : [event('u2-event')],
@@ -466,7 +467,7 @@ test('loadEventReport surfaces an API error without reverting to workspace mock 
   const controller = createOrganizerWorkspaceController({
     api: stubApi({
       findMine: async () => [event('evt-1')],
-      reporting: (async () => { throw new ApiError({ status: 500, code: 'EVENT_REQUEST_FAILED', message: 'Không tải được báo cáo.' }) }) as never,
+      reporting: (async () => { throw apiError('Không tải được báo cáo.') }) as never,
     }),
   })
   controller.sync({ userId: 'u1', accessToken: 't1', status: 'authenticated' })

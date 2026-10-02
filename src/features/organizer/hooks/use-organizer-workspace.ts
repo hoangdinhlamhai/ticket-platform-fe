@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
-import { useAttendeeAuth } from '../../auth/hooks/use-attendee-auth.ts'
-import { createEventApi, dataUrlFile } from '../../auth/api/event-api.ts'
+import type { AuthStatus } from '../../auth/hooks/useAuth.ts'
+import type { AttendeeUser } from '../../auth/types/authContract.ts'
+import { createEventApi, dataUrlFile } from '../../events/api/event-api.ts'
 import { createOrganizerWorkspaceController, maskOrganizerWorkspaceView } from './organizer-workspace-controller.ts'
 import type { OrganizerWorkspaceController } from './organizer-workspace-controller.ts'
 
@@ -17,20 +18,13 @@ const uploadApi = createEventApi({ baseUrl: import.meta.env.VITE_API_BASE_URL ??
 
 const NO_ACTIVE_IDENTITY_MESSAGE = 'Bạn cần đăng nhập bằng tài khoản người dùng để thực hiện thao tác này.'
 
-export function useOrganizerWorkspace(): OrganizerWorkspaceController {
+export function useOrganizerWorkspace(auth: { status: AuthStatus; user: AttendeeUser | null; accessToken: string | null }): OrganizerWorkspaceController {
   const rawSnapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot)
-  const auth = useAttendeeAuth(true)
   const currentUserId = auth.status === 'authenticated' ? (auth.user?.id ?? null) : null
 
   // Feed the auth session's identity into the controller. userId changes clear and
   // reload; a token-only change (refresh) keeps same-user work; logout/anonymous clears.
   useEffect(() => {
-    console.log('[OrganizerWorkspace] useEffect sync identity:', {
-      authStatus: auth.status,
-      user: auth.user,
-      hasToken: Boolean(auth.accessToken),
-      currentUserId,
-    })
     controller.sync({ userId: currentUserId, accessToken: auth.accessToken, status: auth.status })
   }, [currentUserId, auth.accessToken, auth.status])
 
@@ -41,17 +35,6 @@ export function useOrganizerWorkspace(): OrganizerWorkspaceController {
   // A masked view means the store snapshot does not yet belong to the current user;
   // action closures must not run against the wrong account until sync() has caught up.
   const identityStale = snapshot !== rawSnapshot
-
-  console.log('[OrganizerWorkspace] render snapshot:', {
-    authStatus: auth.status,
-    authUserId: auth.user?.id,
-    userRole: auth.user?.role,
-    hasToken: Boolean(auth.accessToken),
-    currentUserId,
-    rawSnapshotUserId: rawSnapshot.userId,
-    identityStale,
-    saveError: identityStale ? NO_ACTIVE_IDENTITY_MESSAGE : snapshot.saveError,
-  })
 
   const updateEventImage = useCallback(async (eventId: string, field: 'seatingChartImage', value: string) => {
     if (identityStale) return null
@@ -73,20 +56,10 @@ export function useOrganizerWorkspace(): OrganizerWorkspaceController {
   return useMemo<OrganizerWorkspaceController>(() => {
     // While identity is stale, gate every mutation so a closure captured on the previous
     // render cannot mutate the newly signed-in (or logged-out) account. Reads stay masked.
-    const blockedAsync = async (...args: unknown[]) => {
-      console.warn('[OrganizerWorkspace] THAO TAC BI CHAN (identityStale = true)!', {
-        identityStale,
-        authStatus: auth.status,
-        currentUserId,
-        rawSnapshotUserId: rawSnapshot.userId,
-        args,
-      })
+    const blockedAsync = async () => {
       return null
     }
-    const blockedSync = (...args: unknown[]) => {
-      console.warn('[OrganizerWorkspace] THAO TAC SYNC BI CHAN (identityStale = true)!', args)
-      return null
-    }
+    const blockedSync = () => null
     return {
       workspace: snapshot.workspace,
       lastOperation: snapshot.lastOperation,
@@ -108,5 +81,5 @@ export function useOrganizerWorkspace(): OrganizerWorkspaceController {
       updateOrganization: identityStale ? blockedSync : controller.updateOrganization,
       clearLastOperation: identityStale ? blockedSync : controller.clearLastOperation,
     }
-  }, [snapshot, identityStale, updateEventImage, auth.status, currentUserId, rawSnapshot.userId])
+  }, [snapshot, identityStale, updateEventImage])
 }

@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import type { OrganizerReportTimelineBucket } from '../../auth/api/event-api.ts'
+import type { OrganizerReportTimelineBucket } from '../../events/api/event-api.ts'
 
 type Props = {
   timeline: readonly OrganizerReportTimelineBucket[]
