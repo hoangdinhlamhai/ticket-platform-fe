@@ -10,7 +10,7 @@ export type EventScheduleItem = {
 export type EventTicketTier = {
   id: string
   name: string
-  price: number
+  price: number | string
   availabilityLabel: string
   note: string
   image?: string
@@ -28,10 +28,10 @@ export type EventCalendarSchedule = {
   timeZone: string
 }
 
-export type MockEvent = {
+export type EventCardData = {
   id: string
   title: string
-  category: Exclude<EventCategory, 'Tất cả'>
+  category: string
   date: string
   venue: string
   city: string
@@ -40,7 +40,7 @@ export type MockEvent = {
   posterTone: EventPosterTone
 }
 
-export type MockEventDetail = MockEvent & {
+export type EventDetailView = EventCardData & {
   thumbnail?: string
   organizerBio?: string
   organizerLogo?: string

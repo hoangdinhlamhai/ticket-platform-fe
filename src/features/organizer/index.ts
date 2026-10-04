@@ -1,14 +1,14 @@
-export { OrganizerAnalyticsPage } from './pages/OrganizerAnalyticsPage.tsx'
-export { OrganizerAttendeesPage } from './pages/OrganizerAttendeesPage.tsx'
-export { OrganizerCheckInPage } from './pages/OrganizerCheckInPage.tsx'
-export { OrganizerDashboardPage } from './pages/OrganizerDashboardPage.tsx'
-export { OrganizerEventCreatePage } from './pages/OrganizerEventCreatePage.tsx'
-export { OrganizerEventEditPage } from './pages/OrganizerEventEditPage.tsx'
-export { OrganizerEventListPage } from './pages/OrganizerEventListPage.tsx'
-export { OrganizerEventOverviewPage } from './pages/OrganizerEventOverviewPage.tsx'
-export { OrganizerFinancePage } from './pages/OrganizerFinancePage.tsx'
-export { OrganizerNotFoundPage } from './pages/OrganizerNotFoundPage.tsx'
-export { OrganizerOrdersPage } from './pages/OrganizerOrdersPage.tsx'
-export { OrganizerOrganizationSettingsPage } from './pages/OrganizerOrganizationSettingsPage.tsx'
-export { OrganizerTicketInventoryPage } from './pages/OrganizerTicketInventoryPage.tsx'
-export { type OrganizerEventFormSave } from './components/OrganizerEventForm.tsx'
+export { OrganizerAnalyticsPage } from "./pages/OrganizerAnalyticsPage.tsx";
+export { OrganizerAttendeesPage } from "./pages/OrganizerAttendeesPage.tsx";
+export { OrganizerCheckInPage } from "./pages/OrganizerCheckInPage.tsx";
+export { OrganizerDashboardPage } from "./pages/OrganizerDashboardPage.tsx";
+export { OrganizerEventCreatePage } from "./pages/OrganizerEventCreatePage.tsx";
+export { OrganizerEventEditPage } from "./pages/OrganizerEventEditPage.tsx";
+export { OrganizerEventListPage } from "./pages/OrganizerEventListPage.tsx";
+export { OrganizerEventOverviewPage } from "./pages/OrganizerEventOverviewPage.tsx";
+export { OrganizerFinancePage } from "./pages/OrganizerFinancePage.tsx";
+export { OrganizerNotFoundPage } from "./pages/OrganizerNotFoundPage.tsx";
+export { OrganizerOrdersPage } from "./pages/OrganizerOrdersPage.tsx";
+export { OrganizerOrganizationSettingsPage } from "./pages/OrganizerOrganizationSettingsPage.tsx";
+export { OrganizerTicketInventoryPage } from "./pages/OrganizerTicketInventoryPage.tsx";
+export { type OrganizerEventFormSave } from "./components/OrganizerEventForm.tsx";

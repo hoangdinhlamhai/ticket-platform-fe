@@ -2,6 +2,7 @@ export type AdminRoute =
   | 'dashboard'
   | 'event-reviews'
   | 'event-review-detail'
+  | 'event-detail'
   | 'cases'
   | 'case-detail'
   | 'organizers'
@@ -37,6 +38,7 @@ export type AdminPath =
   | '/admin/payments'
   | '/admin/resale/transactions'
   | `/admin/events/${string}/review`
+  | `/admin/events/${string}/details`
   | `/admin/cases/${string}`
 
 const staticRoutes: Readonly<Record<string, AdminRoute>> = {
@@ -83,7 +85,7 @@ export function isAdminPath(pathname: string) {
 }
 
 export function getAdminEventId(pathname: string) {
-  return extractId(pathname, /^\/admin\/events\/([^/]+)\/review$/)
+  return extractId(pathname, /^\/admin\/events\/([^/]+)\/(?:review|details)$/)
 }
 
 export function getAdminCaseId(pathname: string) {
@@ -94,7 +96,8 @@ export function getAdminRoute(pathname: string): AdminRoute {
   const path = normalizePath(pathname)
   const staticRoute = staticRoutes[path]
   if (staticRoute) return staticRoute
-  if (getAdminEventId(path)) return 'event-review-detail'
+  if (/^\/admin\/events\/[^/]+\/review$/.test(path) && getAdminEventId(path)) return 'event-review-detail'
+  if (/^\/admin\/events\/[^/]+\/details$/.test(path) && getAdminEventId(path)) return 'event-detail'
   if (getAdminCaseId(path)) return 'case-detail'
   return 'not-found'
 }

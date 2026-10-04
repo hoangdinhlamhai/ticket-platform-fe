@@ -141,7 +141,6 @@ function AttendeePage({
       <PrimaryCheckoutPage
         key={pathname}
         selection={state.selection}
-        profile={state.profile}
         onComplete={actions.completePrimary}
         onNavigate={actions.navigate}
       />
@@ -623,9 +622,10 @@ function AttendeeApplication() {
       <AuthPage
         key={route}
         mode={route}
-        onAuthenticated={(role) =>
-          navigateToPath(getPostAuthenticationPath(role))
-        }
+        onAuthenticated={(role, session) => {
+          if (session) auth.authenticate(session);
+          navigateToPath(getPostAuthenticationPath(role));
+        }}
         onNavigateMode={(mode) => navigate(`/${mode}`)}
       />
     );

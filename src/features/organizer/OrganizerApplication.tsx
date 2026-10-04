@@ -1,1 +1,1 @@
-export { OrganizerApplication } from '../../pages/OrganizerApplication.tsx'
+export { OrganizerApplication } from "../../pages/OrganizerApplication.tsx";

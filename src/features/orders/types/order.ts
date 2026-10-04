@@ -2,7 +2,7 @@ export type AttendeeOrderSource = 'primary' | 'resale'
 export type AttendeeOrderStatus = 'completed' | 'failed' | 'expired'
 export type DemoPaymentOutcome = AttendeeOrderStatus
 export type AttendeeOrderLineItem = { label: string; quantity: number; unitPrice: number }
-export type AttendeeOrderBuyer = { fullName: string; email: string; phone: string }
+export type AttendeeOrderBuyer = { fullName: string; email: string }
 export type AttendeeOrder = {
   id: string; source: AttendeeOrderSource; status: AttendeeOrderStatus; eventId: string; eventTitle: string
   buyer: AttendeeOrderBuyer; items: readonly AttendeeOrderLineItem[]; subtotal: number; serviceFee: 0; total: number

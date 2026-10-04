@@ -9,8 +9,9 @@ import { AdminMissingRecord } from "../features/admin/index.ts";
 import type { AdminWorkspaceController } from "../features/admin/hooks/admin-workspace-controller.ts";
 import type { AdminOperationResult } from "../features/admin/types/admin-workspace.ts";
 import {
-  AdminEventListPage,
-  AdminEventReviewDetailPage,
+  AdminEventDetail,
+  AdminEventsPage,
+  AdminPendingEventsPage,
 } from "../features/admin/event/index.ts";
 import { RealAdminPage } from "../features/admin/components/RealAdminPage.tsx";
 import { getAdminAccessState } from "./admin-access.ts";
@@ -89,12 +90,7 @@ export function AdminApplication({
   else if (route === "users")
     page = <RealAdminPage accessToken={adminToken} kind="users" />;
   else if (route === "events-all")
-    page = (
-      <AdminEventListPage
-        mode="all"
-        navigate={navigatePage}
-      />
-    );
+    page = <AdminEventsPage navigate={navigatePage} />;
   else if (route === "organizers")
     page = <RealAdminPage accessToken={adminToken} kind="organizers" />;
   else if (route === "orders")
@@ -112,19 +108,11 @@ export function AdminApplication({
       <RealAdminPage accessToken={adminToken} kind="resale-transactions" />
     );
   else if (route === "event-reviews")
-    page = (
-      <AdminEventListPage
-        mode="pending"
-        navigate={navigatePage}
-      />
-    );
+    page = <AdminPendingEventsPage navigate={navigatePage} />;
   else if (route === "event-review-detail" && eventId)
-    page = (
-      <AdminEventReviewDetailPage
-        eventId={eventId}
-        navigate={navigatePage}
-      />
-    );
+    page = <AdminEventDetail eventId={eventId} reviewMode navigate={navigatePage} />;
+  else if (route === "event-detail" && eventId)
+    page = <AdminEventDetail eventId={eventId} reviewMode={false} navigate={navigatePage} />;
   else
     page = (
       <AdminMissingRecord

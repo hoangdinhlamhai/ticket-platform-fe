@@ -1,7 +1,7 @@
-export function formatTicketPrice(price: number) {
+export function formatTicketPrice(price: number | string) {
   return `${new Intl.NumberFormat('vi-VN').format(price)}đ`
 }
 
-export function getTicketSubtotal(price: number, quantity: number) {
-  return price * quantity
+export function getTicketSubtotal(price: number | string, quantity: number) {
+  return Number(price) * quantity
 }

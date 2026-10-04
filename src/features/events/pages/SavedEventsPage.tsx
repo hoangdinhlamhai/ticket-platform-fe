@@ -1,43 +1,108 @@
-import { useCallback, type MouseEvent } from 'react'
-import type { AttendeePath } from '../../../routes/attendee-route'
-import { shouldUseClientNavigation } from '../../../routes/attendee-route'
-import { SavedEventsGrid } from '../components/SavedEventsGrid'
-import { SavedEventsHero } from '../components/SavedEventsHero'
-import { MOCK_EVENTS } from '../mock/eventData'
-import type { MockEvent } from '../types/event'
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
+import type { AttendeePath } from "../../../routes/attendee-route.ts";
+import { shouldUseClientNavigation } from "../../../routes/attendee-route.ts";
+import * as eventApi from "../api/eventApi.ts";
+import {
+  getSavedEventIds,
+  mapPublicEventToCard,
+  SAVED_EVENT_STORAGE_KEY,
+} from "../helpers/map-public-event.ts";
+import { SavedEventsGrid } from "../components/SavedEventsGrid.tsx";
+import { SavedEventsHero } from "../components/SavedEventsHero.tsx";
+import type { EventCardData } from "../types/event.ts";
 
-const SAVED_EVENT_IDS = new Set([
-  'vong-khuc-thanh-pho',
-  'midnight-market-live-set',
-  'cham-vao-dat',
-])
+type Props = {
+  onNavigate: (path: AttendeePath) => void;
+  onNoticeChange: (notice: string) => void;
+};
 
-const SAVED_EVENTS = MOCK_EVENTS.filter((event) => SAVED_EVENT_IDS.has(event.id))
+export function SavedEventsPage({ onNavigate, onNoticeChange }: Props) {
+  const [events, setEvents] = useState<EventCardData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-type SavedEventsPageProps = {
-  onNavigate: (path: AttendeePath) => void
-  onNoticeChange: (notice: string) => void
-}
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const { data } = await eventApi.findPublic();
+        const savedIds = new Set(getSavedEventIds());
+        if (active)
+          setEvents(
+            data.events
+              .filter((event) => savedIds.has(event.id))
+              .map(mapPublicEventToCard),
+          );
+      } catch (cause: unknown) {
+        if (active)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "Không thể tải danh sách sự kiện đã lưu.",
+          );
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
-export function SavedEventsPage({ onNavigate, onNoticeChange }: SavedEventsPageProps) {
-  const viewEvent = useCallback((event: MockEvent, clickEvent: MouseEvent<HTMLAnchorElement>) => {
-    if (!shouldUseClientNavigation(clickEvent)) return
-    clickEvent.preventDefault()
-    onNavigate(`/events/${event.id}`)
-  }, [onNavigate])
+  const viewEvent = useCallback(
+    (event: EventCardData, clickEvent: MouseEvent<HTMLAnchorElement>) => {
+      if (!shouldUseClientNavigation(clickEvent)) return;
+      clickEvent.preventDefault();
+      onNavigate(`/events/${event.id}`);
+    },
+    [onNavigate],
+  );
 
-  const showStaticFavoriteNotice = useCallback((event: MockEvent) => {
-    onNoticeChange(`“${event.title}” đang nằm trong danh sách minh họa. Tính năng bỏ lưu chưa được kết nối.`)
-  }, [onNoticeChange])
+  const removeSavedEvent = useCallback(
+    (event: EventCardData) => {
+      const savedIds = getSavedEventIds().filter((id) => id !== event.id);
+      try {
+        window.localStorage.setItem(
+          SAVED_EVENT_STORAGE_KEY,
+          JSON.stringify(savedIds),
+        );
+      } catch {
+        // The event is still removed from the current page state.
+      }
+      setEvents((current) =>
+        current.filter((savedEvent) => savedEvent.id !== event.id),
+      );
+      onNoticeChange(`Đã bỏ lưu “${event.title}”.`);
+    },
+    [onNoticeChange],
+  );
 
   return (
     <>
       <SavedEventsHero />
-      <SavedEventsGrid
-        events={SAVED_EVENTS}
-        onToggleFavorite={showStaticFavoriteNotice}
-        onViewEvent={viewEvent}
-      />
+      {loading ? (
+        <p className="attendee-container py-12 text-center" role="status">
+          Đang tải sự kiện đã lưu...
+        </p>
+      ) : error ? (
+        <p
+          className="attendee-container py-12 text-center text-error"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : events.length ? (
+        <SavedEventsGrid
+          events={events}
+          onToggleFavorite={removeSavedEvent}
+          onViewEvent={viewEvent}
+        />
+      ) : (
+        <p className="attendee-container py-12 text-center">
+          Bạn chưa lưu sự kiện nào.
+        </p>
+      )}
     </>
-  )
+  );
 }

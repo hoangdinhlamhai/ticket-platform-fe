@@ -1,4 +1,4 @@
-export { adminEventApi } from './api/adminEventApi.ts'
-export { AdminEventListPage } from './pages/AdminEventListPage.tsx'
-export { AdminEventReviewDetailPage } from './pages/AdminEventReviewDetailPage.tsx'
-export type { AdminEvent, AdminEventDetail, AdminEventReviewDecision } from './types/adminEventTypes.ts'
+export { AdminEventReviews } from "./components/AdminEventReviews.tsx";
+export { AdminEventDetail } from "./components/AdminEventDetail.tsx";
+export { AdminEventsPage } from "./pages/AdminEventsPage.tsx";
+export { AdminPendingEventsPage } from "./pages/AdminPendingEventsPage.tsx";

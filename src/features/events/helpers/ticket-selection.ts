@@ -25,7 +25,8 @@ function isFuture(value: string | null | undefined, now: Date) {
 }
 
 export function getTicketAvailability(tier: EventTicketTier, now: Date = new Date()): TicketAvailability {
-  if (!Number.isFinite(tier.price) || tier.price <= 0) return { status: 'invalid-price', available: false }
+  const price = typeof tier.price === 'string' && tier.price.trim() !== '' ? Number(tier.price) : tier.price
+  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return { status: 'invalid-price', available: false }
   if (isReached(tier.eventEndAt, now)) return { status: 'event-ended', available: false }
   if (isFuture(tier.saleStartAt, now)) return { status: 'future', available: false }
   if (isReached(tier.saleEndAt, now)) return { status: 'expired', available: false }

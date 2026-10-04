@@ -1,41 +1,27 @@
 import axiosClient from "../../../../api/axiosClient.ts";
+import type { EventReviewDecision } from "../../../../types/event.ts";
 import type {
-  AdminEvent,
-  AdminEventDetail,
-  AdminEventReviewDecision,
-} from "../types/adminEventTypes.ts";
+  AdminEventDetailResponse,
+  AdminEventListResponse,
+} from "../types/admin-event.ts";
 
-export const adminEventApi = {
-  async findAll(): Promise<AdminEvent[]> {
-    const response = await axiosClient.get<{ events: AdminEvent[] }>(
-      "/admin/events",
-    );
-    return response.data.events;
-  },
+export const findAll = () =>
+  axiosClient.get<AdminEventListResponse>("/admin/events");
 
-  async findPending(): Promise<AdminEvent[]> {
-    const response = await axiosClient.get<{ events: AdminEvent[] }>(
-      "/admin/events/pending-review",
-    );
-    return response.data.events;
-  },
+export const findPending = () =>
+  axiosClient.get<AdminEventListResponse>("/admin/events/pending-review");
 
-  async findById(id: string): Promise<AdminEventDetail> {
-    const response = await axiosClient.get<{ event: AdminEventDetail }>(
-      `/admin/events/${encodeURIComponent(id)}`,
-    );
-    return response.data.event;
-  },
+export const findById = (id: string) =>
+  axiosClient.get<AdminEventDetailResponse>(
+    `/admin/events/${encodeURIComponent(id)}`,
+  );
 
-  async review(
-    id: string,
-    decision: AdminEventReviewDecision,
-    reason?: string,
-  ): Promise<AdminEventDetail> {
-    const response = await axiosClient.post<{ event: AdminEventDetail }>(
-      `/admin/events/${encodeURIComponent(id)}/review`,
-      { decision, reason },
-    );
-    return response.data.event;
-  },
-};
+export const review = (
+  id: string,
+  decision: EventReviewDecision,
+  reason?: string,
+) =>
+  axiosClient.post<AdminEventDetailResponse>(
+    `/admin/events/${encodeURIComponent(id)}/review`,
+    { decision, reason },
+  );
