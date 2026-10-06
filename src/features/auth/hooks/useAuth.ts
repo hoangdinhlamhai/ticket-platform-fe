@@ -57,6 +57,20 @@ export function useAuth(enabled = true) {
     if (enabled) restorePromise.current ??= refresh();
   }, [enabled, refresh]);
 
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setAccessToken(null);
+      setUser(null);
+      setStatus("anonymous");
+      setError(null);
+      setCanRetry(false);
+    };
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () =>
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+  }, []);
+
   const logout = useCallback(async () => {
     setAccessToken(null);
     setClientAccessToken(null);

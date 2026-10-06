@@ -6,7 +6,7 @@ import type {
 } from "../../helpers/event-discovery-filter-state";
 import type { EventCardData } from "../../types/event";
 import { AdvancedEventFilterSidebar } from "./AdvancedEventFilterSidebar";
-import { EventDiscoveryCard } from "./EventDiscoveryCard";
+import { EventCard } from "./EventCard";
 import { EventDiscoveryEmptyState } from "./EventDiscoveryEmptyState";
 import { EventDiscoveryToolbar } from "./EventDiscoveryToolbar";
 import { EventFilterDrawer } from "../EventFilterDrawer";
@@ -85,7 +85,7 @@ export function EventDiscoveryGrid({
           {events.length > 0 ? (
             <div className="grid min-w-0 grid-cols-1 gap-5 min-[769px]:grid-cols-2 min-[1101px]:grid-cols-3">
               {events.map((event) => (
-                <EventDiscoveryCard
+                <EventCard
                   key={event.id}
                   event={event}
                   isFavorite={favoriteEventIds.includes(event.id)}

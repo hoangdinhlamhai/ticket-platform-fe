@@ -11,8 +11,9 @@ import type {
   EventPayoutInfo,
   EventCategory,
   EventLocation,
-  PublicEventResponse,
   PublicEventListResponse,
+  PublicEventResponse,
+  SavedEventListResponse,
   OrganizerReportRangeInput,
 } from "../../../types/event.ts";
 
@@ -60,6 +61,18 @@ const createTicketType = (data: TicketTypePayload) =>
 const updateTicketType = (id: string, data: Partial<TicketTypePayload>) =>
   axiosClient.patch<EventTicketTypeResponse>(`/ticket-types/${id}`, data);
 
+// Saved events
+const findSaved = () =>
+  axiosClient.get<SavedEventListResponse>("/events/saves");
+const addSave = (id: string) =>
+  axiosClient.post<{ eventId: string; isSaved: boolean }>(
+    `/events/${encodeURIComponent(id)}/save`,
+  );
+const removeSave = (id: string) =>
+  axiosClient.delete<{ eventId: string; isSaved: boolean }>(
+    `/events/${encodeURIComponent(id)}/save`,
+  );
+
 export {
   create,
   update,
@@ -70,6 +83,9 @@ export {
   reporting,
   findPublic,
   findPublicById,
+  findSaved,
+  addSave,
+  removeSave,
   findPending,
   categories,
   locations,

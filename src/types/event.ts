@@ -135,6 +135,7 @@ export type UploadResponse = { url: string };
 export type EventListResponse = { events: OwnerEvent[] };
 export type PublicEventResponse = { event: PublicEvent };
 export type PublicEventListResponse = { events: PublicEvent[] };
+export type SavedEventListResponse = { events: PublicEvent[] };
 export type EventReportResponse = { report: OrganizerEventReport };
 export type EventReviewResponse = EventApiResponse;
 export type EventTicketTypeResponse = { ticketType: EventTicketType };

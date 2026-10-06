@@ -8,20 +8,6 @@ const posterTones: readonly EventPosterTone[] = [
   "blue",
   "coral",
 ];
-export const SAVED_EVENT_STORAGE_KEY = "ticketly:saved-event-ids";
-
-export function getSavedEventIds(): string[] {
-  try {
-    const saved = window.localStorage.getItem(SAVED_EVENT_STORAGE_KEY);
-    const value: unknown = saved ? JSON.parse(saved) : [];
-    return Array.isArray(value)
-      ? value.filter((id): id is string => typeof id === "string")
-      : [];
-  } catch {
-    return [];
-  }
-}
-
 export function mapPublicEventToCard(
   event: PublicEvent,
   index = 0,

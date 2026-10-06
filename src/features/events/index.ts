@@ -1,14 +1,14 @@
 export { EventCategoryFilter } from "./components/EventCategoryFilter.tsx";
 export { EventDetailHero } from "./components/even-detail/EventDetailHero.tsx";
 export { EventDetailOverview } from "./components/even-detail/EventDetailOverview.tsx";
-export { EventDiscoveryCard } from "./components/event-discovery/EventDiscoveryCard.tsx";
+export { EventCard } from "./components/event-discovery/EventCard.tsx";
 export { EventDiscoveryGrid } from "./components/event-discovery/EventDiscoveryGrid.tsx";
 export { EventNotFoundState } from "./components/EventNotFoundState.tsx";
 export { EventSchedule } from "./components/EventSchedule.tsx";
 export { EventSearchHero } from "./components/EventSearchHero.tsx";
 export { EventTicketSelector } from "./components/EventTicketSelector.tsx";
-export { SavedEventsGrid } from "./components/SavedEventsGrid.tsx";
-export { SavedEventsHero } from "./components/SavedEventsHero.tsx";
+export { SavedEventsGrid } from "./components/saved/SavedEventsGrid.tsx";
+export { SavedEventsHero } from "./components/saved/SavedEventsHero.tsx";
 export { formatTicketPrice } from "./helpers/formatTicketPrice.ts";
 export { getEventById } from "./helpers/getEventById.ts";
 export { useMockTicketSelection } from "./hooks/useMockTicketSelection.ts";

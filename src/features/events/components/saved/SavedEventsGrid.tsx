@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
-import type { EventCardData } from "../types/event";
-import { EventDiscoveryCard } from "./event-discovery/EventDiscoveryCard";
+import type { EventCardData } from "../../types/event";
+import { EventCard } from "../event-discovery/EventCard";
 
 type SavedEventsGridProps = {
   events: readonly EventCardData[];
@@ -42,7 +42,7 @@ export function SavedEventsGrid({
 
         <div className="mt-7 grid grid-cols-1 gap-5 min-[769px]:grid-cols-2 min-[1101px]:grid-cols-3">
           {events.map((event) => (
-            <EventDiscoveryCard
+            <EventCard
               key={event.id}
               event={event}
               favoriteControlMode="informational"

@@ -2,13 +2,9 @@ import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import type { AttendeePath } from "../../../routes/attendee-route.ts";
 import { shouldUseClientNavigation } from "../../../routes/attendee-route.ts";
 import * as eventApi from "../api/eventApi.ts";
-import {
-  getSavedEventIds,
-  mapPublicEventToCard,
-  SAVED_EVENT_STORAGE_KEY,
-} from "../helpers/map-public-event.ts";
-import { SavedEventsGrid } from "../components/SavedEventsGrid.tsx";
-import { SavedEventsHero } from "../components/SavedEventsHero.tsx";
+import { mapPublicEventToCard } from "../helpers/map-public-event.ts";
+import { SavedEventsGrid } from "../components/saved/SavedEventsGrid.tsx";
+import { SavedEventsHero } from "../components/saved/SavedEventsHero.tsx";
 import type { EventCardData } from "../types/event.ts";
 
 type Props = {
@@ -25,14 +21,9 @@ export function SavedEventsPage({ onNavigate, onNoticeChange }: Props) {
     let active = true;
     const load = async () => {
       try {
-        const { data } = await eventApi.findPublic();
-        const savedIds = new Set(getSavedEventIds());
+        const { data } = await eventApi.findSaved();
         if (active)
-          setEvents(
-            data.events
-              .filter((event) => savedIds.has(event.id))
-              .map(mapPublicEventToCard),
-          );
+          setEvents(data.events.map(mapPublicEventToCard));
       } catch (cause: unknown) {
         if (active)
           setError(
@@ -60,20 +51,18 @@ export function SavedEventsPage({ onNavigate, onNoticeChange }: Props) {
   );
 
   const removeSavedEvent = useCallback(
-    (event: EventCardData) => {
-      const savedIds = getSavedEventIds().filter((id) => id !== event.id);
+    async (event: EventCardData) => {
       try {
-        window.localStorage.setItem(
-          SAVED_EVENT_STORAGE_KEY,
-          JSON.stringify(savedIds),
+        await eventApi.removeSave(event.id);
+        setEvents((current) =>
+          current.filter((savedEvent) => savedEvent.id !== event.id),
         );
-      } catch {
-        // The event is still removed from the current page state.
+        onNoticeChange(`Đã bỏ lưu “${event.title}”.`);
+      } catch (cause: unknown) {
+        onNoticeChange(
+          cause instanceof Error ? cause.message : "Không thể bỏ lưu sự kiện.",
+        );
       }
-      setEvents((current) =>
-        current.filter((savedEvent) => savedEvent.id !== event.id),
-      );
-      onNoticeChange(`Đã bỏ lưu “${event.title}”.`);
     },
     [onNoticeChange],
   );

@@ -3,7 +3,7 @@ import {
   eventPosterToneClasses,
 } from "../../helpers/eventPosterStyles";
 import type { EventCardData } from "../../types/event";
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import {
   ArrowUpRightIcon,
   CalendarIcon,
@@ -11,7 +11,7 @@ import {
   PinIcon,
 } from "../../../../components/icons/TicketlyIcons";
 
-type EventDiscoveryCardProps = {
+type EventCardProps = {
   event: EventCardData;
   favoriteControlMode?: "toggle" | "informational";
   isFavorite: boolean;
@@ -22,13 +22,15 @@ type EventDiscoveryCardProps = {
   ) => void;
 };
 
-export function EventDiscoveryCard({
+export function EventCard({
   event,
   favoriteControlMode = "toggle",
   isFavorite,
   onToggleFavorite,
   onViewEvent,
-}: EventDiscoveryCardProps) {
+}: EventCardProps) {
+  const [heartAnimationKey, setHeartAnimationKey] = useState(0);
+
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-line/70 bg-surface">
       <div
@@ -82,9 +84,17 @@ export function EventDiscoveryCard({
             aria-pressed={
               favoriteControlMode === "toggle" ? isFavorite : undefined
             }
-            onClick={() => onToggleFavorite(event, isFavorite)}
+            onClick={() => {
+              setHeartAnimationKey((current) => current + 1);
+              onToggleFavorite(event, isFavorite);
+            }}
           >
-            <HeartIcon className="h-5 w-5" filled={isFavorite} />
+            <span
+              key={heartAnimationKey}
+              className="favorite-heart-pop grid place-items-center"
+            >
+              <HeartIcon className="h-5 w-5" filled={isFavorite} />
+            </span>
           </button>
         </div>
 

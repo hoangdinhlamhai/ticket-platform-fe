@@ -9,11 +9,7 @@ import {
 import type { AttendeePath } from "../../../routes/attendee-route.ts";
 import { shouldUseClientNavigation } from "../../../routes/attendee-route.ts";
 import * as eventApi from "../api/eventApi.ts";
-import {
-  getSavedEventIds,
-  mapPublicEventToCard,
-  SAVED_EVENT_STORAGE_KEY,
-} from "../helpers/map-public-event.ts";
+import { mapPublicEventToCard } from "../helpers/map-public-event.ts";
 import {
   countActiveEventFilters,
   createDefaultEventDiscoveryFilters,
@@ -40,8 +36,7 @@ export function EventDiscoveryPage({ onNavigate, onNoticeChange }: Props) {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
-  const [favoriteEventIds, setFavoriteEventIds] =
-    useState<string[]>(getSavedEventIds);
+  const [favoriteEventIds, setFavoriteEventIds] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState(
     createDefaultEventDiscoveryFilters,
   );
@@ -144,31 +139,34 @@ export function EventDiscoveryPage({ onNavigate, onNoticeChange }: Props) {
     setSelectedCategory("Tất cả");
     setAdvancedFilters(createDefaultEventDiscoveryFilters());
   }, []);
+
+  //lưu và bỏ lưu sự kiện
   const toggleFavorite = useCallback(
-    (event: EventCardData, isFavorite: boolean) => {
-      setFavoriteEventIds((current) =>
-        isFavorite
-          ? current.filter((id) => id !== event.id)
-          : [...current, event.id],
-      );
+    async (event: EventCardData, isFavorite: boolean) => {
       try {
-        const next = isFavorite
-          ? favoriteEventIds.filter((id) => id !== event.id)
-          : [...favoriteEventIds, event.id];
-        window.localStorage.setItem(
-          SAVED_EVENT_STORAGE_KEY,
-          JSON.stringify(next),
+        if (isFavorite) await eventApi.removeSave(event.id);
+        else await eventApi.addSave(event.id);
+        setFavoriteEventIds((current) =>
+          isFavorite
+            ? current.filter((id) => id !== event.id)
+            : current.includes(event.id)
+              ? current
+              : [...current, event.id],
         );
-      } catch {
-        // Favorites remain available for the current page session.
+        onNoticeChange(
+          isFavorite
+            ? `Đã bỏ lưu “${event.title}”.`
+            : `Đã lưu “${event.title}” vào danh sách quan tâm.`,
+        );
+      } catch (cause: unknown) {
+        onNoticeChange(
+          cause instanceof Error
+            ? cause.message
+            : "Không thể cập nhật sự kiện đã lưu.",
+        );
       }
-      onNoticeChange(
-        isFavorite
-          ? `Đã bỏ lưu “${event.title}”.`
-          : `Đã lưu “${event.title}” vào danh sách quan tâm.`,
-      );
     },
-    [favoriteEventIds, onNoticeChange],
+    [onNoticeChange],
   );
   const viewEvent = useCallback(
     (event: EventCardData, clickEvent: MouseEvent<HTMLAnchorElement>) => {
