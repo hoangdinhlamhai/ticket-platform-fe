@@ -56,6 +56,7 @@ import {
   getAttendeeRoute,
   getAttendeeTicketId,
   getPrimaryCheckoutEventId,
+  getPrimaryCheckoutOrderId,
   getResaleSellTicketId,
   type AttendeePath,
   type AttendeeRoute,
@@ -86,6 +87,10 @@ type Actions = {
 type OrganizerNavigationGuard = (destination: string) => boolean;
 
 const historyIndexKey = "__ticketlyNavigationIndex";
+
+function getCurrentPath() {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
 
 function createSessionId(prefix: "ORD" | "RS") {
   return `${prefix}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
@@ -148,6 +153,7 @@ function AttendeePage({
     return (
       <PrimaryOrderResultPage
         eventId={getPrimaryCheckoutEventId(pathname) ?? ""}
+        orderId={getPrimaryCheckoutOrderId(pathname)}
         order={state.primaryOrder}
         onNavigate={actions.navigate}
       />
@@ -267,10 +273,8 @@ function AttendeeApplication() {
   const { clearLastOperation: clearAdminLastOperation } = adminWorkspace;
   const { clearLastOperation: clearOrganizerLastOperation } =
     organizerWorkspace;
-  const [pathname, setPathname] = useState(() => window.location.pathname);
-  const [route, setRoute] = useState(() =>
-    getAttendeeRoute(window.location.pathname),
-  );
+  const [pathname, setPathname] = useState(getCurrentPath);
+  const [route, setRoute] = useState(() => getAttendeeRoute(getCurrentPath()));
   const [notice, setNotice] = useState("");
   const [profile, setProfile] = useState<CustomerProfile>({
     ...MOCK_CUSTOMER_PROFILE,
@@ -373,7 +377,7 @@ function AttendeeApplication() {
     }
 
     const pop = (event: PopStateEvent) => {
-      const nextPath = window.location.pathname;
+      const nextPath = getCurrentPath();
       const currentPath = acceptedPathRef.current;
       const nextIndex = getHistoryIndex(event.state);
       if (
