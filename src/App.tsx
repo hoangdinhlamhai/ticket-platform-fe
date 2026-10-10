@@ -17,7 +17,6 @@ import { useAdminWorkspace } from "./features/admin/hooks/use-admin-workspace.ts
 import { useOrganizerWorkspace } from "./features/organizer/hooks/use-organizer-workspace.ts";
 import {
   createAttendeeOrder,
-  MOCK_ATTENDEE_ORDERS,
   OrderDetailPage,
   OrderHistoryPage,
   type AttendeeOrder,
@@ -154,14 +153,11 @@ function AttendeePage({
       />
     );
   if (route === "orders")
-    return (
-      <OrderHistoryPage orders={state.orders} onNavigate={actions.navigate} />
-    );
+    return <OrderHistoryPage onNavigate={actions.navigate} />;
   if (route === "order-detail")
     return (
       <OrderDetailPage
         orderId={getAttendeeOrderId(pathname) ?? ""}
-        orders={state.orders}
         onNavigate={actions.navigate}
       />
     );
@@ -279,9 +275,7 @@ function AttendeeApplication() {
   const [profile, setProfile] = useState<CustomerProfile>({
     ...MOCK_CUSTOMER_PROFILE,
   });
-  const [orders, setOrders] = useState<AttendeeOrder[]>(() => [
-    ...MOCK_ATTENDEE_ORDERS,
-  ]);
+  const [orders, setOrders] = useState<AttendeeOrder[]>([]);
   const [tickets, setTickets] = useState<OwnedTicket[]>(() => [
     ...MOCK_OWNED_TICKETS,
   ]);

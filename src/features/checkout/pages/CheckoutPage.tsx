@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
-import type { AttendeePath } from "../../../routes/attendee-route.ts";
 import type {
   AttendeeOrderBuyer,
-  DemoPaymentOutcome,
   PrimaryCheckoutSelection,
 } from "../../orders";
+import type { AttendeePath } from "../../../routes/attendee-route.ts";
+import { createOrder } from "../../orders/api/orderApi";
 import { getMe } from "../api/checkoutApi";
-import { DemoPaymentOutcomeSelector } from "../components/DemoPaymentOutcomeSelector";
 import { PrimaryBuyerForm } from "../components/InfomationBuyerForm";
 import { PrimaryCheckoutSteps } from "../components/PrimaryCheckoutSteps";
 import { PrimaryPurchaseSummary } from "../components/PrimaryPurchaseSummary";
-import { PrimaryVietQrPanel } from "../components/PrimaryVietQrPanel";
 import type { PrimaryCheckoutSubmission } from "../types/primary-checkout";
 
 type Props = {
@@ -19,35 +17,26 @@ type Props = {
   onNavigate: (path: AttendeePath) => void;
 };
 
-export function PrimaryCheckoutPage({
-  selection,
-  onComplete,
-  onNavigate,
-}: Props) {
+export function PrimaryCheckoutPage({ selection, onNavigate }: Props) {
   const [buyer, setBuyer] = useState<AttendeeOrderBuyer>({
     fullName: "",
     email: "",
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [outcome, setOutcome] = useState<DemoPaymentOutcome>("completed");
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
     const loadBuyer = async () => {
       try {
-        const { user } = await getMe();
-        if (active) {
-          setBuyer({
-            fullName: user.fullName,
-            email: user.email,
-          });
-        }
+        const { data } = await getMe();
+        if (active)
+          setBuyer({ fullName: data.user.fullName, email: data.user.email });
       } catch {
-        // Keep the checkout form usable when the profile request fails.
+        // Giữ form sử dụng được nếu không tải được hồ sơ người dùng.
       }
     };
-
     void loadBuyer();
     return () => {
       active = false;
@@ -61,7 +50,7 @@ export function PrimaryCheckoutPage({
           Chưa có lựa chọn vé.
         </h1>
         <p className="mt-4 text-ink-soft">
-          Hãy quay lại sự kiện và chọn hạng vé trước khi checkout.
+          Hãy quay lại sự kiện và chọn hạng vé trước khi thanh toán.
         </p>
         <button
           className="mt-6 min-h-12 rounded-md bg-blue px-5 font-extrabold text-paper"
@@ -75,7 +64,8 @@ export function PrimaryCheckoutPage({
 
   const updateBuyer = (field: keyof AttendeeOrderBuyer, value: string) =>
     setBuyer((current) => ({ ...current, [field]: value }));
-  const submit = () => {
+
+  const submit = async () => {
     if (
       processing ||
       !acceptedTerms ||
@@ -84,22 +74,19 @@ export function PrimaryCheckoutPage({
     )
       return;
     setProcessing(true);
-    window.setTimeout(
-      () =>
-        onComplete({
-          selection,
-          buyer: {
-            fullName: buyer.fullName.trim(),
-            email: buyer.email.trim(),
-          },
-          outcome,
-          transferContent: `TICKETLY ${selection.eventId
-            .replace(/[^a-z0-9]/gi, "")
-            .slice(-10)
-            .toUpperCase()}`,
-        }),
-      500,
-    );
+    setError("");
+    try {
+      const { data } = await createOrder({
+        eventId: selection.eventId,
+        ticketTypeId: selection.ticketTierId,
+        quantity: selection.quantity,
+        payerEmail: buyer.email.trim(),
+      });
+      window.location.assign(data.paymentLinkUrl);
+    } catch {
+      setError("Không thể tạo phiên thanh toán. Vui lòng thử lại.");
+      setProcessing(false);
+    }
   };
 
   return (
@@ -109,13 +96,17 @@ export function PrimaryCheckoutPage({
         <div className="mt-9 grid grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.72fr)] items-start gap-8 max-[1100px]:block">
           <div className="space-y-7">
             <PrimaryBuyerForm buyer={buyer} onChange={updateBuyer} />
-            <PrimaryVietQrPanel
-              acceptedTerms={acceptedTerms}
-              amount={selection.unitPrice * selection.quantity}
-              transferContent={`TICKETLY ${selection.eventId.toUpperCase().slice(-10)}`}
-              onAcceptedTermsChange={setAcceptedTerms}
-            />
-            <DemoPaymentOutcomeSelector value={outcome} onChange={setOutcome} />
+            <label className="flex min-h-12 gap-3 rounded-md border border-line bg-paper p-3 text-sm">
+              <input
+                className="mt-1 h-5 w-5 accent-blue"
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(event) => setAcceptedTerms(event.target.checked)}
+              />
+              <span>
+                Tôi đồng ý với điều khoản mua vé và tiếp tục thanh toán.
+              </span>
+            </label>
           </div>
           <div className="sticky top-5 max-[1100px]:static max-[1100px]:mt-8">
             <PrimaryPurchaseSummary selection={selection} />
@@ -128,19 +119,25 @@ export function PrimaryCheckoutPage({
                 !buyer.fullName.trim() ||
                 !buyer.email.trim()
               }
-              onClick={submit}
+              onClick={() => void submit()}
             >
-              {processing
-                ? "Đang tạo kết quả demo…"
-                : "Xác nhận thanh toán demo"}
+              {processing ? "Đang chuyển đến Xendit…" : "Tiếp tục thanh toán"}
             </button>
+            {error && (
+              <p
+                className="mt-3 text-center text-sm font-bold text-error"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
             <p
               className="mt-3 text-center text-xs text-ink-soft"
               aria-live="polite"
             >
               {processing
-                ? "Đang tạo order trong bộ nhớ phiên."
-                : "Không có tiền hoặc giữ chỗ thật."}
+                ? "Đang tạo đơn hàng và phiên thanh toán."
+                : "Bạn sẽ được chuyển đến trang thanh toán bảo mật của Xendit."}
             </p>
           </div>
         </div>

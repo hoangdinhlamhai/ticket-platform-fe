@@ -2,6 +2,7 @@ import { useCallback, type ReactNode } from "react";
 import { AdminLayout } from "../layouts/AdminLayout.tsx";
 import {
   getAdminEventId,
+  getAdminPayoutId,
   getAdminRoute,
   type AdminPath,
 } from "../routes/admin-route.ts";
@@ -13,6 +14,10 @@ import {
   AdminEventsPage,
   AdminPendingEventsPage,
 } from "../features/admin/event/index.ts";
+import {
+  PayoutDetailPage,
+  PayoutListPage,
+} from "../features/admin/payout/index.ts";
 import { RealAdminPage } from "../features/admin/components/RealAdminPage.tsx";
 import { getAdminAccessState } from "./admin-access.ts";
 import type { AuthStatus } from "../features/auth/hooks/useAuth.ts";
@@ -51,6 +56,7 @@ export function AdminApplication({
     accessToken,
   });
   const eventId = getAdminEventId(pathname);
+  const payoutId = getAdminPayoutId(pathname);
   const adminToken = accessToken as string;
   const navigate = useCallback(
     (destination: AdminPath) => {
@@ -99,6 +105,9 @@ export function AdminApplication({
     page = <RealAdminPage accessToken={adminToken} kind="payments" />;
   else if (route === "refunds")
     page = <RealAdminPage accessToken={adminToken} kind="refunds" />;
+  else if (route === "payouts") page = <PayoutListPage navigate={navigate} />;
+  else if (route === "payout-detail" && payoutId)
+    page = <PayoutDetailPage payoutId={payoutId} navigate={navigate} />;
   else if (route === "categories")
     page = <RealAdminPage accessToken={adminToken} kind="categories" />;
   else if (route === "resale")
@@ -110,9 +119,17 @@ export function AdminApplication({
   else if (route === "event-reviews")
     page = <AdminPendingEventsPage navigate={navigatePage} />;
   else if (route === "event-review-detail" && eventId)
-    page = <AdminEventDetail eventId={eventId} reviewMode navigate={navigatePage} />;
+    page = (
+      <AdminEventDetail eventId={eventId} reviewMode navigate={navigatePage} />
+    );
   else if (route === "event-detail" && eventId)
-    page = <AdminEventDetail eventId={eventId} reviewMode={false} navigate={navigatePage} />;
+    page = (
+      <AdminEventDetail
+        eventId={eventId}
+        reviewMode={false}
+        navigate={navigatePage}
+      />
+    );
   else
     page = (
       <AdminMissingRecord
@@ -124,7 +141,7 @@ export function AdminApplication({
   const pendingCount = 0;
   return (
     <AdminLayout
-      activeRoute={route}
+      activeRoute={route === "payout-detail" ? "payouts" : route}
       notice={getOperationNotice(workspace.lastOperation)}
       onAcknowledgeNotice={workspace.clearLastOperation}
       onExitToAttendee={onExitToAttendee}
