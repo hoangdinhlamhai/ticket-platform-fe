@@ -40,12 +40,8 @@ import {
   type ResaleListing,
 } from "./features/resale";
 import {
-  issuePrimaryTickets,
-  issueResaleTicket,
-  MOCK_OWNED_TICKETS,
   OwnedTicketsPage,
   TicketStatusPage,
-  updateOwnedTicketResaleStatus,
   type OwnedTicket,
 } from "./features/tickets";
 import { AttendeeLayout } from "./layouts/AttendeeLayout";
@@ -171,14 +167,12 @@ function AttendeePage({
     return (
       <TicketStatusPage
         ticketId={getAttendeeTicketId(pathname) ?? ""}
-        tickets={state.tickets}
         onNavigate={actions.navigate}
       />
     );
   if (route === "tickets")
     return (
       <OwnedTicketsPage
-        tickets={state.tickets}
         onNavigate={actions.navigate}
         onSellTicket={actions.sellTicket}
       />
@@ -280,9 +274,7 @@ function AttendeeApplication() {
     ...MOCK_CUSTOMER_PROFILE,
   });
   const [orders, setOrders] = useState<AttendeeOrder[]>([]);
-  const [tickets, setTickets] = useState<OwnedTicket[]>(() => [
-    ...MOCK_OWNED_TICKETS,
-  ]);
+  const [tickets] = useState<OwnedTicket[]>([]);
   const [listings, setListings] = useState<ResaleListing[]>(() => [
     ...MOCK_RESALE_LISTINGS,
   ]);
@@ -438,14 +430,6 @@ function AttendeeApplication() {
   const completePrimary = useCallback(
     (submission: PrimaryCheckoutSubmission) => {
       const id = createSessionId("ORD");
-      const issued =
-        submission.outcome === "completed"
-          ? issuePrimaryTickets({
-              orderId: id,
-              selection: submission.selection,
-              buyerName: submission.buyer.fullName,
-            })
-          : [];
       const order = createAttendeeOrder({
         id,
         source: "primary",
@@ -460,10 +444,9 @@ function AttendeeApplication() {
             unitPrice: submission.selection.unitPrice,
           },
         ],
-        issuedTicketIds: issued.map((ticket) => ticket.id),
+        issuedTicketIds: [],
       });
       setOrders((current) => [order, ...current]);
-      if (issued.length) setTickets((current) => [...issued, ...current]);
       setPrimaryOrderId(id);
       navigate(`/events/${submission.selection.eventId}/checkout/result`);
     },
@@ -491,11 +474,6 @@ function AttendeeApplication() {
       }
       completingListingIds.current.add(completion.listingId);
       const id = createSessionId("RS");
-      const issued = issueResaleTicket({
-        orderId: id,
-        listing: source,
-        buyerName: completion.buyer.fullName,
-      });
       const order = createAttendeeOrder({
         id,
         source: "resale",
@@ -510,24 +488,13 @@ function AttendeeApplication() {
             unitPrice: completion.amount,
           },
         ],
-        issuedTicketIds: [issued.id],
+        issuedTicketIds: [],
         resaleListingId: completion.listingId,
       });
       setOrders((current) => [order, ...current]);
       setListings((current) =>
         updateResaleListingStatus(current, completion.listingId, "sold"),
       );
-      setTickets((current) => {
-        const updated = source.sourceTicketId
-          ? updateOwnedTicketResaleStatus(
-              current,
-              source.sourceTicketId,
-              "sold",
-              "revoked",
-            )
-          : [...current];
-        return [issued, ...updated];
-      });
       setCompletedListingIds((current) =>
         new Set(current).add(completion.listingId),
       );
@@ -538,35 +505,15 @@ function AttendeeApplication() {
   const publishListing = useCallback(
     (listing: ResaleListing) => {
       setListings((current) => [listing, ...current]);
-      if (listing.sourceTicketId)
-        setTickets((current) =>
-          updateOwnedTicketResaleStatus(
-            current,
-            listing.sourceTicketId!,
-            "listed",
-          ),
-        );
       navigate(`/resale/${listing.id}`);
     },
     [navigate],
   );
-  const withdrawListing = useCallback(
-    (id: string) => {
-      const listing = listings.find((item) => item.id === id);
-      setListings((current) =>
-        updateResaleListingStatus(current, id, "withdrawn"),
-      );
-      if (listing?.sourceTicketId)
-        setTickets((current) =>
-          updateOwnedTicketResaleStatus(
-            current,
-            listing.sourceTicketId!,
-            "eligible",
-          ),
-        );
-    },
-    [listings],
-  );
+  const withdrawListing = useCallback((id: string) => {
+    setListings((current) =>
+      updateResaleListingStatus(current, id, "withdrawn"),
+    );
+  }, []);
 
   if (isAdminPath(pathname)) {
     return (
