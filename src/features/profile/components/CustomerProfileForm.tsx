@@ -1,63 +1,138 @@
-import type { ChangeEvent, FormEvent } from 'react'
-import type { CustomerProfile, CustomerProfileErrors } from '../types/customer-profile'
+import { useState, type ChangeEvent, type FormEvent } from "react";
+import type { CustomerProfile } from "../types/customer-profile";
 
 type CustomerProfileFormProps = {
-  errors: CustomerProfileErrors
-  isDirty: boolean
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
-  profile: CustomerProfile
-}
+  isSaving: boolean;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (
+    event: FormEvent<HTMLFormElement>,
+    password: PasswordChange,
+  ) => void;
+  profile: CustomerProfile;
+};
 
-const inputClass = 'min-h-12 w-full rounded-md border border-line bg-surface px-3 text-base text-ink outline-none hover:border-ink-soft focus:border-blue focus:shadow-[0_0_0_3px_var(--color-focus-ring)] aria-[invalid=true]:border-error'
+export type PasswordChange = {
+  currentPassword: string;
+  newPassword: string;
+};
 
-const fields: ReadonlyArray<{
-  autoComplete: string
-  label: string
-  name: keyof CustomerProfile
-  required?: boolean
-  type: string
-}> = [
-  { autoComplete: 'name', label: 'Họ và tên', name: 'fullName', required: true, type: 'text' },
-  { autoComplete: 'email', label: 'Email', name: 'email', required: true, type: 'email' },
-  { autoComplete: 'tel', label: 'Số điện thoại', name: 'phone', type: 'tel' },
-  { autoComplete: 'bday', label: 'Ngày sinh', name: 'birthDate', type: 'date' },
-]
+const inputClass =
+  "min-h-12 w-full rounded-md border border-line bg-surface px-3 text-base text-ink outline-none focus:border-blue focus:shadow-[0_0_0_3px_var(--color-focus-ring)]";
 
-export function CustomerProfileForm({ errors, isDirty, onChange, onSubmit, profile }: CustomerProfileFormProps) {
+export function CustomerProfileForm({
+  isSaving,
+  onChange,
+  onSubmit,
+  profile,
+}: CustomerProfileFormProps) {
+  const [password, setPassword] = useState<PasswordChange>({
+    currentPassword: "",
+    newPassword: "",
+  });
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    onSubmit(event, password);
+    if (password.currentPassword || password.newPassword) {
+      setPassword({ currentPassword: "", newPassword: "" });
+    }
+  };
+
   return (
-    <form className="rounded-lg border border-line bg-surface p-6 mobile:p-4" noValidate onSubmit={onSubmit}>
+    <form
+      className="rounded-lg border border-line bg-surface p-6 mobile:p-4"
+      onSubmit={submit}
+    >
       <div className="mb-6 border-b border-line pb-4">
-        <p className="m-0 text-[0.7rem] font-extrabold tracking-[0.11em] text-coral-dark">THÔNG TIN CÁ NHÂN</p>
-        <h2 className="mt-2 mb-0 font-body text-2xl font-extrabold tracking-[-0.05em] text-ink">Thông tin liên hệ</h2>
+        <p className="m-0 text-[0.7rem] font-extrabold tracking-[0.11em] text-coral-dark">
+          THÔNG TIN CÁ NHÂN
+        </p>
+        <h2 className="mt-2 mb-0 font-body text-2xl font-extrabold tracking-[-0.05em] text-ink">
+          Hồ sơ tài khoản
+        </h2>
       </div>
       <div className="grid grid-cols-2 gap-4 mobile:grid-cols-1">
-        {fields.map((field) => {
-          const errorId = `${field.name}-error`
-          return (
-            <div key={field.name} className={field.name === 'fullName' || field.name === 'email' ? 'col-span-2 mobile:col-span-1' : undefined}>
-              <label className="mb-2 block text-[0.82rem] font-bold" htmlFor={`profile-${field.name}`}>{field.label}</label>
-              <input
-                id={`profile-${field.name}`}
-                name={field.name}
-                className={inputClass}
-                type={field.type}
-                autoComplete={field.autoComplete}
-                required={field.required}
-                value={profile[field.name]}
-                onChange={onChange}
-                aria-invalid={Boolean(errors[field.name])}
-                aria-describedby={errors[field.name] ? errorId : undefined}
-              />
-              {errors[field.name] ? <p id={errorId} className="mt-2 mb-0 text-[0.78rem] leading-relaxed text-error" role="alert">{errors[field.name]}</p> : null}
-            </div>
-          )
-        })}
+        <label className="col-span-2 block text-sm font-bold text-ink mobile:col-span-1">
+          Email
+          <input
+            className={`${inputClass} mt-2 bg-paper-deep`}
+            value={profile.email}
+            readOnly
+          />
+        </label>
+        <label className="col-span-2 block text-sm font-bold text-ink mobile:col-span-1">
+          Họ và tên
+          <input
+            className={`${inputClass} mt-2`}
+            name="fullName"
+            autoComplete="name"
+            value={profile.fullName}
+            minLength={2}
+            maxLength={120}
+            required
+            onChange={onChange}
+          />
+        </label>
+        <label className="col-span-2 block text-sm font-bold text-ink mobile:col-span-1">
+          Số điện thoại
+          <input
+            className={`${inputClass} mt-2`}
+            name="phone"
+            autoComplete="tel"
+            value={profile.phone}
+            maxLength={30}
+            onChange={onChange}
+          />
+        </label>
       </div>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-        <p className="m-0 max-w-lg text-[0.76rem] leading-relaxed text-ink-soft">Dữ liệu chỉ được giữ trong phiên minh họa và sẽ trở về mặc định khi tải lại trang.</p>
-        <button className="min-h-11 rounded-md border border-coral-dark bg-coral px-5 text-sm font-extrabold text-paper hover:bg-coral-dark disabled:cursor-not-allowed disabled:opacity-45" type="submit" disabled={!isDirty}>Lưu thay đổi</button>
+      <div className="mt-7 border-t border-line pt-5">
+        <h3 className="m-0 text-base font-extrabold text-ink">Đổi mật khẩu</h3>
+        <p className="mt-1 mb-4 text-sm text-ink-soft">
+          Để trống cả hai ô nếu bạn không muốn đổi mật khẩu.
+        </p>
+        <div className="grid grid-cols-2 gap-4 mobile:grid-cols-1">
+          <label className="block text-sm font-bold text-ink">
+            Mật khẩu hiện tại
+            <input
+              className={`${inputClass} mt-2`}
+              type="password"
+              autoComplete="current-password"
+              value={password.currentPassword}
+              onChange={(event) =>
+                setPassword((current) => ({
+                  ...current,
+                  currentPassword: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="block text-sm font-bold text-ink">
+            Mật khẩu mới
+            <input
+              className={`${inputClass} mt-2`}
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              value={password.newPassword}
+              onChange={(event) =>
+                setPassword((current) => ({
+                  ...current,
+                  newPassword: event.target.value,
+                }))
+              }
+            />
+          </label>
+        </div>
+      </div>
+      <div className="mt-6 flex justify-end border-t border-line pt-5">
+        <button
+          className="min-h-11 rounded-md border border-coral-dark bg-coral px-5 text-sm font-extrabold text-paper hover:bg-coral-dark disabled:cursor-not-allowed disabled:opacity-45"
+          type="submit"
+          disabled={isSaving}
+        >
+          {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+        </button>
       </div>
     </form>
-  )
+  );
 }

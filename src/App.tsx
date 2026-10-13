@@ -22,11 +22,7 @@ import {
   type AttendeeOrder,
   type PrimaryCheckoutSelection,
 } from "./features/orders";
-import {
-  CustomerProfilePage,
-  MOCK_CUSTOMER_PROFILE,
-  type CustomerProfile,
-} from "./features/profile";
+import { CustomerProfilePage, type CustomerProfile } from "./features/profile";
 import {
   CreateResaleListingPage,
   MOCK_RESALE_LISTINGS,
@@ -270,9 +266,15 @@ function AttendeeApplication() {
   const [pathname, setPathname] = useState(getCurrentPath);
   const [route, setRoute] = useState(() => getAttendeeRoute(getCurrentPath()));
   const [notice, setNotice] = useState("");
-  const [profile, setProfile] = useState<CustomerProfile>({
-    ...MOCK_CUSTOMER_PROFILE,
-  });
+  const [profileOverride, setProfile] = useState<CustomerProfile | null>(null);
+  const profile: CustomerProfile =
+    profileOverride && auth.user && profileOverride.email === auth.user.email
+      ? profileOverride
+      : {
+          fullName: auth.user?.fullName ?? "",
+          email: auth.user?.email ?? "",
+          phone: auth.user?.phone ?? "",
+        };
   const [orders, setOrders] = useState<AttendeeOrder[]>([]);
   const [tickets] = useState<OwnedTicket[]>([]);
   const [listings, setListings] = useState<ResaleListing[]>(() => [

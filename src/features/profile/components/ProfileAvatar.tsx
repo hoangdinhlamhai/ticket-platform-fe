@@ -1,12 +1,16 @@
-import { getProfileInitials } from '../helpers/get-profile-initials'
+import { getProfileInitials } from "../profile-utils";
 
 type ProfileAvatarProps = {
-  fullName: string
-  size?: 'compact' | 'large'
-}
+  fullName: string;
+  size?: "compact" | "large";
+};
 
-export function ProfileAvatar({ fullName, size = 'large' }: ProfileAvatarProps) {
-  const sizeClass = size === 'compact' ? 'h-9 w-9 text-[0.72rem]' : 'h-20 w-20 text-xl'
+export function ProfileAvatar({
+  fullName,
+  size = "large",
+}: ProfileAvatarProps) {
+  const sizeClass =
+    size === "compact" ? "h-9 w-9 text-[0.72rem]" : "h-20 w-20 text-xl";
 
   return (
     <span
@@ -15,5 +19,5 @@ export function ProfileAvatar({ fullName, size = 'large' }: ProfileAvatarProps) 
     >
       {getProfileInitials(fullName)}
     </span>
-  )
+  );
 }
