@@ -3,7 +3,7 @@ import { OrganizerEmptyState } from "../components/OrganizerEmptyState.tsx";
 import {
   OrganizerEventForm,
   type OrganizerEventFormSave,
-} from "../components/OrganizerEventForm.tsx";
+} from "../components/create-event/OrganizerEventForm.tsx";
 import { OrganizerEventNavigation } from "../components/OrganizerEventNavigation.tsx";
 import { OrganizerPageHeader } from "../components/OrganizerPageHeader.tsx";
 import { canSubmitOrganizerEventForReview } from "../helpers/organizer-event-transitions.ts";
@@ -16,16 +16,20 @@ import type {
   OrganizerEventFinance,
 } from "../types/organizer-event.ts";
 import type { OrganizerWorkspace } from "../types/organizer-workspace.ts";
+import type { SeatMap } from "../../seat-map/types/seat-map.ts";
 
 type Props = {
   activeRoute: OrganizerRoute;
   eventId: string;
   onDirtyChange: (isDirty: boolean) => void;
   onNavigate: (path: OrganizerPath) => void;
+  saveError?: string | null;
   onUpdate: (
     eventId: string,
     input: OrganizerEventInput,
     finance?: OrganizerEventFinance,
+    seatMap?: SeatMap,
+    seatMapExists?: boolean,
   ) => boolean | Promise<boolean>;
   workspace: OrganizerWorkspace;
 };
@@ -35,6 +39,7 @@ export function OrganizerEventEditPage({
   eventId,
   onDirtyChange,
   onNavigate,
+  saveError,
   onUpdate,
   workspace,
 }: Props) {
@@ -65,8 +70,13 @@ export function OrganizerEventEditPage({
   // so editing does not blank a previously saved payout. Finance is saved through the
   // dedicated payout endpoint by the controller, never inside the event PATCH.
   const finance = workspace.eventFinance[event.id];
-  const save = ({ input, finance: nextFinance }: OrganizerEventFormSave) =>
-    onUpdate(event.id, input, nextFinance);
+  const save = ({
+    input,
+    finance: nextFinance,
+    seatMap: nextSeatMap,
+    seatMapExists,
+  }: OrganizerEventFormSave) =>
+    onUpdate(event.id, input, nextFinance, nextSeatMap, seatMapExists);
 
   return (
     <div className="mx-auto max-w-7xl space-y-7">
@@ -95,10 +105,14 @@ export function OrganizerEventEditPage({
         key={event.id}
         event={event}
         finance={finance}
+        availableTicketTiers={workspace.ticketTiers.filter(
+          (tier) => tier.eventId === event.id,
+        )}
         locked={!editable}
         onCancel={() => onNavigate(`/organizer/events/${event.id}`)}
         onDirtyChange={onDirtyChange}
         onSave={save}
+        error={saveError}
         submitLabel="Lưu thay đổi"
       />
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
-import { sanitizeOrganizerHtml } from "../helpers/sanitize-organizer-html.ts";
-import type { OrganizerEventFormValues } from "../hooks/use-organizer-event-form.ts";
+import { sanitizeOrganizerHtml } from "../../helpers/sanitize-organizer-html.ts";
+import type { OrganizerEventFormValues } from "../../hooks/use-organizer-event-form.ts";
 
 type Props = {
   open: boolean;

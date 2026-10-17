@@ -122,9 +122,13 @@ export function PrimaryCheckoutPage({ selection, onNavigate }: Props) {
     try {
       const { data } = await createOrder({
         eventId: selection.eventId,
-        ticketTypeId: selection.ticketTierId,
-        quantity: selection.quantity,
         payerEmail: buyer.email.trim(),
+        ...(selection.seatIds?.length
+          ? { seatIds: selection.seatIds }
+          : {
+              ticketTypeId: selection.ticketTierId,
+              quantity: selection.quantity,
+            }),
       });
       setCreatedOrderId(data.orderId);
       setPaymentLinkUrl(data.paymentLinkUrl);
@@ -135,9 +139,28 @@ export function PrimaryCheckoutPage({ selection, onNavigate }: Props) {
           paymentTab.close();
         }
       }
-    } catch {
+    } catch (requestError: unknown) {
       paymentTab?.close();
-      setError("Không thể tạo phiên thanh toán. Vui lòng thử lại.");
+      const response =
+        typeof requestError === "object" &&
+        requestError !== null &&
+        "response" in requestError &&
+        typeof requestError.response === "object" &&
+        requestError.response !== null &&
+        "data" in requestError.response
+          ? requestError.response.data
+          : null;
+      const apiMessage =
+        typeof response === "object" &&
+        response !== null &&
+        "message" in response &&
+        typeof response.message === "string"
+          ? response.message
+          : null;
+      setError(
+        apiMessage ??
+          "Không thể tạo phiên thanh toán. Ghế có thể vừa được đặt hoặc vé hiện không còn mở bán.",
+      );
     } finally {
       setProcessing(false);
     }

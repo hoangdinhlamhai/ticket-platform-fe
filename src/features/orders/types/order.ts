@@ -33,10 +33,13 @@ export type PrimaryCheckoutSelection = {
   date: string;
   venue: string;
   address: string;
-  ticketTierId: string;
+  ticketTierId?: string;
   ticketTierName: string;
   unitPrice: number;
   quantity: number;
+  seatIds?: string[];
+  seatLabels?: string[];
+  totalPrice?: number;
 };
 export type OrderFilters = {
   status: "all" | "PENDING_PAYMENT" | "PAID" | "FAILED" | "EXPIRED";
@@ -44,8 +47,9 @@ export type OrderFilters = {
 
 export type CreateOrderInput = {
   eventId: string;
-  ticketTypeId: string;
-  quantity: number;
+  ticketTypeId?: string;
+  quantity?: number;
+  seatIds?: string[];
   payerEmail: string;
 };
 

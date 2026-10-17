@@ -42,7 +42,7 @@ function assertNoExternalSideEffects(path: string) {
 }
 
 test("requires a ticket tier before the event wizard can advance", () => {
-  const form = source("components/OrganizerEventForm.tsx");
+  const form = source("components/create-event/OrganizerEventForm.tsx");
 
   assert.match(
     form,

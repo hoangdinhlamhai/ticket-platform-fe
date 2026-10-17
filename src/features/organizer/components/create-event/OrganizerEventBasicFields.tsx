@@ -1,9 +1,9 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import type { OrganizerEventErrors } from "../helpers/validate-organizer-event.ts";
-import type { OrganizerEventFormValues } from "../hooks/use-organizer-event-form.ts";
-import { sanitizeOrganizerHtml } from "../helpers/sanitize-organizer-html.ts";
-import * as eventApi from "../../events/api/eventApi.ts";
+import type { OrganizerEventErrors } from "../../helpers/validate-organizer-event.ts";
+import type { OrganizerEventFormValues } from "../../hooks/use-organizer-event-form.ts";
+import { sanitizeOrganizerHtml } from "../../helpers/sanitize-organizer-html.ts";
+import * as eventApi from "../../../events/api/eventApi.ts";
 import { OrganizerImagePicker } from "./OrganizerImagePicker.tsx";
 
 type Props = {

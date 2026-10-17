@@ -1,7 +1,52 @@
-import { formatTicketPrice } from '../../events'
-import type { PrimaryCheckoutSelection } from '../../orders'
-type Props = { selection: PrimaryCheckoutSelection }
+import { formatTicketPrice } from "../../events";
+import type { PrimaryCheckoutSelection } from "../../orders";
+type Props = { selection: PrimaryCheckoutSelection };
 export function PrimaryPurchaseSummary({ selection }: Props) {
-  const total = selection.unitPrice * selection.quantity
-  return <aside className="rounded-lg bg-pine p-5 text-paper"><p className="m-0 text-xs font-extrabold tracking-[0.1em] text-mint">TÓM TẮT ĐƠN HÀNG</p><h2 className="mt-2 font-body text-[2rem] font-extrabold tracking-[-0.07em]">{selection.eventTitle}</h2><dl className="mt-5 space-y-3 text-sm"><div className="flex justify-between gap-4"><dt className="text-story-copy">Hạng vé</dt><dd className="m-0 font-bold">{selection.ticketTierName}</dd></div><div className="flex justify-between gap-4"><dt className="text-story-copy">Số lượng</dt><dd className="m-0 font-bold">{selection.quantity}</dd></div><div className="flex justify-between gap-4"><dt className="text-story-copy">Đơn giá</dt><dd className="m-0 font-bold">{formatTicketPrice(selection.unitPrice)}</dd></div></dl><div className="mt-5 border-t border-paper/25 pt-5"><p className="flex items-end justify-between gap-4"><span className="text-story-copy">Tổng thanh toán</span><strong className="text-2xl text-poster-yellow">{formatTicketPrice(total)}</strong></p><p className="mt-2 text-xs text-story-copy">Không có phí dịch vụ trong prototype.</p></div></aside>
+  const total =
+    selection.totalPrice ?? selection.unitPrice * selection.quantity;
+  return (
+    <aside className="rounded-lg bg-pine p-5 text-paper">
+      <p className="m-0 text-xs font-extrabold tracking-[0.1em] text-mint">
+        TÓM TẮT ĐƠN HÀNG
+      </p>
+      <h2 className="mt-2 font-body text-[2rem] font-extrabold tracking-[-0.07em]">
+        {selection.eventTitle}
+      </h2>
+      <dl className="mt-5 space-y-3 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-story-copy">
+            {selection.seatLabels?.length ? "Ghế" : "Hạng vé"}
+          </dt>
+          <dd className="m-0 text-right font-bold">
+            {selection.seatLabels?.length
+              ? selection.seatLabels.join(", ")
+              : selection.ticketTierName}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-story-copy">Số lượng</dt>
+          <dd className="m-0 font-bold">{selection.quantity}</dd>
+        </div>
+        {!selection.seatIds?.length && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-story-copy">Đơn giá</dt>
+            <dd className="m-0 font-bold">
+              {formatTicketPrice(selection.unitPrice)}
+            </dd>
+          </div>
+        )}
+      </dl>
+      <div className="mt-5 border-t border-paper/25 pt-5">
+        <p className="flex items-end justify-between gap-4">
+          <span className="text-story-copy">Tổng thanh toán</span>
+          <strong className="text-2xl text-poster-yellow">
+            {formatTicketPrice(total)}
+          </strong>
+        </p>
+        <p className="mt-2 text-xs text-story-copy">
+          Không có phí dịch vụ trong prototype.
+        </p>
+      </div>
+    </aside>
+  );
 }

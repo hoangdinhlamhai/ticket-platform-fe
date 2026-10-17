@@ -11,4 +11,4 @@ export { OrganizerNotFoundPage } from "./pages/OrganizerNotFoundPage.tsx";
 export { OrganizerOrdersPage } from "./pages/OrganizerOrdersPage.tsx";
 export { OrganizerOrganizationSettingsPage } from "./pages/OrganizerOrganizationSettingsPage.tsx";
 export { OrganizerTicketInventoryPage } from "./pages/OrganizerTicketInventoryPage.tsx";
-export { type OrganizerEventFormSave } from "./components/OrganizerEventForm.tsx";
+export { type OrganizerEventFormSave } from "./components/create-event/OrganizerEventForm.tsx";

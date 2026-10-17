@@ -1,25 +1,38 @@
-import { useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import axios from "axios";
 import { OrganizerEventBasicFields } from "./OrganizerEventBasicFields.tsx";
 import { OrganizerEventPreview } from "./OrganizerEventPreview.tsx";
 import { OrganizerEventScheduleFields } from "./OrganizerEventScheduleFields.tsx";
 import { OrganizerEventWizardProgress } from "./OrganizerEventWizardProgress.tsx";
-import { OrganizerImagePicker } from "./OrganizerImagePicker.tsx";
+import { SeatMapEditor } from "./SeatMapEditor.tsx";
 import { OrganizerEventTierDialog } from "./OrganizerEventTierDialog.tsx";
-import { useOrganizerEventForm } from "../hooks/use-organizer-event-form.ts";
+import { useOrganizerEventForm } from "../../hooks/use-organizer-event-form.ts";
 import {
   validateOrganizerTicketTier,
   type OrganizerTicketTierDraft,
-} from "../helpers/validate-organizer-ticket-tier.ts";
+} from "../../helpers/validate-organizer-ticket-tier.ts";
 import type {
   OrganizerEvent,
   OrganizerEventFinance,
   OrganizerEventInput,
-} from "../types/organizer-event.ts";
+} from "../../types/organizer-event.ts";
+import type { OrganizerTicketTier } from "../../types/organizer-commerce.ts";
+import { findOwned } from "../../../seat-map/api/seatMapApi.ts";
+import type { SeatMap } from "../../../seat-map/types/seat-map.ts";
 
 export type OrganizerEventFormSave = {
   readonly initialTicketTiers?: readonly OrganizerTicketTierDraft[];
   readonly finance?: OrganizerEventFinance;
   readonly input: OrganizerEventInput;
+  readonly seatMap?: SeatMap;
+  readonly seatMapExists?: boolean;
+  readonly ticketTierKeys?: readonly string[];
 };
 
 type Props = {
@@ -33,6 +46,7 @@ type Props = {
   onSave: (value: OrganizerEventFormSave) => boolean | Promise<boolean>;
   submitLabel: string;
   wizard?: boolean;
+  availableTicketTiers?: readonly OrganizerTicketTier[];
 };
 
 const inputClass =
@@ -49,6 +63,7 @@ export function OrganizerEventForm({
   onSave,
   submitLabel,
   wizard = false,
+  availableTicketTiers = [],
 }: Props) {
   const form = useOrganizerEventForm(event, { onDirtyChange, finance });
   const [step, setStep] = useState(0);
@@ -59,8 +74,68 @@ export function OrganizerEventForm({
     null,
   );
   const [tierMessage, setTierMessage] = useState("");
+  const [seatMap, setSeatMap] = useState<SeatMap | null>(null);
+  const [seatMapExists, setSeatMapExists] = useState(false);
+  const [seatMapLoading, setSeatMapLoading] = useState(Boolean(event?.id));
+  const [seatMapError, setSeatMapError] = useState("");
+  const ignoreNextSeatMapChange = useRef(true);
+  const [tierKeys, setTierKeys] = useState<string[]>(() =>
+    form.values.tiers.map(() => crypto.randomUUID()),
+  );
   const previewRef = useRef<HTMLButtonElement>(null);
   const tiers = form.values.tiers;
+  const seatEditorTiers = tiers.length
+    ? tiers.map((tier, index) => ({
+        id: tierKeys[index] ?? `ticket-tier-${index}`,
+        name: tier.name,
+        price: tier.price,
+      }))
+    : availableTicketTiers.map((tier) => ({
+        id: tier.id,
+        name: tier.name,
+        price: tier.price,
+      }));
+  const handleSeatMapChange = useCallback(
+    (nextMap: SeatMap) => {
+      setSeatMap(nextMap);
+      if (ignoreNextSeatMapChange.current) {
+        ignoreNextSeatMapChange.current = false;
+        return;
+      }
+      onDirtyChange?.(true);
+    },
+    [onDirtyChange],
+  );
+
+  useEffect(() => {
+    if (!event?.id) return;
+    let active = true;
+    const loadSeatMap = async () => {
+      setSeatMapLoading(true);
+      setSeatMapError("");
+      try {
+        const { data } = await findOwned(event.id);
+        if (!active) return;
+        ignoreNextSeatMapChange.current = true;
+        setSeatMap(data.seatMap);
+        setSeatMapExists(true);
+      } catch (error: unknown) {
+        if (!active) return;
+        ignoreNextSeatMapChange.current = true;
+        setSeatMap(null);
+        setSeatMapExists(false);
+        if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+          setSeatMapError("Không thể tải sơ đồ ghế của sự kiện.");
+        }
+      } finally {
+        if (active) setSeatMapLoading(false);
+      }
+    };
+    void loadSeatMap();
+    return () => {
+      active = false;
+    };
+  }, [event?.id]);
 
   const update = (name: string, value: string) => form.setField(name, value);
 
@@ -74,14 +149,20 @@ export function OrganizerEventForm({
               index === editingTier ? draft : tier,
             ),
     }));
+    if (editingTier === null)
+      setTierKeys((current) => [...current, crypto.randomUUID()]);
     setTierMessage("");
   };
 
-  const removeTier = (index: number) =>
+  const removeTier = (index: number) => {
+    setTierKeys((current) =>
+      current.filter((_, itemIndex) => itemIndex !== index),
+    );
     form.setValues((current) => ({
       ...current,
       tiers: current.tiers.filter((_, itemIndex) => itemIndex !== index),
     }));
+  };
 
   const validateTiers = () => {
     if (!wizard) return true;
@@ -115,7 +196,7 @@ export function OrganizerEventForm({
   };
 
   const save = async () => {
-    if (locked || saving) return;
+    if (locked || saving || seatMapLoading || seatMapError) return;
 
     if (wizard && step < 3) {
       next();
@@ -146,9 +227,12 @@ export function OrganizerEventForm({
     }
 
     const savePayload: OrganizerEventFormSave = {
-      input: form.toInput(),
+      input: { ...form.toInput(), seatingChartImage: undefined },
       initialTicketTiers: wizard ? tiers : undefined,
       finance: form.values.finance,
+      seatMap: seatMap ?? undefined,
+      seatMapExists,
+      ticketTierKeys: tiers.map((_, index) => tierKeys[index] ?? ""),
     };
 
     const ok = await onSave(savePayload);
@@ -180,66 +264,82 @@ export function OrganizerEventForm({
         registerField={form.registerField}
         values={form.values}
       />
-      {wizard && (
+      {(wizard || event) && (
         <fieldset disabled={locked} className="mt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <legend className="text-xl font-extrabold">Loại vé</legend>
-            <span className="text-sm text-ink-soft">
-              {tiers.length} loại vé
-            </span>
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-xl font-extrabold">Sơ đồ chỗ ngồi</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                Chọn tải ảnh sơ đồ hoặc tự thiết kế khu vực và ghế. Có thể bỏ
+                qua nếu sự kiện không dùng chỗ ngồi cố định.
+              </p>
+            </div>
+            <SeatMapEditor
+              key={`${event?.id ?? "new"}-${seatMap?.id ?? (seatMapLoading ? "loading" : "empty")}`}
+              initialImage={form.values.seatingChartImage}
+              onImageChange={(value) => update("seatingChartImage", value)}
+              initialMap={seatMap}
+              onMapChange={handleSeatMapChange}
+              ticketTiers={seatEditorTiers}
+            />
+            {seatMapLoading && <p role="status">Đang tải sơ đồ ghế...</p>}
+            {seatMapError && <p role="alert">{seatMapError}</p>}
           </div>
-          {tiers.map((tier, index) => (
-            <div
-              key={`${tier.name}-${index}`}
-              className="flex items-center justify-between gap-3 rounded-md border border-line p-3"
-            >
+          {wizard && (
+            <>
+              <div className="flex items-center justify-between">
+                <legend className="text-xl font-extrabold">Loại vé</legend>
+                <span className="text-sm text-ink-soft">
+                  {tiers.length} loại vé
+                </span>
+              </div>
+              {tiers.map((tier, index) => (
+                <div
+                  key={`${tier.name}-${index}`}
+                  className="flex items-center justify-between gap-3 rounded-md border border-line p-3"
+                >
+                  <button
+                    type="button"
+                    className="text-left"
+                    onClick={(clickEvent) => {
+                      setEditingTier(index);
+                      setTierReturnFocus(clickEvent.currentTarget);
+                      setTierOpen(true);
+                    }}
+                  >
+                    <strong>{tier.name}</strong> ·{" "}
+                    {tier.price === 0
+                      ? "Miễn phí"
+                      : `${tier.price.toLocaleString("vi-VN")} đ`}{" "}
+                    · {tier.capacity} vé
+                  </button>
+                  <button
+                    type="button"
+                    className="text-sm font-bold text-coral-dark"
+                    onClick={() => removeTier(index)}
+                  >
+                    Xóa
+                  </button>
+                </div>
+              ))}
               <button
                 type="button"
-                className="text-left"
+                className="min-h-10 rounded-md border border-blue px-4 font-bold text-blue-deep"
                 onClick={(clickEvent) => {
-                  setEditingTier(index);
+                  setEditingTier(null);
                   setTierReturnFocus(clickEvent.currentTarget);
                   setTierOpen(true);
                 }}
               >
-                <strong>{tier.name}</strong> ·{" "}
-                {tier.price === 0
-                  ? "Miễn phí"
-                  : `${tier.price.toLocaleString("vi-VN")} đ`}{" "}
-                · {tier.capacity} vé
+                + Thêm loại vé
               </button>
-              <button
-                type="button"
-                className="text-sm font-bold text-coral-dark"
-                onClick={() => removeTier(index)}
-              >
-                Xóa
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="min-h-10 rounded-md border border-blue px-4 font-bold text-blue-deep"
-            onClick={(clickEvent) => {
-              setEditingTier(null);
-              setTierReturnFocus(clickEvent.currentTarget);
-              setTierOpen(true);
-            }}
-          >
-            + Thêm loại vé
-          </button>
-          {tierMessage && (
-            <p className="text-sm font-bold text-error" role="alert">
-              {tierMessage}
-            </p>
+              {tierMessage && (
+                <p className="text-sm font-bold text-error" role="alert">
+                  {tierMessage}
+                </p>
+              )}
+            </>
           )}
-          <OrganizerImagePicker
-            label="Ảnh sơ đồ chỗ ngồi (tùy chọn)"
-            value={form.values.seatingChartImage}
-            onChange={(value) => update("seatingChartImage", value)}
-            disabled={locked}
-            maxMb={3}
-          />
         </fieldset>
       )}
     </>
@@ -334,14 +434,12 @@ export function OrganizerEventForm({
 
   // Wizard mode shows one section per step. Edit mode (non-wizard) has no stepper, so
   // it must expose every section at once — otherwise confirmation and payout stay hidden.
-  const wizardSection =
-    step === 0
-      ? basicSection
-      : step === 1
-        ? scheduleSection
-        : step === 2
-          ? confirmationSection
-          : paymentSection;
+  const wizardSections = [
+    basicSection,
+    scheduleSection,
+    confirmationSection,
+    paymentSection,
+  ];
 
   return (
     <>
@@ -372,7 +470,11 @@ export function OrganizerEventForm({
 
         {wizard ? (
           <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">
-            {wizardSection}
+            {wizardSections.map((section, index) => (
+              <div key={index} hidden={step !== index}>
+                {section}
+              </div>
+            ))}
           </section>
         ) : (
           <div className="space-y-5">
@@ -392,7 +494,7 @@ export function OrganizerEventForm({
               <button
                 className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper"
                 type="submit"
-                disabled={saving}
+                disabled={saving || seatMapLoading || Boolean(seatMapError)}
               >
                 {saving ? "Đang lưu…" : submitLabel}
               </button>
@@ -451,7 +553,7 @@ export function OrganizerEventForm({
                   key="step-submit-btn"
                   className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper"
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || seatMapLoading || Boolean(seatMapError)}
                 >
                   {saving ? "Đang lưu…" : submitLabel}
                 </button>

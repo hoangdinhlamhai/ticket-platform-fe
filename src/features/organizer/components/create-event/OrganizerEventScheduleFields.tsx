@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
-import type { OrganizerEventErrors } from "../helpers/validate-organizer-event.ts";
-import type { OrganizerEventFormValues } from "../hooks/use-organizer-event-form.ts";
+import type { OrganizerEventErrors } from "../../helpers/validate-organizer-event.ts";
+import type { OrganizerEventFormValues } from "../../hooks/use-organizer-event-form.ts";
 
 type Props = {
   disabled?: boolean;

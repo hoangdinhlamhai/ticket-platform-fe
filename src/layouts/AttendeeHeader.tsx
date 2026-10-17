@@ -182,15 +182,6 @@ export function AttendeeHeader({
               onNavigate("/profile");
             }}
           >
-            <span
-              className="grid h-9 w-9 place-items-center rounded-md bg-pine text-[0.72rem] font-extrabold tracking-[0.06em] text-paper"
-              aria-hidden="true"
-            >
-              {getProfileInitials(profileName)}
-            </span>
-            <span className="hidden text-[0.82rem] font-bold sm:block">
-              Hồ sơ demo
-            </span>
             <span className="sr-only">Mở hồ sơ demo</span>
           </a>
           <a

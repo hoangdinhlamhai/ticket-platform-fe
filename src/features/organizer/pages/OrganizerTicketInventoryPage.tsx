@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { SeatMapEditor } from "../components/create-event/SeatMapEditor.tsx";
 import { OrganizerEmptyState } from "../components/OrganizerEmptyState.tsx";
 import { OrganizerEventNavigation } from "../components/OrganizerEventNavigation.tsx";
 import { OrganizerInventorySummary } from "../components/OrganizerInventorySummary.tsx";
@@ -22,11 +23,6 @@ type Props = {
     tierId: string,
     status: OrganizerTicketTier["saleStatus"],
   ) => void;
-  onUpdateEventImage: (
-    eventId: string,
-    field: "seatingChartImage",
-    value: string,
-  ) => Promise<unknown>;
   workspace: OrganizerWorkspace;
 };
 
@@ -36,7 +32,6 @@ export function OrganizerTicketInventoryPage({
   onNavigate,
   onSaveTicketTier,
   onSetSaleStatus,
-  onUpdateEventImage,
   workspace,
 }: Props) {
   const [editingTierId, setEditingTierId] = useState<string | null>(null);
@@ -44,10 +39,6 @@ export function OrganizerTicketInventoryPage({
   const [exportNotice, setExportNotice] = useState("");
   const [returnFocus, setReturnFocus] = useState<HTMLElement | null>(null);
   const event = workspace.events.find((item) => item.id === eventId);
-  const [seatingChartImage, setSeatingChartImage] = useState(
-    event?.seatingChartImage ?? "",
-  );
-  const [seatingNotice, setSeatingNotice] = useState("");
   const metrics = useMemo(
     () => selectOrganizerEventMetrics(workspace, eventId),
     [eventId, workspace],
@@ -85,22 +76,6 @@ export function OrganizerTicketInventoryPage({
     setReturnFocus(opener);
     setEditingTierId(tierId);
     setFormOpen(true);
-  };
-  const saveSeatingChart = async (file: File) => {
-    setSeatingNotice("");
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-      setSeatingChartImage(reader.result);
-      void onUpdateEventImage(
-        eventId,
-        "seatingChartImage",
-        reader.result,
-      ).catch(() =>
-        setSeatingNotice("Không thể tải sơ đồ chỗ ngồi. Vui lòng thử lại."),
-      );
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -180,53 +155,7 @@ export function OrganizerTicketInventoryPage({
           tier={editingTier}
         />
       )}
-      <section className="rounded-lg border border-line bg-surface p-5">
-        <h2 className="text-xl font-extrabold">Sơ đồ chỗ ngồi</h2>
-        <p className="mt-2 text-sm text-ink-soft">
-          Tùy chọn; lưu trong workspace phiên demo.
-        </p>
-        <input
-          className="mt-3 block text-sm"
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          onChange={(input) => {
-            const file = input.target.files?.[0];
-            if (
-              !file ||
-              !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-              file.size > 3 * 1024 * 1024
-            ) {
-              setSeatingNotice("Chỉ nhận PNG, JPEG hoặc WebP tối đa 3MB.");
-              return;
-            }
-            void saveSeatingChart(file);
-          }}
-        />
-        {seatingNotice && (
-          <p className="mt-2 text-sm font-bold text-error" role="alert">
-            {seatingNotice}
-          </p>
-        )}
-        {seatingChartImage && (
-          <div className="mt-4 flex items-start gap-3">
-            <img
-              className="max-h-48 rounded border border-line"
-              src={seatingChartImage}
-              alt="Sơ đồ chỗ ngồi"
-            />
-            <button
-              className="font-bold text-coral-dark"
-              type="button"
-              onClick={() => {
-                setSeatingChartImage("");
-                void onUpdateEventImage(eventId, "seatingChartImage", "");
-              }}
-            >
-              Xóa sơ đồ
-            </button>
-          </div>
-        )}
-      </section>
+      <SeatMapEditor />
     </div>
   );
 }

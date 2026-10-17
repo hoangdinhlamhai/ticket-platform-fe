@@ -3,7 +3,7 @@ import { OrganizerImagePicker } from "./OrganizerImagePicker.tsx";
 import {
   validateOrganizerTicketTier,
   type OrganizerTicketTierDraft,
-} from "../helpers/validate-organizer-ticket-tier.ts";
+} from "../../helpers/validate-organizer-ticket-tier.ts";
 
 type Props = {
   open: boolean;

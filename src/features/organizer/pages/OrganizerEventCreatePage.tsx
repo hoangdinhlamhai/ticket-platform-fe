@@ -1,7 +1,7 @@
 import {
   OrganizerEventForm,
   type OrganizerEventFormSave,
-} from "../components/OrganizerEventForm.tsx";
+} from "../components/create-event/OrganizerEventForm.tsx";
 import { OrganizerPageHeader } from "../components/OrganizerPageHeader.tsx";
 
 type Props = {
