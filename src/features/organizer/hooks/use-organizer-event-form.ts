@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import {
   validateOrganizerEvent,
   type OrganizerEventErrors,
@@ -230,6 +236,12 @@ export function useOrganizerEventForm(
     seatingChartImage: values.seatingChartImage || undefined,
   });
 
+  const reset = useCallback((next: OrganizerEventFormValues) => {
+    setValues(next);
+    setSavedValues(next);
+    setErrors({});
+  }, []);
+
   return {
     errors,
     isDirty,
@@ -241,5 +253,6 @@ export function useOrganizerEventForm(
     values,
     setField: update,
     setValues,
+    reset,
   };
 }

@@ -29,7 +29,7 @@ export function OrganizerEventScheduleFields({
   return (
     <fieldset disabled={disabled} className="space-y-4">
       <legend className="text-xl font-extrabold text-ink">
-        Thời gian và địa điểm
+        Thời gian
       </legend>
       <div className="grid gap-4 sm:grid-cols-2">
         {(["startAt", "endAt"] as const).map((name) => (
@@ -52,10 +52,6 @@ export function OrganizerEventScheduleFields({
           </label>
         ))}
       </div>
-      <p className="m-0 text-sm text-ink-soft">
-        Địa điểm đã được khai báo ở bước 1 gồm tỉnh/thành phố, phường/xã và
-        đường/phố.
-      </p>
     </fieldset>
   );
 }

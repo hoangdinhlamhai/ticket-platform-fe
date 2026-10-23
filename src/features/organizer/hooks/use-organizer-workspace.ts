@@ -60,7 +60,8 @@ export function useOrganizerWorkspace(auth: {
         const file = dataUrlFile(value, "seating-chart.img");
         if (file) {
           try {
-            const url = (await uploadApi.uploadImage(file)).data.url;
+            const url = (await uploadApi.uploadImage(file, "seating-chart"))
+              .data.url;
             return controller.updateEventImage(eventId, field, url);
           } catch {
             return null;

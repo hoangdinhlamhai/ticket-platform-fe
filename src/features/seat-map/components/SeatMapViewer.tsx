@@ -13,7 +13,7 @@ function ticketColor(name?: string | null) {
 export function SeatMapViewer({ seatMap }: { seatMap: SeatMap }) {
   const width = seatMap.width ?? 900;
   const height = seatMap.height ?? 620;
-  const rows = seatMap.blocks.flatMap((block) => block.rows);
+  const rows = seatMap.hangs;
   const ticketTypes = new Map<
     string,
     { id: string; name: string; price: number }
@@ -48,73 +48,60 @@ export function SeatMapViewer({ seatMap }: { seatMap: SeatMap }) {
               preserveAspectRatio="none"
             />
           )}
-          {seatMap.blocks.map((block, blockIndex) => (
-            <g key={block.id ?? `${block.name}-${blockIndex}`}>
-              {block.width && block.height && (
+          {seatMap.vatThe.map((item, index) => (
+            <g key={item.id ?? `object-${index}`}>
+              {item.width && item.height && (
                 <g
-                  transform={`rotate(${block.rotation ?? 0} ${block.x ?? 0} ${block.y ?? 0})`}
+                  transform={`translate(${item.x} ${item.y}) rotate(${item.rotation ?? 0})`}
                 >
                   <rect
-                    x={block.x ?? 0}
-                    y={block.y ?? 0}
-                    width={block.width}
-                    height={block.height}
+                    x={-item.width / 2}
+                    y={-item.height / 2}
+                    width={item.width}
+                    height={item.height}
                     rx="8"
-                    fill={block.color ?? "#dbeafe"}
+                    fill="#dbeafe"
                     fillOpacity="0.8"
                     stroke="#475569"
                   />
-                  <text
-                    x={(block.x ?? 0) + block.width / 2}
-                    y={(block.y ?? 0) + block.height / 2}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fill="#172033"
-                    fontSize="18"
-                    fontWeight="700"
-                  >
-                    {block.name}
-                  </text>
                 </g>
               )}
             </g>
           ))}
-          {seatMap.blocks.flatMap((block, blockIndex) =>
-            block.rows.map((row, rowIndex) => (
-              <g key={row.id ?? `${blockIndex}-${row.label}-${rowIndex}`}>
-                <text
-                  x={row.x}
-                  y={row.y - 22}
-                  textAnchor="middle"
-                  fill="#172033"
-                  fontSize="14"
-                  fontWeight="700"
-                >
-                  {row.label}
-                </text>
-                {row.seats.map((seat, seatIndex) => (
-                  <g key={seat.id ?? `${seat.number}-${seatIndex}`}>
-                    <circle
-                      cx={seat.x}
-                      cy={seat.y}
-                      r={Math.max(
-                        8,
-                        Math.min(seat.width ?? 24, seat.height ?? 24) / 2,
-                      )}
-                      fill={ticketColor(
-                        seat.ticketType?.name ?? row.ticketType?.name,
-                      )}
-                      stroke="white"
-                      strokeWidth="2"
-                    />
-                    <title>
-                      {`${row.label}${seat.number} · ${seat.ticketType?.name ?? row.ticketType?.name ?? "Chưa có loại vé"}`}
-                    </title>
-                  </g>
-                ))}
-              </g>
-            )),
-          )}
+          {rows.map((row, rowIndex) => (
+            <g key={row.id ?? `${row.label}-${rowIndex}`}>
+              <text
+                x={row.x}
+                y={row.y - 22}
+                textAnchor="middle"
+                fill="#172033"
+                fontSize="14"
+                fontWeight="700"
+              >
+                {row.label}
+              </text>
+              {row.seats.map((seat, seatIndex) => (
+                <g key={seat.id ?? `${seat.number}-${seatIndex}`}>
+                  <circle
+                    cx={seat.x}
+                    cy={seat.y}
+                    r={Math.max(
+                      8,
+                      Math.min(seat.width ?? 24, seat.height ?? 24) / 2,
+                    )}
+                    fill={ticketColor(
+                      seat.ticketType?.name ?? row.ticketType?.name,
+                    )}
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                  <title>
+                    {`${row.label}${seat.number} · ${seat.ticketType?.name ?? row.ticketType?.name ?? "Chưa có loại vé"}`}
+                  </title>
+                </g>
+              ))}
+            </g>
+          ))}
         </svg>
       </div>
       {rows.length > 0 && (

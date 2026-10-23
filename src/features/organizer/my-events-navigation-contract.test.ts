@@ -50,18 +50,20 @@ test("forwards the controller load state from the app shell into the list page",
 });
 
 test("redirects to the My-events list only on a confirmed create, clearing dirty first and keeping the notice", () => {
-  const organizerApp = read("src/pages/OrganizerApplication.tsx");
+  const createPage = read(
+    "src/features/organizer/pages/OrganizerEventCreatePage.tsx",
+  );
 
   // The success decision routes through the tested production helper, not an inline kind check.
-  assert.match(organizerApp, /resolveOrganizerCreateRedirect\(result\)/);
-  assert.match(organizerApp, /if \(!redirect\) return false/);
+  assert.match(createPage, /resolveOrganizerCreateRedirect\(result\)/);
+  assert.match(createPage, /if \(!result \|\| !redirect\) return/);
   // Dirty guard cleared before navigating so the redirect never trips the unsaved prompt.
   assert.match(
-    organizerApp,
-    /setDirty\(redirect\.clearDirtyFirst \? false : dirtyRef\.current\)/,
+    createPage,
+    /if \(redirect\.clearDirtyFirst\) form\.markSaved\(\)/,
   );
   // Notice-preserving navigate is used (the normal navigate clears lastOperation).
-  assert.match(organizerApp, /onNavigatePreservingNotice\(redirect\.path\)/);
+  assert.match(createPage, /onNavigatePreservingNotice\(redirect\.path\)/);
 });
 
 test("the app shell preserves the organizer success notice exactly once across the redirect", () => {

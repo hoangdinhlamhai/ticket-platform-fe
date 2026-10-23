@@ -4,7 +4,6 @@ import type {
   EventCreatePayload,
   EventListResponse,
   EventReportResponse,
-  EventUpdatePayload,
   EventTicketTypeResponse,
   TicketTypePayload,
   UploadResponse,
@@ -19,11 +18,7 @@ import type {
 
 const create = (data: EventCreatePayload) =>
   axiosClient.post<EventApiResponse>("/events", data);
-const update = (id: string, data: EventUpdatePayload) =>
-  axiosClient.patch<EventApiResponse>(`/events/${id}`, data);
 const findMine = () => axiosClient.get<EventListResponse>("/events/mine");
-const findMineById = (id: string) =>
-  axiosClient.get<EventApiResponse>(`/events/mine/${encodeURIComponent(id)}`);
 const submitReview = (id: string) =>
   axiosClient.post<EventApiResponse>(`/events/${id}/submit-review`);
 const setPayout = (id: string, data: EventPayoutInfo) =>
@@ -46,8 +41,16 @@ const wards = (provinceId: string) =>
   axiosClient.get<{ wards: EventLocation[] }>(
     `/locations/provinces/${encodeURIComponent(provinceId)}/wards`,
   );
-const uploadImage = (file: File, onProgress?: (progress: number) => void) => {
+export type EventImageCategory =
+  "thumbnail" | "cover" | "organizer-avatar" | "seating-chart" | "ticket-tier";
+
+const uploadImage = (
+  file: File,
+  category: EventImageCategory,
+  onProgress?: (progress: number) => void,
+) => {
   const body = new FormData();
+  body.append("category", category);
   body.append("file", file);
   return axiosClient.post<UploadResponse>("/uploads/events", body, {
     onUploadProgress: (event) => {
@@ -75,9 +78,7 @@ const removeSave = (id: string) =>
 
 export {
   create,
-  update,
   findMine,
-  findMineById,
   submitReview,
   setPayout,
   reporting,

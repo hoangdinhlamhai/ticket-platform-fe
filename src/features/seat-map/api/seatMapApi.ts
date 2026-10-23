@@ -2,11 +2,6 @@ import axiosClient from "../../../api/axiosClient.ts";
 import type { SeatMapResponse } from "../types/seat-map.ts";
 import type { SeatMapWritePayload } from "../helpers/seat-map-payload.ts";
 
-export const findOwned = (eventId: string) =>
-  axiosClient.get<SeatMapResponse>(
-    `/organizer/events/${encodeURIComponent(eventId)}/seat-map`,
-  );
-
 export const findPublic = (eventId: string) =>
   axiosClient.get<SeatMapResponse>(
     `/events/${encodeURIComponent(eventId)}/seat-map`,
@@ -25,12 +20,6 @@ export const findPublicSeatStatuses = (eventId: string) =>
 
 export const create = (eventId: string, data: SeatMapWritePayload) =>
   axiosClient.post<SeatMapResponse>(
-    `/organizer/events/${encodeURIComponent(eventId)}/seat-map`,
-    data,
-  );
-
-export const update = (eventId: string, data: SeatMapWritePayload) =>
-  axiosClient.patch<SeatMapResponse>(
     `/organizer/events/${encodeURIComponent(eventId)}/seat-map`,
     data,
   );

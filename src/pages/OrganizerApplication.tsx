@@ -19,21 +19,9 @@ import {
   OrganizerOrdersPage,
   OrganizerOrganizationSettingsPage,
   OrganizerTicketInventoryPage,
-  type OrganizerEventFormSave,
 } from "../features/organizer/index.ts";
 import type { OrganizerWorkspaceController } from "../features/organizer/hooks/organizer-workspace-controller.ts";
-import {
-  resolveOrganizerCreateRedirect,
-  type OrganizerCreateRedirect,
-} from "../features/organizer/helpers/resolve-organizer-create-redirect.ts";
 import type { OrganizerOperationResult } from "../features/organizer/types/organizer-workspace.ts";
-import * as eventApi from "../features/events/api/eventApi.ts";
-import {
-  create as createSeatMap,
-  update as updateSeatMap,
-} from "../features/seat-map/api/seatMapApi.ts";
-import { toSeatMapWritePayload } from "../features/seat-map/helpers/seat-map-payload.ts";
-import type { SeatMap } from "../features/seat-map/types/seat-map.ts";
 
 type Props = {
   pathname: string;
@@ -86,7 +74,6 @@ export function OrganizerApplication({
   registerNavigationGuard,
 }: Props) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [seatMapSaveError, setSeatMapSaveError] = useState<string | null>(null);
   const dirtyRef = useRef(false);
   const route = getOrganizerRoute(pathname);
   const eventId = getOrganizerEventId(pathname);
@@ -138,107 +125,6 @@ export function OrganizerApplication({
     onExitToAttendee();
   }, [discardOrContinue, onExitToAttendee, workspace]);
 
-  const pendingSeatMapCreate = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (route !== "event-create") pendingSeatMapCreate.current = null;
-  }, [route]);
-
-  const create = useCallback(
-    async (value: OrganizerEventFormSave) => {
-      setSeatMapSaveError(null);
-      console.log(
-        "[OrganizerApplication] create nhan duoc value tu form:",
-        value,
-      );
-      let eventId = pendingSeatMapCreate.current;
-      let redirect: OrganizerCreateRedirect | null = eventId
-        ? { path: "/organizer/events", clearDirtyFirst: true }
-        : null;
-
-      if (!eventId) {
-        const result = await workspace.createEvent(
-          { ...value.input, seatingChartImage: undefined },
-          value.initialTicketTiers ?? [],
-          value.finance,
-        );
-        console.log("[OrganizerApplication] createEvent result:", result);
-        redirect = resolveOrganizerCreateRedirect(result);
-        console.log(
-          "[OrganizerApplication] resolveOrganizerCreateRedirect:",
-          redirect,
-        );
-        if (!result || !redirect) return false;
-        eventId = result.targetIds.eventId;
-        if (value.seatMap) pendingSeatMapCreate.current = eventId;
-      }
-      if (!eventId || !redirect) return false;
-
-      if (value.seatMap) {
-        try {
-          const { data } = await eventApi.findMineById(eventId);
-          const types = data.event.ticketTypes ?? [];
-          const ticketTypeIds: Record<string, string> = {};
-          value.ticketTierKeys?.forEach((key, index) => {
-            const draft = value.initialTicketTiers?.[index];
-            const persisted = types.find(
-              (ticket) =>
-                ticket.name === draft?.name &&
-                ticket.price === draft?.price &&
-                ticket.quantity === draft?.capacity,
-            );
-            if (key && persisted) ticketTypeIds[key] = persisted.id;
-          });
-          await createSeatMap(
-            eventId,
-            toSeatMapWritePayload(value.seatMap, ticketTypeIds),
-          );
-          pendingSeatMapCreate.current = null;
-        } catch {
-          setSeatMapSaveError(
-            "Sự kiện đã tạo nhưng chưa lưu được sơ đồ ghế. Hãy thử gửi lại để lưu sơ đồ mà không tạo trùng sự kiện.",
-          );
-          return false;
-        }
-      }
-      setSeatMapSaveError(null);
-      // Clear the unsaved guard ONLY after the confirmed create, before navigating, so the
-      // redirect never trips the "thay đổi chưa lưu" prompt. Preserve the success notice by
-      // routing through the notice-preserving navigate (the normal navigate clears it).
-      setDirty(redirect.clearDirtyFirst ? false : dirtyRef.current);
-      onNavigatePreservingNotice(redirect.path);
-      return true;
-    },
-    [onNavigatePreservingNotice, setDirty, workspace],
-  );
-
-  const update = useCallback(
-    async (
-      id: string,
-      input: Parameters<typeof workspace.updateEvent>[1],
-      finance?: Parameters<typeof workspace.updateEvent>[2],
-      seatMap?: SeatMap,
-      seatMapExists?: boolean,
-    ) => {
-      setSeatMapSaveError(null);
-      const result = await workspace.updateEvent(id, input, finance);
-      if (result?.kind !== "event_updated") return false;
-      if (seatMap) {
-        try {
-          const payload = toSeatMapWritePayload(seatMap);
-          if (seatMapExists) await updateSeatMap(id, payload);
-          else await createSeatMap(id, payload);
-        } catch {
-          setSeatMapSaveError("Không thể lưu sơ đồ ghế. Hãy thử lưu lại sau.");
-          return false;
-        }
-      }
-      setSeatMapSaveError(null);
-      return true;
-    },
-    [workspace],
-  );
-
   const eventExists =
     eventId !== null &&
     workspace.workspace.events.some((event) => event.id === eventId);
@@ -266,13 +152,16 @@ export function OrganizerApplication({
     page = (
       <OrganizerEventCreatePage
         onCancel={() => navigate("/organizer/events")}
-        onCreate={create}
         onDirtyChange={setDirty}
-        saving={workspace.isSaving}
-        error={seatMapSaveError ?? workspace.saveError}
+        workspace={workspace}
+        onNavigatePreservingNotice={onNavigatePreservingNotice}
       />
     );
-  } else if (!eventExists && route.startsWith("event-")) {
+  } else if (
+    !eventExists &&
+    route !== "event-edit" &&
+    route.startsWith("event-")
+  ) {
     page = <OrganizerMissingEventPage onNavigate={navigate} />;
   } else if (route === "event-overview" && eventId) {
     page = (
@@ -294,9 +183,7 @@ export function OrganizerApplication({
         eventId={eventId}
         onDirtyChange={setDirty}
         onNavigate={navigate}
-        onUpdate={update}
-        saveError={seatMapSaveError}
-        workspace={workspace.workspace}
+        key={eventId}
       />
     );
   } else if (route === "event-tickets" && eventId) {

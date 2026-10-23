@@ -56,7 +56,6 @@ export function AttendeeHeader({
   onLogout,
   onNavigate,
   onNavigateToOrganizer,
-  profileName,
 }: AttendeeHeaderProps) {
   return (
     <header className="border-b border-line bg-paper">

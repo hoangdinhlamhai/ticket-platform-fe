@@ -159,10 +159,8 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
           <h2 className="mt-0 text-xl font-extrabold">Thông tin sự kiện</h2>
           <dl className="grid gap-3">
             <div>
-              <dt className="text-sm text-ink-soft">Slug / ID</dt>
-              <dd className="m-0 break-all">
-                {event.slug} · {event.id}
-              </dd>
+              <dt className="text-sm text-ink-soft">ID sự kiện</dt>
+              <dd className="m-0 break-all">{event.id}</dd>
             </div>
             <div>
               <dt className="text-sm text-ink-soft">Danh mục</dt>

@@ -33,16 +33,13 @@ export type SeatMapRow = {
   seats: SeatMapSeat[];
 };
 
-export type SeatMapBlock = {
+export type SeatMapObject = {
   id?: string;
-  name: string;
-  color?: string | null;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   rotation?: number;
-  rows: SeatMapRow[];
 };
 
 export type SeatMap = {
@@ -52,7 +49,8 @@ export type SeatMap = {
   width?: number | null;
   height?: number | null;
   imageUrl?: string | null;
-  blocks: SeatMapBlock[];
+  vatThe: SeatMapObject[];
+  hangs: SeatMapRow[];
 };
 
 export type SeatMapResponse = { seatMap: SeatMap };

@@ -6,7 +6,6 @@ import type {
 export type AdminEventListItem = {
   id: string;
   title: string;
-  slug: string;
   status: string;
   visibility: string;
   startAt: string;

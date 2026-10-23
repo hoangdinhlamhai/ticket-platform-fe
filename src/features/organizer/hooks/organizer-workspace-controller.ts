@@ -1,11 +1,16 @@
 import axios from "axios";
 import * as api from "../../../features/events/api/eventApi.ts";
+import {
+  findMineById,
+  updateEvent as updateOrganizerEvent,
+} from "../api/organizerEventApi.ts";
 import type {
   OrganizerEventOwnerDetail,
   OrganizerEventReport,
   OrganizerReportRangeInput,
 } from "../../../types/event.ts";
 import { createEmptyOrganizerWorkspace } from "../mock/create-organizer-workspace.ts";
+import { dataUrlFile } from "../../../utils/eventImage.ts";
 import { organizerWorkspaceReducer } from "../helpers/organizer-workspace-reducer.ts";
 import type { OrganizerTicketTier } from "../types/organizer-commerce.ts";
 import type {
@@ -15,6 +20,7 @@ import type {
   OrganizerEventPatch,
   OrganizerEventStatus,
 } from "../types/organizer-event.ts";
+
 import type { OrganizerOrganizationPatch } from "../types/organizer-organization.ts";
 import type {
   OrganizerInitialTicketTierInput,
@@ -22,6 +28,8 @@ import type {
   OrganizerOperationResult,
   OrganizerWorkspace,
 } from "../types/organizer-workspace.ts";
+
+type EventImageCategory = Parameters<typeof api.uploadImage>[1];
 
 // Report state is kept separate from the mock business workspace so a connected,
 // server-computed report never falls back to mock orders on error or while loading.
@@ -347,7 +355,7 @@ export function createOrganizerWorkspaceController() {
         // from findMine is published regardless; only the details that resolve are
         // hydrated, and a failed detail simply leaves that event without its tiers/finance.
         const details = await Promise.allSettled(
-          events.map((event) => api.findMineById(event.id)),
+          events.map((event) => findMineById(event.id)),
         );
         if (
           currentGeneration !== generation ||
@@ -435,44 +443,63 @@ export function createOrganizerWorkspaceController() {
     initialTicketTiers: readonly OrganizerInitialTicketTierInput[],
     finance?: OrganizerEventFinance,
   ) {
-    console.log("[WorkspaceController] createEvent duoc goi:", {
-      input,
-      initialTicketTiers,
-      finance,
-    });
     const token = requireToken();
     if (!token) {
-      console.warn(
-        "[WorkspaceController] createEvent bi huy vi khong co token hop le!",
-      );
       return null;
     }
-    if (snapshot.isSaving) {
-      console.warn(
-        "[WorkspaceController] createEvent bi bo qua vi dang saving!",
-      );
-      return null;
-    }
+    if (snapshot.isSaving) return null;
     const currentGeneration = generation;
     set({ isSaving: true, saveError: null });
     try {
+      // Convert selected base64 images to uploaded URLs before sending the JSON event payload.
+      const uploadedImages = new Map<string, Promise<string>>();
+      const uploadImageIfNeeded = (
+        value: string | null | undefined,
+        category: EventImageCategory,
+      ) => {
+        if (!value) return Promise.resolve(value);
+        const file = dataUrlFile(value, category);
+        if (!file) return Promise.resolve(value);
+        const uploadKey = `${category}:${value}`;
+        let upload = uploadedImages.get(uploadKey);
+        if (!upload) {
+          upload = api
+            .uploadImage(file, category)
+            .then((response) => response.data.url);
+          uploadedImages.set(uploadKey, upload);
+        }
+        return upload;
+      };
+      const [thumbnail, coverImage, organizerLogo, seatingChartImage, tickets] =
+        await Promise.all([
+          uploadImageIfNeeded(input.thumbnail, "thumbnail"),
+          uploadImageIfNeeded(input.coverImage, "cover"),
+          uploadImageIfNeeded(input.organizerLogo, "organizer-avatar"),
+          uploadImageIfNeeded(input.seatingChartImage, "seating-chart"),
+          Promise.all(
+            initialTicketTiers.map(async (tier) => ({
+              ...tier,
+              image: await uploadImageIfNeeded(tier.image, "ticket-tier"),
+            })),
+          ),
+        ]);
       const payload = {
         title: input.title,
         startAt: input.startAt,
         endAt: input.endAt,
         venueName: input.venueName ?? input.venue,
         description: input.description ?? undefined,
-        thumbnail: input.thumbnail,
-        coverImage: input.coverImage,
+        thumbnail,
+        coverImage,
         organizerName: input.organizerName,
         organizerBio: input.organizerBio,
-        organizerLogo: input.organizerLogo,
+        organizerLogo,
         visibility: (input.visibility === "public"
           ? "PUBLIC"
           : input.visibility === "link_only"
             ? "LINK_ONLY"
             : undefined) as "PUBLIC" | "LINK_ONLY" | undefined,
-        seatingChartImage: input.seatingChartImage,
+        seatingChartImage,
         categoryId: input.categoryId ?? "",
         location:
           input.provinceId && input.street
@@ -482,7 +509,7 @@ export function createOrganizerWorkspaceController() {
                 wardId: input.wardId,
               }
             : undefined,
-        tickets: initialTicketTiers.map((tier) => ({
+        tickets: tickets.map((tier) => ({
           name: tier.name,
           price: tier.price,
           quantity: tier.capacity,
@@ -495,9 +522,7 @@ export function createOrganizerWorkspaceController() {
         })),
         payoutInfo: finance,
       };
-      console.log("[WorkspaceController] api.create payload:", payload);
       const created = (await api.create(payload)).data.event;
-      console.log("[WorkspaceController] api.create thanh cong:", created);
       if (currentGeneration !== generation) return null; // user switched mid-flight; drop the result
       loadRevision += 1; // invalidate any in-flight load so it can't drop this created event
       const lastOperation: OrganizerOperationResult = {
@@ -514,7 +539,7 @@ export function createOrganizerWorkspaceController() {
         lastOperation,
       });
       try {
-        const detail = (await api.findMineById(created.id)).data
+        const detail = (await findMineById(created.id)).data
           .event as OrganizerEventOwnerDetail["event"];
         if (currentGeneration === generation && detail) {
           set({
@@ -559,8 +584,9 @@ export function createOrganizerWorkspaceController() {
       // The event scalars go through PATCH /events/:id; finance goes through its own
       // POST /events/:id/payout. Both must succeed to report event_updated — a payout
       // failure surfaces an error rather than a false full success.
-      const updated = (await api.update(eventId, toEventUpdatePayload(patch)))
-        .data.event;
+      const updated = (
+        await updateOrganizerEvent(eventId, toEventUpdatePayload(patch))
+      ).data.event;
       if (finance) await api.setPayout(eventId, finance);
       if (currentGeneration !== generation) return null;
       loadRevision += 1;
@@ -674,8 +700,8 @@ export function createOrganizerWorkspaceController() {
     const currentGeneration = generation;
     set({ saveError: null });
     try {
-      const updated = (await api.update(eventId, { [field]: value })).data
-        .event;
+      const updated = (await updateOrganizerEvent(eventId, { [field]: value }))
+        .data.event;
       if (currentGeneration !== generation) return null;
       const lastOperation: OrganizerOperationResult = {
         operation: "update_event",

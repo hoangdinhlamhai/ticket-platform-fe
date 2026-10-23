@@ -44,7 +44,6 @@ type SeatRow = {
 };
 type SeatZone = {
   id: string;
-  name: string;
   x: number;
   y: number;
   width: number;
@@ -58,59 +57,52 @@ const uid = () => crypto.randomUUID();
 function readSeatMap(seatMap?: SeatMap | null) {
   const rows: SeatRow[] = [];
   const seats: Seat[] = [];
-  const zones: SeatZone[] = [];
-  seatMap?.blocks.forEach((block) => {
-    block.rows.forEach((source) => {
-      const id = source.id ?? uid();
-      const row: SeatRow = {
-        id,
-        name: source.label,
-        kind: source.type === "ARC" ? "arc" : "straight",
-        x: source.x,
-        y: source.y,
-        rotation: source.rotation ?? 0,
-        count: source.seats.length,
-        prefix: source.seats[0]?.number.replace(/\d+$/, "") || source.label,
-        start: source.firstSeatNumber ?? 1,
-        spacing: source.seatSpacing ?? 38,
-        width: source.seatWidth ?? 24,
-        height: source.seatHeight ?? 24,
-        radius: source.radius ?? 150,
-        startAngle: source.startAngle ?? 200,
-        endAngle: source.endAngle ?? 340,
-        reverse: source.reverseNumbering ?? false,
-        direction: source.curveDirection ?? 1,
-        ticketTierId:
-          source.ticketTypeId ?? source.seats[0]?.ticketTypeId ?? "",
-        seatIds: source.seats.map((seat) => seat.id ?? uid()),
-      };
-      rows.push(row);
-      seats.push(
-        ...source.seats.map((seat, index) => ({
-          id: row.seatIds[index],
-          rowId: id,
-          code: seat.number,
-          x: seat.x,
-          y: seat.y,
-          rotation: seat.rotation ?? 0,
-          width: seat.width ?? row.width,
-          height: seat.height ?? row.height,
-          ticketTierId: seat.ticketTypeId ?? undefined,
-          detached: true,
-        })),
-      );
-    });
-    if (block.rows.length === 0) {
-      zones.push({
-        id: block.id ?? uid(),
-        name: block.name,
-        x: block.x ?? 0,
-        y: block.y ?? 0,
-        width: block.width ?? 220,
-        height: block.height ?? 120,
-        rotation: block.rotation ?? 0,
-      });
-    }
+  const zones: SeatZone[] = (seatMap?.vatThe ?? []).map((item) => ({
+    id: item.id ?? uid(),
+    x: item.x,
+    y: item.y,
+    width: item.width,
+    height: item.height,
+    rotation: item.rotation ?? 0,
+  }));
+  (seatMap?.hangs ?? []).forEach((source) => {
+    const id = source.id ?? uid();
+    const row: SeatRow = {
+      id,
+      name: source.label,
+      kind: source.type === "ARC" ? "arc" : "straight",
+      x: source.x,
+      y: source.y,
+      rotation: source.rotation ?? 0,
+      count: source.seats.length,
+      prefix: source.seats[0]?.number.replace(/\d+$/, "") || source.label,
+      start: source.firstSeatNumber ?? 1,
+      spacing: source.seatSpacing ?? 38,
+      width: source.seatWidth ?? 24,
+      height: source.seatHeight ?? 24,
+      radius: source.radius ?? 150,
+      startAngle: source.startAngle ?? 200,
+      endAngle: source.endAngle ?? 340,
+      reverse: source.reverseNumbering ?? false,
+      direction: source.curveDirection ?? 1,
+      ticketTierId: source.ticketTypeId ?? source.seats[0]?.ticketTypeId ?? "",
+      seatIds: source.seats.map((seat) => seat.id ?? uid()),
+    };
+    rows.push(row);
+    seats.push(
+      ...source.seats.map((seat, index) => ({
+        id: row.seatIds[index],
+        rowId: id,
+        code: seat.number,
+        x: seat.x,
+        y: seat.y,
+        rotation: seat.rotation ?? 0,
+        width: seat.width ?? row.width,
+        height: seat.height ?? row.height,
+        ticketTierId: seat.ticketTypeId ?? undefined,
+        detached: true,
+      })),
+    );
   });
   return { rows, seats, zones };
 }
@@ -257,21 +249,14 @@ export function SeatMapEditor({
       width: 900,
       height: 620,
       imageUrl: background || null,
-      blocks: [
-        ...zones.map((item) => ({
-          id: item.id,
-          name: item.name,
-          x: item.x,
-          y: item.y,
-          width: item.width,
-          height: item.height,
-          rotation: item.rotation,
-          rows: [],
-        })),
-        ...(rowPayloads.length
-          ? [{ name: "Khối ghế", rows: rowPayloads }]
-          : []),
-      ],
+      vatThe: zones.map((item) => ({
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+        rotation: item.rotation,
+      })),
+      hangs: rowPayloads,
     });
   }, [
     background,
@@ -711,7 +696,7 @@ export function SeatMapEditor({
       setWarning("Chọn tệp ảnh hợp lệ để làm nền.");
       return;
     }
-    void uploadImage(file)
+    void uploadImage(file, "seating-chart")
       .then(({ data }) => {
         setBackground(data.url);
         onImageChange?.(data.url);
@@ -770,7 +755,6 @@ export function SeatMapEditor({
                 ...old,
                 {
                   id,
-                  name: `Khối ${old.length + 1}`,
                   x: 420,
                   y: 300,
                   width: 220,
@@ -992,7 +976,7 @@ export function SeatMapEditor({
                     fill="#325241"
                     pointerEvents="none"
                   >
-                    {item.name}
+                    Vật thể
                   </text>
                 </g>
               ))}
@@ -1153,14 +1137,7 @@ export function SeatMapEditor({
             </>
           ) : zone ? (
             <>
-              <h3>{zone.name}</h3>
-              {textInput("Tên khối", zone.name, (value) =>
-                setZones((old) =>
-                  old.map((item) =>
-                    item.id === zone.id ? { ...item, name: value } : item,
-                  ),
-                ),
-              )}
+              <h3>Vật thể</h3>
               {numberInput(
                 "Rộng khối",
                 zone.width,

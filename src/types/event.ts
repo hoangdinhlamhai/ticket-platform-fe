@@ -43,7 +43,6 @@ export type EventTicketType = Omit<
 };
 export type EventCreatePayload = {
   title: string;
-  slug?: string;
   startAt: string;
   endAt: string;
   venueName?: string | null;
@@ -68,7 +67,6 @@ export type EventUpdatePayload = Partial<
 export type PublicEvent = {
   id: string;
   title: string;
-  slug: string;
   startAt: string;
   endAt: string;
   venueName: string | null;
