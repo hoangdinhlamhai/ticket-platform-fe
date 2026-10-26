@@ -148,11 +148,28 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
       )}
 
       {(event.coverImage || event.thumbnail) && (
-        <img
-          className="max-h-[28rem] w-full rounded-lg object-cover"
-          src={event.coverImage ?? event.thumbnail ?? ""}
-          alt={`Ảnh sự kiện ${event.title}`}
-        />
+        <section className="grid gap-5 rounded-lg border border-line bg-surface p-5 md:grid-cols-2">
+          {event.thumbnail && (
+            <figure className="m-0 grid content-start gap-2">
+              <figcaption className="font-bold">Ảnh thumbnail</figcaption>
+              <img
+                className="max-h-[28rem] w-full rounded-lg object-cover"
+                src={event.thumbnail}
+                alt={`Thumbnail: ${event.title}`}
+              />
+            </figure>
+          )}
+          {event.coverImage && (
+            <figure className="m-0 grid content-start gap-2">
+              <figcaption className="font-bold">Ảnh cover</figcaption>
+              <img
+                className="max-h-[28rem] w-full rounded-lg object-cover"
+                src={event.coverImage}
+                alt={`Cover: ${event.title}`}
+              />
+            </figure>
+          )}
+        </section>
       )}
       <section className="grid gap-5 rounded-lg border border-line bg-surface p-5 lg:grid-cols-2">
         <div>
@@ -240,6 +257,14 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
                   : "Chưa xét duyệt"}
               </dd>
             </div>
+            <div>
+              <dt className="text-sm text-ink-soft">Thời điểm duyệt</dt>
+              <dd className="m-0">
+                {event.reviewedAt
+                  ? new Date(event.reviewedAt).toLocaleString("vi-VN")
+                  : "Chưa xét duyệt"}
+              </dd>
+            </div>
           </dl>
         </div>
       </section>
@@ -309,24 +334,35 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
             <dl className="grid gap-2">
               <div>
                 <dt className="text-sm text-ink-soft">Chủ tài khoản</dt>
-                <dd className="m-0">{payout.accountHolder}</dd>
+                <dd className="m-0">{payout.accountHolder || "-"}</dd>
               </div>
               <div>
-                <dt className="text-sm text-ink-soft">Tài khoản / Ngân hàng</dt>
-                <dd className="m-0">
-                  {payout.accountNumber} · {payout.bankName} · {payout.branch}
-                </dd>
+                <dt className="text-sm text-ink-soft">Số tài khoản</dt>
+                <dd className="m-0">{payout.accountNumber || "-"}</dd>
               </div>
               <div>
-                <dt className="text-sm text-ink-soft">Loại hình</dt>
-                <dd className="m-0">{payout.businessType}</dd>
+                <dt className="text-sm text-ink-soft">Tên ngân hàng</dt>
+                <dd className="m-0">{payout.bankName || "-"}</dd>
               </div>
               <div>
-                <dt className="text-sm text-ink-soft">Hóa đơn / Mã số thuế</dt>
-                <dd className="m-0">
-                  {payout.invoiceName || "—"} · {payout.invoiceAddress || "—"} ·{" "}
-                  {payout.taxCode || "—"}
-                </dd>
+                <dt className="text-sm text-ink-soft">Chi nhánh</dt>
+                <dd className="m-0">{payout.branch || "-"}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-ink-soft">Loại hình kinh doanh</dt>
+                <dd className="m-0">{payout.businessType || "-"}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-ink-soft">Tên xuất hóa đơn</dt>
+                <dd className="m-0">{payout.invoiceName || "-"}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-ink-soft">Địa chỉ hóa đơn</dt>
+                <dd className="m-0">{payout.invoiceAddress || "-"}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-ink-soft">Mã số thuế</dt>
+                <dd className="m-0">{payout.taxCode || "-"}</dd>
               </div>
             </dl>
           ) : (

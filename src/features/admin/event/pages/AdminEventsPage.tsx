@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as adminEventApi from "../api/adminEventApi.ts";
-import { AdminEventList } from "../components/AdminEventList.tsx";
+import { AdminEventList } from "../components/AdminEventCard.tsx";
 import type { AdminEventListItem } from "../types/admin-event.ts";
 
 export function AdminEventsPage({ navigate }: { readonly navigate: (path: string) => void }) {

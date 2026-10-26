@@ -7,7 +7,6 @@ import {
   type WheelEvent,
 } from "react";
 import type { SeatMap, SeatMapRow } from "../../../seat-map/types/seat-map.ts";
-import { uploadImage } from "../../../events/api/eventApi.ts";
 
 type Seat = {
   id: string;
@@ -140,12 +139,14 @@ const textInput = (
 
 export function SeatMapEditor({
   onImageChange,
+  onImageFileChange,
   onMapChange,
   initialMap,
   initialImage = "",
   ticketTiers = [],
 }: {
   onImageChange?: (value: string) => void;
+  onImageFileChange?: (file: File) => void;
   onMapChange?: (value: SeatMap) => void;
   initialMap?: SeatMap | null;
   initialImage?: string;
@@ -158,6 +159,10 @@ export function SeatMapEditor({
   const [background, setBackground] = useState(
     initialMap?.imageUrl ?? initialImage,
   );
+  const [previewImage, setPreviewImage] = useState(
+    initialMap?.imageUrl ?? initialImage,
+  );
+  const localPreviewUrl = useRef<string | null>(null);
   const [rows, setRows] = useState<SeatRow[]>(initialState.rows);
   const [seats, setSeats] = useState<Seat[]>(initialState.seats);
   const [zones, setZones] = useState<SeatZone[]>(initialState.zones);
@@ -180,6 +185,13 @@ export function SeatMapEditor({
     panX: number;
     panY: number;
   } | null>(null);
+
+  useEffect(
+    () => () => {
+      if (localPreviewUrl.current) URL.revokeObjectURL(localPreviewUrl.current);
+    },
+    [],
+  );
   const row = rows.find((item) => item.id === selected);
   const seat = seats.find((item) => item.id === selected);
   const zone = zones.find((item) => item.id === selected);
@@ -690,19 +702,20 @@ export function SeatMapEditor({
         { x: 400, y: 230 + index * gap },
       );
   };
-  const uploaded = async (file?: File) => {
+  const uploaded = (file?: File) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setWarning("Chọn tệp ảnh hợp lệ để làm nền.");
       return;
     }
-    void uploadImage(file, "seating-chart")
-      .then(({ data }) => {
-        setBackground(data.url);
-        onImageChange?.(data.url);
-        setWarning("");
-      })
-      .catch(() => setWarning("Không thể tải ảnh lên. Vui lòng thử lại."));
+    const localUrl = URL.createObjectURL(file);
+    if (localPreviewUrl.current) URL.revokeObjectURL(localPreviewUrl.current);
+    localPreviewUrl.current = localUrl;
+    setPreviewImage(localUrl);
+    setBackground(localUrl);
+    onImageChange?.(localUrl);
+    onImageFileChange?.(file);
+    setWarning("");
   };
 
   return (
@@ -733,552 +746,589 @@ export function SeatMapEditor({
           </button>
         </div>
       </header>
-      <div
-        className={`seat-workspace ${mode === "upload" ? "upload-mode" : ""}`}
-      >
-        <aside
-          className={`seat-tools ${mode === "upload" ? "upload-only" : ""}`}
-        >
-          <span className="seat-section-label">
-            {mode === "upload" ? "ẢNH MẶT BẰNG" : "THÊM VÀO SƠ ĐỒ"}
-          </span>
-          <button onClick={() => makeRow("straight")} type="button">
-            ＋ Hàng thẳng
-          </button>
-          <button onClick={() => makeRow("arc")} type="button">
-            ⌒ Hàng cong
-          </button>
-          <button
-            onClick={() => {
-              const id = uid();
-              setZones((old) => [
-                ...old,
-                {
-                  id,
-                  x: 420,
-                  y: 300,
-                  width: 220,
-                  height: 120,
-                  rotation: 0,
-                },
-              ]);
-              setSelected(id);
-            }}
-            type="button"
-          >
-            ▱ Thêm khối
-          </button>
-          <div className="seat-batch">
-            <b>Nhiều hàng</b>
-            <label>
-              Số hàng
-              <input
-                id="seat-row-count"
-                type="number"
-                min="1"
-                defaultValue="3"
-              />
-            </label>
-            <label>
-              Ghế mỗi hàng
-              <input
-                id="seat-each-count"
-                type="number"
-                min="1"
-                defaultValue="8"
-              />
-            </label>
-            <label>
-              Tiền tố
-              <input id="seat-batch-prefix" defaultValue="B" />
-            </label>
-            <label>
-              Khoảng cách hàng
-              <input
-                id="seat-row-gap"
-                type="number"
-                min="20"
-                defaultValue="70"
-              />
-            </label>
-            <button onClick={addBatch} type="button">
-              Tạo các hàng
-            </button>
-          </div>
-          <div className="seat-tool-bottom">
-            <button
-              className={tool === "select" ? "active" : ""}
-              onClick={() => setTool("select")}
-              type="button"
-            >
-              ↖ Chọn / kéo
-            </button>
-            <button
-              className={tool === "pan" ? "active" : ""}
-              onClick={() => setTool("pan")}
-              type="button"
-            >
-              ✋ Di chuyển vùng
-            </button>
-            <label className="seat-upload">
-              ＋ Tải ảnh nền
+      {mode === "upload" ? (
+        <div className="seat-upload-panel">
+          <div className="seat-upload-panel-header">
+            <div>
+              <strong>Ảnh sơ đồ chỗ ngồi</strong>
+              <p>
+                Chọn ảnh để xem trước. Ảnh sẽ được tải lên khi bạn lưu sự kiện.
+              </p>
+            </div>
+            <label className="seat-upload seat-upload-picker">
+              {previewImage ? "Chọn ảnh khác" : "Chọn ảnh sơ đồ"}
               <input
                 type="file"
                 accept="image/*"
-                onChange={(event) => uploaded(event.target.files?.[0])}
+                onChange={(event) => {
+                  uploaded(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
               />
             </label>
-            <button
-              className="seat-clear-all"
-              type="button"
-              disabled={
-                rows.length === 0 && seats.length === 0 && zones.length === 0
-              }
-              onClick={deleteAll}
-            >
-              Xóa tất cả ghế và khối
-            </button>
           </div>
-        </aside>
-        <div className="seat-stage-wrap">
-          <div className="seat-stage-toolbar">
-            <span>
-              {mode === "upload" ? "Ảnh nền và đối tượng" : "Bảng vẽ SVG"}
-            </span>
-            <div>
-              <button
-                onClick={() => setZoom(Math.max(0.25, zoom - 0.1))}
-                type="button"
-              >
-                −
-              </button>
-              <span>{Math.round(zoom * 100)}%</span>
-              <button
-                onClick={() => setZoom(Math.min(3, zoom + 0.1))}
-                type="button"
-              >
-                ＋
-              </button>
-              <button
-                onClick={() => {
-                  setZoom(1);
-                  setPan({ x: 0, y: 0 });
-                }}
-                type="button"
-              >
-                Đặt lại khung
-              </button>
-            </div>
-          </div>
-          <svg
-            ref={svgRef}
-            className="seat-canvas"
-            viewBox="0 0 900 620"
-            onPointerMove={pointerMove}
-            onPointerUp={() => {
-              drag.current = null;
-              panDrag.current = null;
-            }}
-            onPointerCancel={() => {
-              drag.current = null;
-              panDrag.current = null;
-            }}
-            onWheel={onWheel}
-            onPointerDown={(event) => {
-              if (event.target === event.currentTarget) setSelected(null);
-            }}
-            style={{
-              cursor: tool === "pan" ? "grab" : "default",
-              touchAction: "none",
-            }}
-          >
-            <defs>
-              <pattern
-                id="seat-grid"
-                width="24"
-                height="24"
-                patternUnits="userSpaceOnUse"
-              >
-                <circle cx="1" cy="1" r="1" fill="#d9d2c6" />
-              </pattern>
-            </defs>
-            <rect width="900" height="620" fill="#f8f6f0" />
-            <g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>
-              <rect width="900" height="620" fill="url(#seat-grid)" />
-              {(mode === "upload" || background) && background && (
-                <image
-                  href={background}
-                  x="30"
-                  y="30"
-                  width="840"
-                  height="560"
-                  preserveAspectRatio="xMidYMid meet"
-                  opacity=".76"
-                />
-              )}
-              {rows.map((item) => (
-                <g
-                  key={item.id}
-                  onPointerDown={(event) => pointerDown(event, item.id, "row")}
-                  style={{ cursor: "move" }}
-                >
-                  <path
-                    d={rowPath(item)}
-                    fill="none"
-                    stroke="transparent"
-                    strokeWidth="28"
-                    vectorEffect="non-scaling-stroke"
-                    pointerEvents="stroke"
-                  />
-                  <path
-                    d={rowPath(item)}
-                    fill="none"
-                    stroke={selected === item.id ? "#4f64d8" : "#97a3a0"}
-                    strokeDasharray="4 5"
-                    strokeWidth="1.5"
-                    pointerEvents="none"
-                  />
-                  {selected === item.id && (
-                    <text
-                      x={item.x}
-                      y={item.y - 30}
-                      textAnchor="middle"
-                      fontSize="13"
-                      fill="#273c36"
-                    >
-                      {item.name}
-                    </text>
-                  )}
-                </g>
-              ))}
-              {zones.map((item) => (
-                <g
-                  key={item.id}
-                  transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}
-                  onPointerDown={(event) => pointerDown(event, item.id, "zone")}
-                  style={{ cursor: "move" }}
-                >
-                  <rect
-                    x={-item.width / 2}
-                    y={-item.height / 2}
-                    width={item.width}
-                    height={item.height}
-                    rx="12"
-                    fill="#dff0db80"
-                    stroke={selected === item.id ? "#1d6a50" : "#82a58f"}
-                    strokeDasharray="7 4"
-                    strokeWidth="2"
-                  />
-                  <text
-                    textAnchor="middle"
-                    y="4"
-                    fontSize="13"
-                    fill="#325241"
-                    pointerEvents="none"
-                  >
-                    Vật thể
-                  </text>
-                </g>
-              ))}
-              {seats.map((item) => (
-                <g
-                  key={item.id}
-                  transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}
-                  onPointerDown={(event) => pointerDown(event, item.id, "seat")}
-                  style={{ cursor: "move" }}
-                >
-                  <rect
-                    x={-item.width / 2}
-                    y={-item.height / 2}
-                    width={item.width}
-                    height={item.height}
-                    rx="5"
-                    fill={selected === item.id ? "#dff0db" : "#fffdf8"}
-                    stroke={selected === item.id ? "#1d6a50" : "#66716d"}
-                    strokeWidth={selected === item.id ? 2 : 1.3}
-                  />
-                  <text
-                    y={4}
-                    textAnchor="middle"
-                    fontSize="8"
-                    fill="#17211f"
-                    pointerEvents="none"
-                  >
-                    {item.code}
-                  </text>
-                </g>
-              ))}
-            </g>
-          </svg>
-          <footer className="seat-stage-footer">
-            <span>
-              {zones.length} khối · {rows.length} hàng · {seats.length} ghế
-            </span>
-            <span>Kéo để di chuyển · Cuộn để phóng to/thu nhỏ</span>
-          </footer>
-        </div>
-        <aside className="seat-properties">
-          <span className="seat-section-label">THUỘC TÍNH</span>
-          {row ? (
-            <>
-              <h3>{row.name}</h3>
-              <label className="seat-field">
-                Hạng vé áp dụng cho hàng
-                <select
-                  value={row.ticketTierId}
-                  onChange={(event) =>
-                    patchRow({ ticketTierId: event.target.value })
-                  }
-                >
-                  <option value="">Chọn hạng vé</option>
-                  {ticketTiers.map((tier) => (
-                    <option key={tier.id} value={tier.id}>
-                      {tier.name} · {tier.price.toLocaleString("vi-VN")}₫
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {ticketTiers.length === 0 && (
-                <p className="seat-empty-selection">
-                  Hãy thêm hạng vé ở phía dưới để gán cho hàng ghế.
-                </p>
-              )}
-              {textInput("Tên hàng", row.name, (value) =>
-                patchRow({ name: value }),
-              )}
-              {numberInput(
-                "Số ghế",
-                row.count,
-                (value) => patchRow({ count: value }),
-                1,
-              )}
-              {textInput("Tiền tố mã ghế", row.prefix, (value) =>
-                patchRow({ prefix: value }),
-              )}
-              {numberInput("Số ghế bắt đầu", row.start, (value) =>
-                patchRow({ start: value }),
-              )}
-              <label className="seat-field">
-                Chiều đánh số
-                <select
-                  value={row.reverse ? "reverse" : "forward"}
-                  onChange={(event) =>
-                    patchRow({ reverse: event.target.value === "reverse" })
-                  }
-                >
-                  <option value="forward">Trái sang phải</option>
-                  <option value="reverse">Phải sang trái</option>
-                </select>
-              </label>
-              {numberInput(
-                "Khoảng cách ghế",
-                row.spacing,
-                (value) => patchRow({ spacing: value }),
-                1,
-              )}
-              {numberInput(
-                "Rộng ghế",
-                row.width,
-                (value) => patchRow({ width: value }),
-                6,
-              )}
-              {numberInput(
-                "Cao ghế",
-                row.height,
-                (value) => patchRow({ height: value }),
-                6,
-              )}
-              {row.kind === "arc" ? (
-                <>
-                  {numberInput(
-                    "Bán kính",
-                    row.radius,
-                    (value) => patchRow({ radius: value }),
-                    20,
-                  )}
-                  {numberInput("Góc bắt đầu", row.startAngle, (value) =>
-                    patchRow({ startAngle: value }),
-                  )}
-                  {numberInput("Góc kết thúc", row.endAngle, (value) =>
-                    patchRow({ endAngle: value }),
-                  )}
-                  <label className="seat-field">
-                    Hướng cong
-                    <select
-                      value={row.direction}
-                      onChange={(event) =>
-                        patchRow({
-                          direction: Number(event.target.value) as 1 | -1,
-                        })
-                      }
-                    >
-                      <option value={1}>Thuận chiều</option>
-                      <option value={-1}>Ngược chiều</option>
-                    </select>
-                  </label>
-                </>
-              ) : (
-                numberInput("Góc xoay", row.rotation, (value) =>
-                  patchRow({ rotation: value }),
-                )
-              )}
-              <div className="seat-property-actions">
-                <button onClick={copyRow} type="button">
-                  Sao chép hàng
-                </button>
-                <button
-                  className="danger"
-                  onClick={deleteSelected}
-                  type="button"
-                >
-                  Xóa hàng
-                </button>
-              </div>
-            </>
-          ) : zone ? (
-            <>
-              <h3>Vật thể</h3>
-              {numberInput(
-                "Rộng khối",
-                zone.width,
-                (value) =>
-                  setZones((old) =>
-                    old.map((item) =>
-                      item.id === zone.id ? { ...item, width: value } : item,
-                    ),
-                  ),
-                20,
-              )}
-              {numberInput(
-                "Cao khối",
-                zone.height,
-                (value) =>
-                  setZones((old) =>
-                    old.map((item) =>
-                      item.id === zone.id ? { ...item, height: value } : item,
-                    ),
-                  ),
-                20,
-              )}
-              {numberInput("Góc xoay", zone.rotation, (value) =>
-                setZones((old) =>
-                  old.map((item) =>
-                    item.id === zone.id ? { ...item, rotation: value } : item,
-                  ),
-                ),
-              )}
-              <button
-                className="seat-delete"
-                onClick={deleteSelected}
-                type="button"
-              >
-                Xóa khối
-              </button>
-            </>
-          ) : seat ? (
-            <>
-              <h3>Ghế {seat.code}</h3>
-              <p className="seat-assignment-summary">
-                {seatRow?.name ? `${seatRow.name} · ` : "Chưa gán hàng · "}
-                {seatTicketTier
-                  ? `${seatTicketTier.name} · ${seatTicketTier.price.toLocaleString("vi-VN")}₫`
-                  : "Chưa có loại vé áp dụng"}
-              </p>
-              <label className="seat-field">
-                Hạng vé riêng cho ghế
-                <select
-                  value={seat.ticketTierId ?? ""}
-                  onChange={(event) =>
-                    setSeats((old) =>
-                      old.map((item) =>
-                        item.id === seat.id
-                          ? {
-                              ...item,
-                              ticketTierId: event.target.value || undefined,
-                            }
-                          : item,
-                      ),
-                    )
-                  }
-                >
-                  <option value="">
-                    Theo hàng{seatTicketTier ? ` · ${seatTicketTier.name}` : ""}
-                  </option>
-                  {ticketTiers.map((tier) => (
-                    <option key={tier.id} value={tier.id}>
-                      {tier.name} · {tier.price.toLocaleString("vi-VN")}₫
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {textInput("Mã ghế", seat.code, (value) => {
-                if (
-                  seats.some(
-                    (item) => item.code === value && item.id !== seat.id,
-                  )
-                ) {
-                  setWarning("Mã ghế đã được sử dụng.");
-                  return;
-                }
-                setSeats((old) =>
-                  old.map((item) =>
-                    item.id === seat.id ? { ...item, code: value } : item,
-                  ),
-                );
-                setWarning("");
-              })}
-              {numberInput("X", seat.x, (value) =>
-                setSeats((old) =>
-                  old.map((item) =>
-                    item.id === seat.id
-                      ? { ...item, x: value, detached: true }
-                      : item,
-                  ),
-                ),
-              )}
-              {numberInput("Y", seat.y, (value) =>
-                setSeats((old) =>
-                  old.map((item) =>
-                    item.id === seat.id
-                      ? { ...item, y: value, detached: true }
-                      : item,
-                  ),
-                ),
-              )}
-              {numberInput("Góc xoay", seat.rotation, (value) =>
-                setSeats((old) =>
-                  old.map((item) =>
-                    item.id === seat.id
-                      ? { ...item, rotation: value, detached: true }
-                      : item,
-                  ),
-                ),
-              )}
-              <button
-                className="seat-delete"
-                onClick={deleteSelected}
-                type="button"
-              >
-                Xóa ghế
-              </button>
-            </>
-          ) : (
-            <p className="seat-empty-selection">
-              Chọn hàng hoặc ghế để xem và chỉnh thuộc tính.
-            </p>
-          )}
           {warning && (
             <p className="seat-warning" role="alert">
               {warning}
             </p>
           )}
-          {overlapCount > 0 && (
-            <p className="seat-warning" role="status">
-              Phát hiện {overlapCount} cặp ghế chồng lấn đáng kể.
-            </p>
+          {previewImage ? (
+            <div className="seat-upload-preview">
+              <img src={previewImage} alt="Xem trước ảnh sơ đồ chỗ ngồi" />
+            </div>
+          ) : (
+            <div className="seat-upload-empty">
+              Ảnh sơ đồ sẽ hiện ở đây sau khi bạn chọn tệp.
+            </div>
           )}
-        </aside>
-      </div>
+        </div>
+      ) : (
+        <div className="seat-workspace">
+          <aside className="seat-tools">
+            <span className="seat-section-label">THÊM VÀO SƠ ĐỒ</span>
+            <button onClick={() => makeRow("straight")} type="button">
+              ＋ Hàng thẳng
+            </button>
+            <button onClick={() => makeRow("arc")} type="button">
+              ⌒ Hàng cong
+            </button>
+            <button
+              onClick={() => {
+                const id = uid();
+                setZones((old) => [
+                  ...old,
+                  {
+                    id,
+                    x: 420,
+                    y: 300,
+                    width: 220,
+                    height: 120,
+                    rotation: 0,
+                  },
+                ]);
+                setSelected(id);
+              }}
+              type="button"
+            >
+              ▱ Thêm khối
+            </button>
+            <div className="seat-batch">
+              <b>Nhiều hàng</b>
+              <label>
+                Số hàng
+                <input
+                  id="seat-row-count"
+                  type="number"
+                  min="1"
+                  defaultValue="3"
+                />
+              </label>
+              <label>
+                Ghế mỗi hàng
+                <input
+                  id="seat-each-count"
+                  type="number"
+                  min="1"
+                  defaultValue="8"
+                />
+              </label>
+              <label>
+                Tiền tố
+                <input id="seat-batch-prefix" defaultValue="B" />
+              </label>
+              <label>
+                Khoảng cách hàng
+                <input
+                  id="seat-row-gap"
+                  type="number"
+                  min="20"
+                  defaultValue="70"
+                />
+              </label>
+              <button onClick={addBatch} type="button">
+                Tạo các hàng
+              </button>
+            </div>
+            <div className="seat-tool-bottom">
+              <button
+                className={tool === "select" ? "active" : ""}
+                onClick={() => setTool("select")}
+                type="button"
+              >
+                ↖ Chọn / kéo
+              </button>
+              <button
+                className={tool === "pan" ? "active" : ""}
+                onClick={() => setTool("pan")}
+                type="button"
+              >
+                ✋ Di chuyển vùng
+              </button>
+              <label className="seat-upload">
+                ＋ Tải ảnh nền
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => uploaded(event.target.files?.[0])}
+                />
+              </label>
+              <button
+                className="seat-clear-all"
+                type="button"
+                disabled={
+                  rows.length === 0 && seats.length === 0 && zones.length === 0
+                }
+                onClick={deleteAll}
+              >
+                Xóa tất cả ghế và khối
+              </button>
+            </div>
+          </aside>
+          <div className="seat-stage-wrap">
+            <div className="seat-stage-toolbar">
+              <span>Bảng vẽ SVG</span>
+              <div>
+                <button
+                  onClick={() => setZoom(Math.max(0.25, zoom - 0.1))}
+                  type="button"
+                >
+                  −
+                </button>
+                <span>{Math.round(zoom * 100)}%</span>
+                <button
+                  onClick={() => setZoom(Math.min(3, zoom + 0.1))}
+                  type="button"
+                >
+                  ＋
+                </button>
+                <button
+                  onClick={() => {
+                    setZoom(1);
+                    setPan({ x: 0, y: 0 });
+                  }}
+                  type="button"
+                >
+                  Đặt lại khung
+                </button>
+              </div>
+            </div>
+            <svg
+              ref={svgRef}
+              className="seat-canvas"
+              viewBox="0 0 900 620"
+              onPointerMove={pointerMove}
+              onPointerUp={() => {
+                drag.current = null;
+                panDrag.current = null;
+              }}
+              onPointerCancel={() => {
+                drag.current = null;
+                panDrag.current = null;
+              }}
+              onWheel={onWheel}
+              onPointerDown={(event) => {
+                if (event.target === event.currentTarget) setSelected(null);
+              }}
+              style={{
+                cursor: tool === "pan" ? "grab" : "default",
+                touchAction: "none",
+              }}
+            >
+              <defs>
+                <pattern
+                  id="seat-grid"
+                  width="24"
+                  height="24"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <circle cx="1" cy="1" r="1" fill="#d9d2c6" />
+                </pattern>
+              </defs>
+              <rect width="900" height="620" fill="#f8f6f0" />
+              <g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>
+                <rect width="900" height="620" fill="url(#seat-grid)" />
+                {background && (
+                  <image
+                    href={background}
+                    x="30"
+                    y="30"
+                    width="840"
+                    height="560"
+                    preserveAspectRatio="xMidYMid meet"
+                    opacity=".76"
+                  />
+                )}
+                {rows.map((item) => (
+                  <g
+                    key={item.id}
+                    onPointerDown={(event) =>
+                      pointerDown(event, item.id, "row")
+                    }
+                    style={{ cursor: "move" }}
+                  >
+                    <path
+                      d={rowPath(item)}
+                      fill="none"
+                      stroke="transparent"
+                      strokeWidth="28"
+                      vectorEffect="non-scaling-stroke"
+                      pointerEvents="stroke"
+                    />
+                    <path
+                      d={rowPath(item)}
+                      fill="none"
+                      stroke={selected === item.id ? "#4f64d8" : "#97a3a0"}
+                      strokeDasharray="4 5"
+                      strokeWidth="1.5"
+                      pointerEvents="none"
+                    />
+                    {selected === item.id && (
+                      <text
+                        x={item.x}
+                        y={item.y - 30}
+                        textAnchor="middle"
+                        fontSize="13"
+                        fill="#273c36"
+                      >
+                        {item.name}
+                      </text>
+                    )}
+                  </g>
+                ))}
+                {zones.map((item) => (
+                  <g
+                    key={item.id}
+                    transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}
+                    onPointerDown={(event) =>
+                      pointerDown(event, item.id, "zone")
+                    }
+                    style={{ cursor: "move" }}
+                  >
+                    <rect
+                      x={-item.width / 2}
+                      y={-item.height / 2}
+                      width={item.width}
+                      height={item.height}
+                      rx="12"
+                      fill="#dff0db80"
+                      stroke={selected === item.id ? "#1d6a50" : "#82a58f"}
+                      strokeDasharray="7 4"
+                      strokeWidth="2"
+                    />
+                    <text
+                      textAnchor="middle"
+                      y="4"
+                      fontSize="13"
+                      fill="#325241"
+                      pointerEvents="none"
+                    >
+                      Vật thể
+                    </text>
+                  </g>
+                ))}
+                {seats.map((item) => (
+                  <g
+                    key={item.id}
+                    transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}
+                    onPointerDown={(event) =>
+                      pointerDown(event, item.id, "seat")
+                    }
+                    style={{ cursor: "move" }}
+                  >
+                    <rect
+                      x={-item.width / 2}
+                      y={-item.height / 2}
+                      width={item.width}
+                      height={item.height}
+                      rx="5"
+                      fill={selected === item.id ? "#dff0db" : "#fffdf8"}
+                      stroke={selected === item.id ? "#1d6a50" : "#66716d"}
+                      strokeWidth={selected === item.id ? 2 : 1.3}
+                    />
+                    <text
+                      y={4}
+                      textAnchor="middle"
+                      fontSize="8"
+                      fill="#17211f"
+                      pointerEvents="none"
+                    >
+                      {item.code}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            </svg>
+            <footer className="seat-stage-footer">
+              <span>
+                {zones.length} khối · {rows.length} hàng · {seats.length} ghế
+              </span>
+              <span>Kéo để di chuyển · Cuộn để phóng to/thu nhỏ</span>
+            </footer>
+          </div>
+          <aside className="seat-properties">
+            <span className="seat-section-label">THUỘC TÍNH</span>
+            {row ? (
+              <>
+                <h3>{row.name}</h3>
+                <label className="seat-field">
+                  Hạng vé áp dụng cho hàng
+                  <select
+                    value={row.ticketTierId}
+                    onChange={(event) =>
+                      patchRow({ ticketTierId: event.target.value })
+                    }
+                  >
+                    <option value="">Chọn hạng vé</option>
+                    {ticketTiers.map((tier) => (
+                      <option key={tier.id} value={tier.id}>
+                        {tier.name} · {tier.price.toLocaleString("vi-VN")}₫
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {ticketTiers.length === 0 && (
+                  <p className="seat-empty-selection">
+                    Hãy thêm hạng vé ở phía dưới để gán cho hàng ghế.
+                  </p>
+                )}
+                {textInput("Tên hàng", row.name, (value) =>
+                  patchRow({ name: value }),
+                )}
+                {numberInput(
+                  "Số ghế",
+                  row.count,
+                  (value) => patchRow({ count: value }),
+                  1,
+                )}
+                {textInput("Tiền tố mã ghế", row.prefix, (value) =>
+                  patchRow({ prefix: value }),
+                )}
+                {numberInput("Số ghế bắt đầu", row.start, (value) =>
+                  patchRow({ start: value }),
+                )}
+                <label className="seat-field">
+                  Chiều đánh số
+                  <select
+                    value={row.reverse ? "reverse" : "forward"}
+                    onChange={(event) =>
+                      patchRow({ reverse: event.target.value === "reverse" })
+                    }
+                  >
+                    <option value="forward">Trái sang phải</option>
+                    <option value="reverse">Phải sang trái</option>
+                  </select>
+                </label>
+                {numberInput(
+                  "Khoảng cách ghế",
+                  row.spacing,
+                  (value) => patchRow({ spacing: value }),
+                  1,
+                )}
+                {numberInput(
+                  "Rộng ghế",
+                  row.width,
+                  (value) => patchRow({ width: value }),
+                  6,
+                )}
+                {numberInput(
+                  "Cao ghế",
+                  row.height,
+                  (value) => patchRow({ height: value }),
+                  6,
+                )}
+                {row.kind === "arc" ? (
+                  <>
+                    {numberInput(
+                      "Bán kính",
+                      row.radius,
+                      (value) => patchRow({ radius: value }),
+                      20,
+                    )}
+                    {numberInput("Góc bắt đầu", row.startAngle, (value) =>
+                      patchRow({ startAngle: value }),
+                    )}
+                    {numberInput("Góc kết thúc", row.endAngle, (value) =>
+                      patchRow({ endAngle: value }),
+                    )}
+                    <label className="seat-field">
+                      Hướng cong
+                      <select
+                        value={row.direction}
+                        onChange={(event) =>
+                          patchRow({
+                            direction: Number(event.target.value) as 1 | -1,
+                          })
+                        }
+                      >
+                        <option value={1}>Thuận chiều</option>
+                        <option value={-1}>Ngược chiều</option>
+                      </select>
+                    </label>
+                  </>
+                ) : (
+                  numberInput("Góc xoay", row.rotation, (value) =>
+                    patchRow({ rotation: value }),
+                  )
+                )}
+                <div className="seat-property-actions">
+                  <button onClick={copyRow} type="button">
+                    Sao chép hàng
+                  </button>
+                  <button
+                    className="danger"
+                    onClick={deleteSelected}
+                    type="button"
+                  >
+                    Xóa hàng
+                  </button>
+                </div>
+              </>
+            ) : zone ? (
+              <>
+                <h3>Vật thể</h3>
+                {numberInput(
+                  "Rộng khối",
+                  zone.width,
+                  (value) =>
+                    setZones((old) =>
+                      old.map((item) =>
+                        item.id === zone.id ? { ...item, width: value } : item,
+                      ),
+                    ),
+                  20,
+                )}
+                {numberInput(
+                  "Cao khối",
+                  zone.height,
+                  (value) =>
+                    setZones((old) =>
+                      old.map((item) =>
+                        item.id === zone.id ? { ...item, height: value } : item,
+                      ),
+                    ),
+                  20,
+                )}
+                {numberInput("Góc xoay", zone.rotation, (value) =>
+                  setZones((old) =>
+                    old.map((item) =>
+                      item.id === zone.id ? { ...item, rotation: value } : item,
+                    ),
+                  ),
+                )}
+                <button
+                  className="seat-delete"
+                  onClick={deleteSelected}
+                  type="button"
+                >
+                  Xóa khối
+                </button>
+              </>
+            ) : seat ? (
+              <>
+                <h3>Ghế {seat.code}</h3>
+                <p className="seat-assignment-summary">
+                  {seatRow?.name ? `${seatRow.name} · ` : "Chưa gán hàng · "}
+                  {seatTicketTier
+                    ? `${seatTicketTier.name} · ${seatTicketTier.price.toLocaleString("vi-VN")}₫`
+                    : "Chưa có loại vé áp dụng"}
+                </p>
+                <label className="seat-field">
+                  Hạng vé riêng cho ghế
+                  <select
+                    value={seat.ticketTierId ?? ""}
+                    onChange={(event) =>
+                      setSeats((old) =>
+                        old.map((item) =>
+                          item.id === seat.id
+                            ? {
+                                ...item,
+                                ticketTierId: event.target.value || undefined,
+                              }
+                            : item,
+                        ),
+                      )
+                    }
+                  >
+                    <option value="">
+                      Theo hàng
+                      {seatTicketTier ? ` · ${seatTicketTier.name}` : ""}
+                    </option>
+                    {ticketTiers.map((tier) => (
+                      <option key={tier.id} value={tier.id}>
+                        {tier.name} · {tier.price.toLocaleString("vi-VN")}₫
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {textInput("Mã ghế", seat.code, (value) => {
+                  if (
+                    seats.some(
+                      (item) => item.code === value && item.id !== seat.id,
+                    )
+                  ) {
+                    setWarning("Mã ghế đã được sử dụng.");
+                    return;
+                  }
+                  setSeats((old) =>
+                    old.map((item) =>
+                      item.id === seat.id ? { ...item, code: value } : item,
+                    ),
+                  );
+                  setWarning("");
+                })}
+                {numberInput("X", seat.x, (value) =>
+                  setSeats((old) =>
+                    old.map((item) =>
+                      item.id === seat.id
+                        ? { ...item, x: value, detached: true }
+                        : item,
+                    ),
+                  ),
+                )}
+                {numberInput("Y", seat.y, (value) =>
+                  setSeats((old) =>
+                    old.map((item) =>
+                      item.id === seat.id
+                        ? { ...item, y: value, detached: true }
+                        : item,
+                    ),
+                  ),
+                )}
+                {numberInput("Góc xoay", seat.rotation, (value) =>
+                  setSeats((old) =>
+                    old.map((item) =>
+                      item.id === seat.id
+                        ? { ...item, rotation: value, detached: true }
+                        : item,
+                    ),
+                  ),
+                )}
+                <button
+                  className="seat-delete"
+                  onClick={deleteSelected}
+                  type="button"
+                >
+                  Xóa ghế
+                </button>
+              </>
+            ) : (
+              <p className="seat-empty-selection">
+                Chọn hàng hoặc ghế để xem và chỉnh thuộc tính.
+              </p>
+            )}
+            {warning && (
+              <p className="seat-warning" role="alert">
+                {warning}
+              </p>
+            )}
+            {overlapCount > 0 && (
+              <p className="seat-warning" role="status">
+                Phát hiện {overlapCount} cặp ghế chồng lấn đáng kể.
+              </p>
+            )}
+          </aside>
+        </div>
+      )}
       <p className="seat-local-note">
         Sơ đồ sẽ được lưu cùng sự kiện khi bạn gửi hoặc lưu biểu mẫu.
       </p>

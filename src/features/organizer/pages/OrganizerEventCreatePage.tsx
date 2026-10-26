@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type FormEvent } from "react";
 import { findMineById } from "../api/organizerEventApi.ts";
+import { uploadImage } from "../../events/api/eventApi.ts";
 import { create as createSeatMap } from "../../seat-map/api/seatMapApi.ts";
 import { toSeatMapWritePayload } from "../../seat-map/helpers/seat-map-payload.ts";
 import { OrganizerPageHeader } from "../components/OrganizerPageHeader.tsx";
@@ -42,6 +43,8 @@ export function OrganizerEventCreatePage({
   const [step, setStep] = useState(0);
   const [tierMessage, setTierMessage] = useState("");
   const [seatMap, setSeatMap] = useState<SeatMap | null>(null);
+  const [seatMapImageFile, setSeatMapImageFile] = useState<File | null>(null);
+  const uploadedSeatMapImageUrl = useRef<string | null>(null);
   const seatMapError = "";
   const [seatMapSaveError, setSeatMapSaveError] = useState<string | null>(null);
   const pendingSeatMapCreate = useRef<string | null>(null);
@@ -122,6 +125,18 @@ export function OrganizerEventCreatePage({
       }
     }
     setSeatMapSaveError(null);
+    if (seatMapImageFile && !uploadedSeatMapImageUrl.current) {
+      try {
+        uploadedSeatMapImageUrl.current = (
+          await uploadImage(seatMapImageFile, "seating-chart")
+        ).data.url;
+      } catch {
+        setSeatMapSaveError("Không thể tải ảnh sơ đồ lên. Hãy thử lưu lại.");
+        return;
+      }
+    }
+    const imageUrl =
+      uploadedSeatMapImageUrl.current ?? seatMap?.imageUrl ?? null;
     let eventId = pendingSeatMapCreate.current;
     let redirect: OrganizerCreateRedirect | null = eventId
       ? { path: "/organizer/events" as const, clearDirtyFirst: true as const }
@@ -157,9 +172,10 @@ export function OrganizerEventCreatePage({
         });
         await createSeatMap(
           eventId,
-          toSeatMapWritePayload(seatMap, ticketTypeIds),
+          toSeatMapWritePayload({ ...seatMap, imageUrl }, ticketTypeIds),
         );
         pendingSeatMapCreate.current = null;
+        setSeatMapImageFile(null);
       } catch {
         setSeatMapSaveError(
           "Sự kiện đã tạo nhưng chưa lưu được sơ đồ ghế. Hãy gửi lại để lưu sơ đồ mà không tạo trùng sự kiện.",
@@ -206,6 +222,10 @@ export function OrganizerEventCreatePage({
       seatMapError={seatMapError}
       seatMapTiers={seatMapTiers}
       onImageChange={form.setField.bind(null, "seatingChartImage")}
+      onImageFileChange={(file) => {
+        setSeatMapImageFile(file);
+        uploadedSeatMapImageUrl.current = null;
+      }}
       onMapChange={handleSeatMapChange}
       tiers={tiers}
       tierMessage={tierMessage}

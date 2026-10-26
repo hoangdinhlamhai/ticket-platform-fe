@@ -69,7 +69,13 @@ export function OrganizerEventEditPage({
     return Number.isInteger(value) && value >= 0 && value <= 3 ? value : 0;
   });
   const [seatMap, setSeatMap] = useState<SeatMap | null>(null);
+  const [seatMapImageFile, setSeatMapImageFile] = useState<File | null>(null);
+  const uploadedSeatMapImageUrl = useRef<string | null>(null);
   const seatMapExists = useRef(false);
+  const [seatMapLoading, setSeatMapLoading] = useState(true);
+  const [seatMapError, setSeatMapError] = useState("");
+  const [seatMapRetry, setSeatMapRetry] = useState(0);
+  const savedMap = useRef<string | null>(null);
   const [mapDirty, setMapDirty] = useState(false);
   const [tierKeys, setTierKeys] = useState<string[]>([]);
   const persistedTiers = useRef(new Map<string, string>());
@@ -83,13 +89,6 @@ export function OrganizerEventEditPage({
       setError(null);
       try {
         const { data } = await findMineById(eventId);
-        let map: SeatMap | null = null;
-        try {
-          map = (await findOwnedSeatMap(eventId)).data.seatMap;
-        } catch (cause) {
-          if (!axios.isAxiosError(cause) || cause.response?.status !== 404)
-            throw cause;
-        }
         if (!active) return;
 
         //sau khi api trả về chi tiết sự kiện thì chạy hàm bên dưới
@@ -98,9 +97,6 @@ export function OrganizerEventEditPage({
         //reset() đưa dữ liệu đó vào form, đồng thời đặt nó làm giá trị gốc đã lưu
         reset(toEditValues(data.event));
         setEvent(data.event);
-        setSeatMap(map);
-        seatMapExists.current = map !== null;
-        setMapDirty(false);
         setTierKeys(data.event.ticketTypes.map((tier) => tier.id));
         persistedTiers.current = new Map(
           data.event.ticketTypes.map((tier) => [tier.id, tier.id]),
@@ -118,11 +114,41 @@ export function OrganizerEventEditPage({
   }, [eventId, retry, reset]);
 
   useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setSeatMapLoading(true);
+      setSeatMapError("");
+      try {
+        let map: SeatMap | null = null;
+        try {
+          map = (await findOwnedSeatMap(eventId)).data.seatMap;
+        } catch (cause) {
+          if (!axios.isAxiosError(cause) || cause.response?.status !== 404)
+            throw cause;
+        }
+        if (!active) return;
+        setSeatMap(map);
+        seatMapExists.current = map !== null;
+        savedMap.current = map === null ? null : JSON.stringify(map);
+        setMapDirty(false);
+      } catch {
+        if (active)
+          setSeatMapError("Không thể tải sơ đồ ghế. Vui lòng thử lại.");
+      } finally {
+        if (active) setSeatMapLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [eventId, seatMapRetry]);
+
+  useEffect(() => {
     onDirtyChange(form.isDirty || mapDirty);
   }, [form.isDirty, mapDirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
-  const savedMap = useRef<string | null>(null);
   const handleMapChange = useCallback((next: SeatMap) => {
     const serialized = JSON.stringify(next);
     if (savedMap.current === null) savedMap.current = serialized;
@@ -161,7 +187,14 @@ export function OrganizerEventEditPage({
   };
 
   const save = async () => {
-    if (locked || savingRef.current || loading) return;
+    if (
+      locked ||
+      savingRef.current ||
+      loading ||
+      seatMapLoading ||
+      seatMapError
+    )
+      return;
     if (!form.validate(["title", "categoryId", "provinceId", "street"])) {
       setStep(0);
       return;
@@ -207,6 +240,10 @@ export function OrganizerEventEditPage({
         form.values.organizerLogo,
         "organizer-avatar",
       );
+      if (seatMapImageFile && !uploadedSeatMapImageUrl.current)
+        uploadedSeatMapImageUrl.current = (
+          await uploadImage(seatMapImageFile, "seating-chart")
+        ).data.url;
       const { data } = await updateEvent(eventId, payload);
       setEvent(data.event);
       for (const [index, tier] of form.values.tiers.entries()) {
@@ -223,7 +260,11 @@ export function OrganizerEventEditPage({
       }
       if (seatMap && mapDirty) {
         const payload = toSeatMapWritePayload(
-          seatMap,
+          {
+            ...seatMap,
+            imageUrl:
+              uploadedSeatMapImageUrl.current ?? seatMap.imageUrl ?? null,
+          },
           Object.fromEntries(persistedTiers.current),
         );
         if (seatMapExists.current) await updateSeatMap(eventId, payload);
@@ -239,6 +280,7 @@ export function OrganizerEventEditPage({
         }
       }
       await setPayout(eventId, form.values.finance);
+      setSeatMapImageFile(null);
       form.markSaved();
       savedMap.current = JSON.stringify(seatMap);
       setMapDirty(false);
@@ -281,21 +323,26 @@ export function OrganizerEventEditPage({
     />,
     <OrganizerEventStepSchedule
       key="schedule"
-      disabled={disabled}
+      disabled={disabled || seatMapLoading || Boolean(seatMapError)}
       errors={form.errors}
       onChange={form.onChange}
       registerField={form.registerField}
       values={form.values}
       eventId={eventId}
       seatMap={seatMap}
-      seatMapLoading={false}
-      seatMapError=""
+      seatMapLoading={seatMapLoading}
+      seatMapError={seatMapError}
       seatMapTiers={form.values.tiers.map((tier, index) => ({
         id: tierKeys[index],
         name: tier.name,
         price: tier.price,
       }))}
       onImageChange={(value) => form.setField("seatingChartImage", value)}
+      onImageFileChange={(file) => {
+        setSeatMapImageFile(file);
+        uploadedSeatMapImageUrl.current = null;
+        setMapDirty(true);
+      }}
       onMapChange={handleMapChange}
       tiers={form.values.tiers}
       tierMessage={tierMessage}
@@ -342,6 +389,27 @@ export function OrganizerEventEditPage({
           {notice}
         </p>
       )}
+      {seatMapLoading && (
+        <p role="status">
+          Đang tải sơ đồ ghế… Bạn có thể chỉnh sửa thông tin sự kiện trong lúc
+          chờ.
+        </p>
+      )}
+      {seatMapError && (
+        <div role="alert">
+          <p>{seatMapError}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setSeatMapLoading(true);
+              setSeatMapError("");
+              setSeatMapRetry((value) => value + 1);
+            }}
+          >
+            Thử tải lại sơ đồ ghế
+          </button>
+        </div>
+      )}
       <fieldset disabled={disabled}>
         <OrganizerEventFormLayout
           wizard={false}
@@ -350,8 +418,8 @@ export function OrganizerEventEditPage({
           sections={sections}
           error={error}
           saving={saving}
-          seatMapLoading={false}
-          seatMapError=""
+          seatMapLoading={seatMapLoading}
+          seatMapError={seatMapError}
           submitLabel="Lưu thay đổi"
           onSubmit={(event) => {
             event.preventDefault();

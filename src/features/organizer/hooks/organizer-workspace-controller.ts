@@ -494,6 +494,7 @@ export function createOrganizerWorkspaceController() {
         organizerName: input.organizerName,
         organizerBio: input.organizerBio,
         organizerLogo,
+        confirmationMessage: input.confirmationMessage ?? undefined,
         visibility: (input.visibility === "public"
           ? "PUBLIC"
           : input.visibility === "link_only"

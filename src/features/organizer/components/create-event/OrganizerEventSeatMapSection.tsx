@@ -11,6 +11,7 @@ type Props = {
   seatMap: SeatMap | null;
   ticketTiers: readonly TicketTierOption[];
   onImageChange: (value: string) => void;
+  onImageFileChange?: (file: File) => void;
   onMapChange: (map: SeatMap) => void;
 };
 
@@ -22,6 +23,7 @@ export function OrganizerEventSeatMapSection({
   seatMap,
   ticketTiers,
   onImageChange,
+  onImageFileChange,
   onMapChange,
 }: Props) {
   return (
@@ -37,6 +39,7 @@ export function OrganizerEventSeatMapSection({
         key={`${eventId ?? "new"}-${seatMap?.id ?? (loading ? "loading" : "empty")}`}
         initialImage={initialImage}
         onImageChange={onImageChange}
+        onImageFileChange={onImageFileChange}
         initialMap={seatMap}
         onMapChange={onMapChange}
         ticketTiers={ticketTiers}

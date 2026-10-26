@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as adminEventApi from "../api/adminEventApi.ts";
-import { AdminEventReviews } from "../components/AdminEventReviews.tsx";
+import { AdminEventList } from "../components/AdminEventList.tsx";
 import type { AdminEventListItem } from "../types/admin-event.ts";
 
 export function AdminPendingEventsPage({ navigate }: { readonly navigate: (path: string) => void }) {
@@ -33,7 +33,7 @@ export function AdminPendingEventsPage({ navigate }: { readonly navigate: (path:
       {loading ? (
         <p className="rounded border border-line bg-surface p-5" role="status">Đang tải danh sách chờ duyệt...</p>
       ) : events.length ? (
-        <AdminEventReviews events={events} navigate={navigate} />
+        <AdminEventList events={events} navigate={navigate} />
       ) : (
         <p className="rounded border border-line bg-surface p-5">Không có sự kiện chờ duyệt.</p>
       )}

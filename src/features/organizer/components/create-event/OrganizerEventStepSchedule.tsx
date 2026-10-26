@@ -25,6 +25,7 @@ type Props = {
   seatMapError: string;
   seatMapTiers: readonly { id: string; name: string; price: number }[];
   onImageChange: (value: string) => void;
+  onImageFileChange?: (file: File) => void;
   onMapChange: (map: SeatMap) => void;
   tiers: readonly OrganizerTicketTierDraft[];
   tierMessage: string;
@@ -47,6 +48,7 @@ export function OrganizerEventStepSchedule({
   seatMapError,
   seatMapTiers,
   onImageChange,
+  onImageFileChange,
   onMapChange,
   tiers,
   tierMessage,
@@ -67,6 +69,7 @@ export function OrganizerEventStepSchedule({
           seatMap={seatMap}
           ticketTiers={seatMapTiers}
           onImageChange={onImageChange}
+          onImageFileChange={onImageFileChange}
           onMapChange={onMapChange}
         />
         <OrganizerEventTicketTiersSection
