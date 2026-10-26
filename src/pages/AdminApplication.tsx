@@ -57,7 +57,6 @@ export function AdminApplication({
   });
   const eventId = getAdminEventId(pathname);
   const payoutId = getAdminPayoutId(pathname);
-  const adminToken = accessToken as string;
   const navigate = useCallback(
     (destination: AdminPath) => {
       if (destination === pathname) return;
@@ -91,31 +90,21 @@ export function AdminApplication({
         </div>
       </section>
     );
-  } else if (route === "dashboard")
-    page = <RealAdminPage accessToken={adminToken} kind="dashboard" />;
-  else if (route === "users")
-    page = <RealAdminPage accessToken={adminToken} kind="users" />;
+  } else if (route === "dashboard") page = <RealAdminPage kind="dashboard" />;
+  else if (route === "users") page = <RealAdminPage kind="users" />;
   else if (route === "events-all")
     page = <AdminEventsPage navigate={navigatePage} />;
-  else if (route === "organizers")
-    page = <RealAdminPage accessToken={adminToken} kind="organizers" />;
-  else if (route === "orders")
-    page = <RealAdminPage accessToken={adminToken} kind="orders" />;
-  else if (route === "payments")
-    page = <RealAdminPage accessToken={adminToken} kind="payments" />;
-  else if (route === "refunds")
-    page = <RealAdminPage accessToken={adminToken} kind="refunds" />;
+  else if (route === "organizers") page = <RealAdminPage kind="organizers" />;
+  else if (route === "orders") page = <RealAdminPage kind="orders" />;
+  else if (route === "payments") page = <RealAdminPage kind="payments" />;
+  else if (route === "refunds") page = <RealAdminPage kind="refunds" />;
   else if (route === "payouts") page = <PayoutListPage navigate={navigate} />;
   else if (route === "payout-detail" && payoutId)
     page = <PayoutDetailPage payoutId={payoutId} navigate={navigate} />;
-  else if (route === "categories")
-    page = <RealAdminPage accessToken={adminToken} kind="categories" />;
-  else if (route === "resale")
-    page = <RealAdminPage accessToken={adminToken} kind="resale" />;
+  else if (route === "categories") page = <RealAdminPage kind="categories" />;
+  else if (route === "resale") page = <RealAdminPage kind="resale" />;
   else if (route === "resale-transactions")
-    page = (
-      <RealAdminPage accessToken={adminToken} kind="resale-transactions" />
-    );
+    page = <RealAdminPage kind="resale-transactions" />;
   else if (route === "event-reviews")
     page = <AdminPendingEventsPage navigate={navigatePage} />;
   else if (route === "event-review-detail" && eventId)

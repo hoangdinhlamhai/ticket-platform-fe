@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as adminEventApi from "../api/adminEventApi.ts";
+import { AdminEventSeatMap } from "./AdminEventSeatMap.tsx";
 import type { AdminEventDetail as EventDetail } from "../types/admin-event.ts";
 
 type Props = {
@@ -176,10 +177,6 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
           <h2 className="mt-0 text-xl font-extrabold">Thông tin sự kiện</h2>
           <dl className="grid gap-3">
             <div>
-              <dt className="text-sm text-ink-soft">ID sự kiện</dt>
-              <dd className="m-0 break-all">{event.id}</dd>
-            </div>
-            <div>
               <dt className="text-sm text-ink-soft">Danh mục</dt>
               <dd className="m-0">{event.category.name}</dd>
             </div>
@@ -223,10 +220,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
           <dl className="grid gap-3">
             <div>
               <dt className="text-sm text-ink-soft">Tài khoản</dt>
-              <dd className="m-0">
-                {event.organizer.fullName} · {event.organizer.email} ·{" "}
-                {event.organizer.id}
-              </dd>
+              <dd className="m-0">{event.organizer.email}</dd>
             </div>
             <div>
               <dt className="text-sm text-ink-soft">Tên hiển thị</dt>
@@ -311,23 +305,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
       </section>
 
       <section className="grid gap-5 rounded-lg border border-line bg-surface p-5 lg:grid-cols-2">
-        <div>
-          <h2 className="mt-0 text-xl font-extrabold">Sơ đồ chỗ ngồi</h2>
-          {event.seatMap?.imageUrl ? (
-            <img
-              className="max-h-80 rounded object-contain"
-              src={event.seatMap.imageUrl}
-              alt="Sơ đồ chỗ ngồi"
-            />
-          ) : (
-            <p>Không có sơ đồ chỗ ngồi.</p>
-          )}
-          {event.seatMap && (
-            <p>
-              Kích thước: {event.seatMap.width} × {event.seatMap.height}
-            </p>
-          )}
-        </div>
+        <AdminEventSeatMap eventId={event.id} />
         <div>
           <h2 className="mt-0 text-xl font-extrabold">Thông tin thanh toán</h2>
           {payout ? (

@@ -2,6 +2,7 @@ import type {
   EventReviewDecision,
   EventTicketType,
 } from "../../../../types/event.ts";
+import type { SeatMap } from "../../../seat-map/types/seat-map.ts";
 
 export type AdminEventListItem = {
   id: string;
@@ -55,4 +56,5 @@ export type AdminEventDetail = AdminEventListItem & {
 
 export type AdminEventDetailResponse = { event: AdminEventDetail };
 export type AdminEventListResponse = { events: AdminEventListItem[] };
+export type AdminEventSeatMapResponse = { seatMap: SeatMap | null };
 export type AdminEventReviewAction = EventReviewDecision;
