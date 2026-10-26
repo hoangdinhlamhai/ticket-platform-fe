@@ -1,4 +1,5 @@
 import type { AdminEventListItem } from "../types/admin-event.ts";
+import { adminStatusLabel } from "../../helpers/admin-display.ts";
 
 type Props = {
   readonly events: readonly AdminEventListItem[];
@@ -6,7 +7,11 @@ type Props = {
   readonly reviewMode?: boolean;
 };
 
-export function AdminEventCard({ events, navigate, reviewMode = false }: Props) {
+export function AdminEventCard({
+  events,
+  navigate,
+  reviewMode = false,
+}: Props) {
   return events.length ? (
     <div className="grid gap-3">
       {events.map((event) => (
@@ -23,14 +28,15 @@ export function AdminEventCard({ events, navigate, reviewMode = false }: Props) 
           <span className="flex flex-wrap items-center justify-between gap-2">
             <strong>{event.title}</strong>
             <span className="rounded-full bg-paper px-3 py-1 text-xs font-bold">
-              {event.status}
+              {adminStatusLabel(event.status)}
             </span>
           </span>
           <span className="mt-2 block text-sm text-ink-soft">
             {event.venueName ?? event.location.address} · {event.category.name}
           </span>
           <span className="mt-1 block text-sm text-ink-soft">
-            {new Date(event.startAt).toLocaleString("vi-VN")} · Organizer: {event.organizer.fullName}
+            {new Date(event.startAt).toLocaleString("vi-VN")} · Organizer:{" "}
+            {event.organizer.fullName}
           </span>
         </button>
       ))}

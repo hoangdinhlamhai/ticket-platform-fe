@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import * as adminEventApi from "../api/adminEventApi.ts";
 import { AdminEventSeatMap } from "./AdminEventSeatMap.tsx";
+import { adminStatusLabel } from "../../helpers/admin-display.ts";
 import type { AdminEventDetail as EventDetail } from "../types/admin-event.ts";
 
 type Props = {
@@ -118,6 +119,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
     .filter(Boolean)
     .join(", ");
   const payout = event.payoutInfo;
+  const isPendingReview = event.status.toUpperCase() === "PENDING_REVIEW";
 
   return (
     <div className="grid gap-5">
@@ -130,7 +132,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
       </button>
       <header className="grid gap-3 rounded-lg bg-pine p-6 text-paper">
         <p className="m-0 text-xs font-bold uppercase tracking-widest text-mint">
-          Chi tiết sự kiện · {event.status}
+          Chi tiết sự kiện · {adminStatusLabel(event.status)}
         </p>
         <h1 className="m-0 text-3xl font-extrabold">{event.title}</h1>
         <p className="m-0">
@@ -139,6 +141,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
           {new Date(event.endAt).toLocaleString("vi-VN")}
         </p>
       </header>
+
       {error && (
         <p
           className="rounded border border-error bg-error/10 p-4 text-error"
@@ -348,17 +351,31 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
           )}
         </div>
       </section>
-
-      {reviewMode && event.status === "PENDING_REVIEW" && (
-        <section className="sticky bottom-3 grid gap-3 rounded-lg border border-line bg-paper p-4 shadow-lg">
+      {isPendingReview && (
+        <section
+          className="grid gap-3 rounded-lg border border-line bg-surface p-5 shadow-sm"
+          aria-labelledby="event-review-heading"
+        >
+          <div>
+            <h2
+              id="event-review-heading"
+              className="m-0 text-xl font-extrabold"
+            >
+              Duyệt sự kiện
+            </h2>
+            <p className="mb-0 mt-1 text-sm text-ink-soft">
+              Xem xét thông tin và chọn quyết định cho sự kiện này.
+            </p>
+          </div>
           <label className="grid gap-2 font-bold" htmlFor="event-review-reason">
             Lý do từ chối (bắt buộc khi từ chối)
           </label>
           <textarea
             id="event-review-reason"
-            className="min-h-24 rounded border border-line bg-surface p-3"
+            className="min-h-24 rounded border border-line bg-paper p-3"
             value={reason}
             onChange={(change) => setReason(change.target.value)}
+            disabled={busy}
           />
           <div className="flex flex-wrap gap-3">
             <button
