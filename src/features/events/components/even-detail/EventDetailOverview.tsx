@@ -47,10 +47,6 @@ export function EventDetailOverview({ event }: EventDetailOverviewProps) {
             </dd>
           )}
         </div>
-        <div className="rounded-lg border border-line/70 bg-surface p-4">
-          <dt className="text-xs font-extrabold text-ink-soft">THỜI LƯỢNG</dt>
-          <dd className="mt-2 ml-0 font-bold">{event.duration}</dd>
-        </div>
       </dl>
       {event.seatingChartImage && (
         <figure className="mt-7 overflow-hidden rounded-lg border border-line/70 bg-surface p-4">

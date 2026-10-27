@@ -307,8 +307,10 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
         )}
       </section>
 
-      <section className="grid gap-5 rounded-lg border border-line bg-surface p-5 lg:grid-cols-2">
+      <section className="rounded-lg border border-line bg-surface p-5">
         <AdminEventSeatMap eventId={event.id} />
+      </section>
+      <section className="rounded-lg border border-line bg-surface p-5">
         <div>
           <h2 className="mt-0 text-xl font-extrabold">Thông tin thanh toán</h2>
           {payout ? (

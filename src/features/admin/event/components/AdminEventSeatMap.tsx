@@ -75,14 +75,14 @@ export function AdminEventSeatMap({ eventId }: Props) {
 
   return (
     <section className="grid content-start gap-4">
-      <div>
-        <h2 className="m-0 text-xl font-extrabold">Sơ đồ chỗ ngồi</h2>
-        <p className="mb-0 mt-1 text-sm text-ink-soft">
-          {hasDesignedLayout
-            ? "Sơ đồ được thiết kế với khu vực hoặc ghế."
-            : "Ảnh sơ đồ được tải lên, không có bố cục ghế tương tác."}
-        </p>
-      </div>
+      {!hasDesignedLayout && (
+        <div>
+          <h2 className="m-0 text-xl font-extrabold">S? ?? ch? ng?i</h2>
+          <p className="mb-0 mt-1 text-sm text-ink-soft">
+            ?nh s? ?? ???c t?i l?n, kh?ng c? b? c?c gh? t??ng t?c.
+          </p>
+        </div>
+      )}
       {hasDesignedLayout ? (
         <SeatMapViewer seatMap={seatMap} />
       ) : seatMap.imageUrl ? (

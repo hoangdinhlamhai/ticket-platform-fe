@@ -13,6 +13,22 @@ type Props = {
 };
 
 export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
+  const mapWidth = seatMap.width ?? 900;
+  const mapHeight = seatMap.height ?? 620;
+  const horizontalBounds = [
+    ...seatMap.hangs.flatMap((row) => [
+      row.x,
+      ...row.seats.map((seat) => seat.x),
+    ]),
+    ...seatMap.vatThe.flatMap((item) => {
+      const radius = Math.hypot(item.width, item.height) / 2;
+      return [item.x - radius, item.x + radius];
+    }),
+  ];
+  const contentCenter = horizontalBounds.length
+    ? (Math.min(...horizontalBounds) + Math.max(...horizontalBounds)) / 2
+    : mapWidth / 2;
+  const horizontalOffset = seatMap.imageUrl ? 0 : mapWidth / 2 - contentCenter;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [seatStatuses, setSeatStatuses] = useState<Record<
     string,
@@ -111,8 +127,8 @@ export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
       </p>
       <div className="overflow-auto rounded-md border border-line bg-paper">
         <svg
-          className="block min-w-[36rem] w-full"
-          viewBox={`0 0 ${seatMap.width ?? 900} ${seatMap.height ?? 620}`}
+          className="block w-full min-w-[36rem]"
+          viewBox={`0 0 ${mapWidth} ${mapHeight}`}
           role="group"
           aria-label="Sơ đồ chọn ghế"
         >
@@ -126,108 +142,110 @@ export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
               preserveAspectRatio="none"
             />
           )}
-          {seatMap.vatThe.map((item, index) => (
-            <g key={item.id ?? `object-${index}`}>
-              {item.width && item.height && (
-                <g
-                  transform={`translate(${item.x} ${item.y}) rotate(${item.rotation ?? 0})`}
-                >
-                  <rect
-                    x={-item.width / 2}
-                    y={-item.height / 2}
-                    width={item.width}
-                    height={item.height}
-                    rx="8"
-                    fill="#dbeafe"
-                    fillOpacity=".8"
-                    stroke="#475569"
-                  />
-                </g>
-              )}
-            </g>
-          ))}
-          {seatMap.hangs.map((row, rowIndex) => (
-            <g key={row.id ?? `${row.label}-${rowIndex}`}>
-              <text
-                x={row.x}
-                y={row.y - 22}
-                textAnchor="middle"
-                fill="#172033"
-                fontSize="14"
-                fontWeight="700"
-              >
-                {row.label}
-              </text>
-              {row.seats.map((seat, seatIndex) => {
-                const id = seat.id;
-                const seatStatus = id ? seatStatuses?.[id] : null;
-                const canSelect = Boolean(
-                  id &&
-                  (seat.ticketTypeId ?? row.ticketTypeId) &&
-                  seatStatus === "AVAILABLE",
-                );
-                const isSelected = Boolean(id && selectedIds.includes(id));
-                const colorIndex =
-                  [
-                    ...(seat.ticketType?.name ?? row.ticketType?.name ?? ""),
-                  ].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 5;
-                const colors = [
-                  "#2463a8",
-                  "#d45b4d",
-                  "#8b5ca8",
-                  "#25806c",
-                  "#c2832f",
-                ];
-                return (
+          <g transform={`translate(${horizontalOffset} 0)`}>
+            {seatMap.vatThe.map((item, index) => (
+              <g key={item.id ?? `object-${index}`}>
+                {item.width && item.height && (
                   <g
-                    key={id ?? `${seat.number}-${seatIndex}`}
-                    role="button"
-                    aria-label={`${row.label}${seat.number}${isSelected ? ", đã chọn" : seatStatus === "SOLD" ? ", đã bán" : seatStatus === "RESERVED" ? ", đang được giữ" : canSelect ? ", chọn ghế" : ", không khả dụng"}`}
-                    aria-disabled={!canSelect}
-                    aria-pressed={isSelected}
-                    tabIndex={canSelect ? 0 : -1}
-                    className={
-                      canSelect
-                        ? "cursor-pointer"
-                        : "cursor-not-allowed opacity-40"
-                    }
-                    onClick={() => canSelect && id && toggleSeat(id)}
-                    onKeyDown={(e) => {
-                      if (
-                        canSelect &&
-                        id &&
-                        (e.key === "Enter" || e.key === " ")
-                      ) {
-                        e.preventDefault();
-                        toggleSeat(id);
-                      }
-                    }}
+                    transform={`translate(${item.x} ${item.y}) rotate(${item.rotation ?? 0})`}
                   >
-                    <circle
-                      cx={seat.x}
-                      cy={seat.y}
-                      r={Math.max(
-                        8,
-                        Math.min(seat.width ?? 24, seat.height ?? 24) / 2,
-                      )}
-                      fill={
-                        isSelected
-                          ? "#16a34a"
-                          : seatStatus === "SOLD"
-                            ? "#94a3b8"
-                            : seatStatus === "RESERVED"
-                              ? "#eab308"
-                              : colors[colorIndex]
-                      }
-                      stroke={isSelected ? "#14532d" : "white"}
-                      strokeWidth={isSelected ? 4 : 2}
+                    <rect
+                      x={-item.width / 2}
+                      y={-item.height / 2}
+                      width={item.width}
+                      height={item.height}
+                      rx="8"
+                      fill="#dbeafe"
+                      fillOpacity=".8"
+                      stroke="#475569"
                     />
-                    <title>{`${row.label}${seat.number} · ${seat.ticketType?.name ?? row.ticketType?.name ?? "Chưa có loại vé"}`}</title>
                   </g>
-                );
-              })}
-            </g>
-          ))}
+                )}
+              </g>
+            ))}
+            {seatMap.hangs.map((row, rowIndex) => (
+              <g key={row.id ?? `${row.label}-${rowIndex}`}>
+                <text
+                  x={row.x}
+                  y={row.y - 22}
+                  textAnchor="middle"
+                  fill="#172033"
+                  fontSize="14"
+                  fontWeight="700"
+                >
+                  {row.label}
+                </text>
+                {row.seats.map((seat, seatIndex) => {
+                  const id = seat.id;
+                  const seatStatus = id ? seatStatuses?.[id] : null;
+                  const canSelect = Boolean(
+                    id &&
+                    (seat.ticketTypeId ?? row.ticketTypeId) &&
+                    seatStatus === "AVAILABLE",
+                  );
+                  const isSelected = Boolean(id && selectedIds.includes(id));
+                  const colorIndex =
+                    [
+                      ...(seat.ticketType?.name ?? row.ticketType?.name ?? ""),
+                    ].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 5;
+                  const colors = [
+                    "#2463a8",
+                    "#d45b4d",
+                    "#8b5ca8",
+                    "#25806c",
+                    "#c2832f",
+                  ];
+                  return (
+                    <g
+                      key={id ?? `${seat.number}-${seatIndex}`}
+                      role="button"
+                      aria-label={`${row.label}${seat.number}${isSelected ? ", đã chọn" : seatStatus === "SOLD" ? ", đã bán" : seatStatus === "RESERVED" ? ", đang được giữ" : canSelect ? ", chọn ghế" : ", không khả dụng"}`}
+                      aria-disabled={!canSelect}
+                      aria-pressed={isSelected}
+                      tabIndex={canSelect ? 0 : -1}
+                      className={
+                        canSelect
+                          ? "cursor-pointer"
+                          : "cursor-not-allowed opacity-40"
+                      }
+                      onClick={() => canSelect && id && toggleSeat(id)}
+                      onKeyDown={(e) => {
+                        if (
+                          canSelect &&
+                          id &&
+                          (e.key === "Enter" || e.key === " ")
+                        ) {
+                          e.preventDefault();
+                          toggleSeat(id);
+                        }
+                      }}
+                    >
+                      <circle
+                        cx={seat.x}
+                        cy={seat.y}
+                        r={Math.max(
+                          8,
+                          Math.min(seat.width ?? 24, seat.height ?? 24) / 2,
+                        )}
+                        fill={
+                          isSelected
+                            ? "#16a34a"
+                            : seatStatus === "SOLD"
+                              ? "#94a3b8"
+                              : seatStatus === "RESERVED"
+                                ? "#eab308"
+                                : colors[colorIndex]
+                        }
+                        stroke={isSelected ? "#14532d" : "white"}
+                        strokeWidth={isSelected ? 4 : 2}
+                      />
+                      <title>{`${row.label}${seat.number} · ${seat.ticketType?.name ?? row.ticketType?.name ?? "Chưa có loại vé"}`}</title>
+                    </g>
+                  );
+                })}
+              </g>
+            ))}
+          </g>
         </svg>
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">

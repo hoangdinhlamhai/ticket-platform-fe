@@ -88,7 +88,6 @@ export function EventTicketSelector({ onDecrease, onIncrease, onMockSubmit, onSe
         <button className="mt-5 min-h-[3.25rem] w-full rounded-md bg-coral px-5 font-extrabold text-paper hover:bg-coral-dark disabled:opacity-50" type="button" onClick={onMockSubmit} disabled={!selectedAvailable}>
           Tiếp tục thanh toán
         </button>
-        <p className="mt-3 mb-0 text-xs leading-[1.5] text-ink-soft">Số lượng hiển thị là suất phân bổ đã cấu hình, không phải tồn kho trực tiếp.</p>
       </div>
     </aside>
   )

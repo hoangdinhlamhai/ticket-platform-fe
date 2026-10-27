@@ -64,6 +64,17 @@ export function SeatMapViewer({ seatMap }: { seatMap: SeatMap }) {
                     fillOpacity="0.8"
                     stroke="#475569"
                   />
+                  <text
+                    x="0"
+                    y="0"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="#172033"
+                    fontSize="16"
+                    fontWeight="700"
+                  >
+                    V?t th?
+                  </text>
                 </g>
               )}
             </g>

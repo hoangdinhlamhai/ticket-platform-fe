@@ -6,15 +6,15 @@ import {
   LinkIcon,
   PinIcon,
   ShareIcon,
-} from "../../../components/icons/TicketlyIcons";
+} from "../../../../components/icons/TicketlyIcons";
 import {
   buildEventDirectionsUrl,
   buildEventGoogleCalendarUrl,
   buildEventIcsDataUrl,
   getEventIcsFilename,
   shareEvent,
-} from "../helpers/event-action-links";
-import type { EventDetailView } from "../types/event";
+} from "../../helpers/event-action-links";
+import type { EventDetailView } from "../../types/event";
 
 type EventActionsProps = {
   event: EventDetailView;

@@ -7,7 +7,7 @@ import { SeatMapSeatPicker } from "../../seat-map/components/SeatMapSeatPicker.t
 import type { SeatMap } from "../../seat-map/types/seat-map.ts";
 import type { PrimaryCheckoutSelection } from "../../orders";
 import type { PublicEvent } from "../../../types/event.ts";
-import { EventActions } from "../components/EventActions.tsx";
+import { EventActions } from "../components/even-detail/EventActions.tsx";
 import { EventDetailHero } from "../components/even-detail/EventDetailHero.tsx";
 import { EventDetailOverview } from "../components/even-detail/EventDetailOverview.tsx";
 import { EventNotFoundState } from "../components/EventNotFoundState.tsx";
@@ -211,6 +211,7 @@ function EventDetailContent({
         <div className="attendee-container">
           {seatMap?.mode === "ASSIGNED_SEATING" ? (
             <div className="space-y-8">
+              <EventDetailOverview event={event} />
               <SeatMapSeatPicker
                 seatMap={seatMap}
                 event={{
@@ -222,7 +223,6 @@ function EventDetailContent({
                 }}
                 onContinue={onStartCheckout}
               />
-              <EventDetailOverview event={event} />
               <EventActions event={event} />
             </div>
           ) : (
