@@ -1,11 +1,8 @@
-export { OwnedTicketSummary } from "./components/OwnedTicketSummary";
+export { OwnedListTicketSummary } from "./components/OwnedListTicketSummary";
 export { TicketCredentialNotice } from "./components/TicketCredentialNotice";
-export { TicketInformationCard } from "./components/TicketInformationCard";
-export { TicketJourneyTimeline } from "./components/TicketJourneyTimeline";
-export { TicketNotFoundState } from "./components/TicketNotFoundState";
-export { TicketStatusHero } from "./components/TicketStatusHero";
 export { findMine, findMineOrders } from "./api/ticketApi";
-export { OwnedTicketsPage } from "./pages/OwnedTicketsPage";
+export { OwnedTicketsPage } from "./pages/OwnedListTicketsPage";
+export { DetailTicketPage } from "./pages/DetailTicketPage";
 export { TicketStatusPage } from "./pages/TicketStatusPage";
 export type {
   OwnedTicket,

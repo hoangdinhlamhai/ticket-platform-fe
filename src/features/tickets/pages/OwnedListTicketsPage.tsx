@@ -3,7 +3,7 @@ import {
   shouldUseClientNavigation,
   type AttendeePath,
 } from "../../../routes/attendee-route";
-import { OwnedTicketSummary } from "../components/OwnedTicketSummary";
+import { OwnedListTicketSummary } from "../components/OwnedListTicketSummary";
 import type { OwnedTicket } from "../types/ticket";
 import { findMine, findMineOrders, toOwnedTicket } from "../api/ticketApi";
 
@@ -50,7 +50,7 @@ export function OwnedTicketsPage({
   );
 
   return (
-    <OwnedTicketSummary
+    <OwnedListTicketSummary
       tickets={tickets}
       onSell={onSellTicket}
       onTicketAction={viewTicket}

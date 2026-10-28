@@ -26,7 +26,7 @@ function resaleLabel(ticket: OwnedTicket) {
   return null;
 }
 
-export function OwnedTicketSummary({ onSell, onTicketAction, tickets }: Props) {
+export function OwnedListTicketSummary({ onSell, onTicketAction, tickets }: Props) {
   return (
     <section
       className="bg-paper-deep py-[clamp(3.5rem,7vw,6.5rem)]"

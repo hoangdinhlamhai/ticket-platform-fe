@@ -37,7 +37,7 @@ import {
 } from "./features/resale";
 import {
   OwnedTicketsPage,
-  TicketStatusPage,
+  DetailTicketPage,
   type OwnedTicket,
 } from "./features/tickets";
 import { AttendeeLayout } from "./layouts/AttendeeLayout";
@@ -161,7 +161,7 @@ function AttendeePage({
     );
   if (route === "ticket-status")
     return (
-      <TicketStatusPage
+      <DetailTicketPage
         ticketId={getAttendeeTicketId(pathname) ?? ""}
         onNavigate={actions.navigate}
       />

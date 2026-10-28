@@ -105,7 +105,7 @@ export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
     });
   };
   const unavailable = options.filter(
-    ({ seat }) => !seat.id || !seat.ticketType?.id,
+    ({ seat, ticketType }) => !seat.id || !ticketType?.id,
   ).length;
 
   return (

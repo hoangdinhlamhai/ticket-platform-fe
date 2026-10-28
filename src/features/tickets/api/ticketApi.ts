@@ -16,7 +16,7 @@ type TicketApiRecord = {
     venueName: string | null;
   };
   ticketType: { id: string; name: string };
-  seat: { id: string; number: string; row: { label: string } } | null;
+  seat: { id: string; number: string; row: string } | null;
   order: { id: string; payment: { paidAt: string | null } | null };
 };
 
@@ -33,7 +33,7 @@ export function toOwnedTicket(
   const order = orders.find((item) => item.id === ticket.order.id);
   const startAt = new Date(ticket.event.startAt);
   const seatLabel = ticket.seat
-    ? `Ghế ${ticket.seat.row.label}${ticket.seat.number}`
+    ? `Ghế ${ticket.seat.row}${ticket.seat.number}`
     : null;
   const paidAt = order?.payment?.paidAt ?? ticket.order.payment?.paidAt;
 
@@ -60,7 +60,7 @@ export function toOwnedTicket(
     credentialCode: ticket.ticketCode,
     credentialStatus: "pending",
     resaleStatus: "ineligible",
-    row: ticket.seat?.row.label ?? null,
+    row: ticket.seat?.row ?? null,
     seats: seatLabel ? [seatLabel] : undefined,
     journey: [
       {
