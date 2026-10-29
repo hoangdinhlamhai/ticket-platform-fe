@@ -8,6 +8,7 @@ import {
 import type { OwnedTicket } from "../types/ticket";
 
 type Props = {
+  isLoading: boolean;
   tickets: readonly OwnedTicket[];
   onTicketAction: (
     ticket: OwnedTicket,
@@ -26,7 +27,12 @@ function resaleLabel(ticket: OwnedTicket) {
   return null;
 }
 
-export function OwnedListTicketSummary({ onSell, onTicketAction, tickets }: Props) {
+export function OwnedListTicketSummary({
+  isLoading,
+  onSell,
+  onTicketAction,
+  tickets,
+}: Props) {
   return (
     <section
       className="bg-paper-deep py-[clamp(3.5rem,7vw,6.5rem)]"
@@ -43,7 +49,7 @@ export function OwnedListTicketSummary({ onSell, onTicketAction, tickets }: Prop
             VÉ CỦA BẠN
           </p>
           <strong className="relative mt-2 block font-body text-[clamp(4.5rem,9vw,7.5rem)] leading-[0.7] font-extrabold tracking-[-0.12em]">
-            {tickets.length}
+            {isLoading ? "…" : tickets.length}
           </strong>
           <p className="relative mt-3 max-w-52 leading-[1.55] text-story-copy">
             Các vé đã thanh toán được lưu tại đây.
@@ -65,67 +71,79 @@ export function OwnedListTicketSummary({ onSell, onTicketAction, tickets }: Prop
             </h1>
           </header>
           <div className="mt-5 space-y-4">
-            {tickets.map((ticket) => {
-              const listingStatus = resaleLabel(ticket);
-              return (
-                <article
-                  key={ticket.id}
-                  className="rounded-lg border border-line/70 bg-surface p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap gap-2">
-                        <span
-                          className={`inline-flex rounded-sm border px-2 py-1 text-xs font-extrabold ${getStatusClass(ticket.status)}`}
-                        >
-                          {ticket.status}
-                        </span>
-                        {listingStatus && (
-                          <span className="rounded-sm border border-coral/40 bg-paper-deep px-2 py-1 text-xs font-extrabold text-coral-dark">
-                            {listingStatus}
-                          </span>
-                        )}
-                      </div>
-                      <h2 className="mt-3 font-body text-[1.65rem] font-extrabold tracking-[-0.07em]">
-                        {ticket.eventTitle}
-                      </h2>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <a
-                        className="flex min-h-11 items-center gap-2 rounded-md border border-blue-deep/60 px-3 text-sm font-extrabold text-blue-deep no-underline hover:bg-blue hover:text-paper"
-                        href={`/tickets/${ticket.id}`}
-                        onClick={(event) => onTicketAction(ticket, event)}
-                      >
-                        Xem vé
-                        <ArrowUpRightIcon className="h-4 w-4" />
-                      </a>
-                      {onSell &&
-                        ticket.resaleStatus === "eligible" &&
-                        ticket.credentialStatus !== "revoked" && (
-                          <button
-                            className="min-h-11 rounded-md bg-coral px-3 text-sm font-extrabold text-paper"
-                            type="button"
-                            onClick={() => onSell(ticket)}
+            {isLoading ? (
+              <p
+                className="rounded-lg border border-line/70 bg-surface p-6 text-center text-ink-soft"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                Đang tải vé của bạn…
+              </p>
+            ) : (
+              tickets.map((ticket) => {
+                const listingStatus = resaleLabel(ticket);
+                return (
+                  <article
+                    key={ticket.id}
+                    className="rounded-lg border border-line/70 bg-surface p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap gap-2">
+                          <span
+                            className={`inline-flex rounded-sm border px-2 py-1 text-xs font-extrabold ${getStatusClass(ticket.status)}`}
                           >
-                            Bán lại vé
-                          </button>
-                        )}
+                            {ticket.status}
+                          </span>
+                          {listingStatus && (
+                            <span className="rounded-sm border border-coral/40 bg-paper-deep px-2 py-1 text-xs font-extrabold text-coral-dark">
+                              {listingStatus}
+                            </span>
+                          )}
+                        </div>
+                        <h2 className="mt-3 font-body text-[1.65rem] font-extrabold tracking-[-0.07em]">
+                          {ticket.eventTitle}
+                        </h2>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <a
+                          className="flex min-h-11 items-center gap-2 rounded-md border border-blue-deep/60 px-3 text-sm font-extrabold text-blue-deep no-underline hover:bg-blue hover:text-paper"
+                          href={`/tickets/${ticket.id}`}
+                          onClick={(event) => onTicketAction(ticket, event)}
+                        >
+                          Xem vé
+                          <ArrowUpRightIcon className="h-4 w-4" />
+                        </a>
+                        {onSell &&
+                          ticket.resaleStatus === "eligible" &&
+                          ticket.credentialStatus !== "revoked" && (
+                            <button
+                              className="min-h-11 rounded-md bg-coral px-3 text-sm font-extrabold text-paper"
+                              type="button"
+                              onClick={() => onSell(ticket)}
+                            >
+                              Bán lại vé
+                            </button>
+                          )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line/70 pt-3 text-sm text-ink-soft mobile:grid-cols-1">
-                    <p className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-blue-deep" />
-                      {ticket.date}
+                    <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line/70 pt-3 text-sm text-ink-soft mobile:grid-cols-1">
+                      <p className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-blue-deep" />
+                        {ticket.date}
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <PinIcon className="h-4 w-4 text-blue-deep" />
+                        {ticket.venue}
+                      </p>
+                    </div>
+                    <p className="mt-3 text-sm font-bold">
+                      {ticket.ticketType}
                     </p>
-                    <p className="flex items-start gap-2">
-                      <PinIcon className="h-4 w-4 text-blue-deep" />
-                      {ticket.venue}
-                    </p>
-                  </div>
-                  <p className="mt-3 text-sm font-bold">{ticket.ticketType}</p>
-                </article>
-              );
-            })}
+                  </article>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

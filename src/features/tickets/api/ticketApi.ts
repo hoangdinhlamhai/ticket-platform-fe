@@ -32,9 +32,7 @@ export function toOwnedTicket(
 ): OwnedTicket {
   const order = orders.find((item) => item.id === ticket.order.id);
   const startAt = new Date(ticket.event.startAt);
-  const seatLabel = ticket.seat
-    ? `Ghế ${ticket.seat.row}${ticket.seat.number}`
-    : null;
+  const seatLabel = ticket.seat?.number ?? null;
   const paidAt = order?.payment?.paidAt ?? ticket.order.payment?.paidAt;
 
   return {
@@ -52,7 +50,11 @@ export function toOwnedTicket(
     ticketType: [ticket.ticketType.name, seatLabel].filter(Boolean).join(" · "),
     holderName: "Vé của bạn",
     referenceCode: ticket.ticketCode,
-    purchaseLabel: `Đơn ${ticket.order.id} · ${new Intl.DateTimeFormat("vi-VN").format(new Date(paidAt ?? ticket.createdAt))}`,
+    purchaseLabel: new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(paidAt ?? ticket.createdAt)),
     status:
       startAt.getTime() > Date.now() ? "Sắp diễn ra" : "Sẵn sàng check-in",
     source: "primary",

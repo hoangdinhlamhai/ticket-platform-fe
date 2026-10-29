@@ -17,6 +17,7 @@ export function OwnedTicketsPage({
   onSellTicket,
 }: OwnedTicketsPageProps) {
   const [tickets, setTickets] = useState<OwnedTicket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     let active = true;
     const loadTickets = async () => {
@@ -33,6 +34,8 @@ export function OwnedTicketsPage({
         );
       } catch {
         if (active) setTickets([]);
+      } finally {
+        if (active) setIsLoading(false);
       }
     };
     void loadTickets();
@@ -52,6 +55,7 @@ export function OwnedTicketsPage({
   return (
     <OwnedListTicketSummary
       tickets={tickets}
+      isLoading={isLoading}
       onSell={onSellTicket}
       onTicketAction={viewTicket}
     />
