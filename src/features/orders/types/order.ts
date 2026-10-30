@@ -107,5 +107,10 @@ export type AttendeeOrderDetail = Omit<
         paymentSessionId: string | null;
       })
     | null;
-  tickets: { id: string; ticketCode: string; status: string }[];
+  tickets: {
+    id: string;
+    ticketCode: string;
+    status: string;
+    ticketType?: { id: string; name: string } | null;
+  }[];
 };

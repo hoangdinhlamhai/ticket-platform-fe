@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { AttendeePath } from "../../../routes/attendee-route";
 import { findMineById } from "../api/orderApi";
-import { OrderDetailTimeline } from "../components/OrderDetailTimeline";
 import { OrderStatusBadge } from "../components/OrderStatusBadge";
 import type { AttendeeOrderDetail } from "../types/order";
 import { formatTicketPrice } from "../../events";
@@ -75,31 +74,39 @@ export function OrderDetailPage({ orderId, onNavigate }: Props) {
     );
   }
 
+  const issuedTicketTypeNames = order.items.flatMap((item) =>
+    Array.from({ length: item.quantity }, () => item.ticketType.name),
+  );
+
   return (
-    <section className="px-6 py-[clamp(3.5rem,6vw,5.5rem)] mobile:px-5">
-      <div className="mx-auto max-w-[68rem]">
-        <button
-          className="min-h-11 font-extrabold text-blue-deep"
-          type="button"
-          onClick={() => onNavigate("/orders")}
-        >
-          ← Tất cả đơn hàng
-        </button>
+    <>
+      <header className="bg-pine py-[clamp(2rem,4vw,3rem)] text-paper">
+        <div className="attendee-container">
+          <button
+            className="min-h-11 rounded-md border border-story-copy/35 bg-transparent px-4 text-sm font-bold text-paper hover:border-mint hover:text-mint"
+            type="button"
+            onClick={() => onNavigate("/orders")}
+          >
+            ← Tất cả đơn hàng
+          </button>
 
-        <header className="mt-6 rounded-lg bg-pine p-6 text-paper">
-          <OrderStatusBadge status={order.status} />
-          <p className="mt-4 text-xs font-extrabold tracking-[0.1em] text-mint">
-            MÃ ĐƠN · {order.id}
-          </p>
-          <h1 className="mt-3 font-body text-[clamp(2.7rem,6vw,5rem)] leading-[0.9] font-extrabold tracking-[-0.095em]">
-            {order.event.title}
-          </h1>
-          {order.event.venueName && (
-            <p className="mb-0 mt-3 text-paper/80">{order.event.venueName}</p>
-          )}
-        </header>
+          <div className="mt-6 rounded-lg border border-story-copy/20 bg-pine p-6">
+            <OrderStatusBadge status={order.status} />
+            <p className="mt-4 text-xs font-extrabold tracking-[0.1em] text-mint">
+              MÃ ĐƠN · {order.id}
+            </p>
+            <h1 className="mt-3 font-body text-[clamp(2.7rem,6vw,5rem)] leading-[0.9] font-extrabold tracking-[-0.095em]">
+              {order.event.title}
+            </h1>
+            {order.event.venueName && (
+              <p className="mb-0 mt-3 text-paper/80">{order.event.venueName}</p>
+            )}
+          </div>
+        </div>
+      </header>
 
-        <section className="mt-7 rounded-lg border border-line bg-surface p-6">
+      <section className="attendee-container py-7">
+        <div className="rounded-lg border border-line bg-surface p-6">
           <h2 className="m-0 text-2xl font-extrabold">Chi tiết thanh toán</h2>
           <dl className="mt-5 grid grid-cols-2 gap-5 mobile:grid-cols-1">
             <div>
@@ -145,23 +152,23 @@ export function OrderDetailPage({ orderId, onNavigate }: Props) {
               </strong>
             </div>
           </div>
-        </section>
-
-        <OrderDetailTimeline
-          orderStatus={order.status}
-          ticketCount={order.tickets.length}
-        />
+        </div>
 
         {order.tickets.length > 0 && (
-          <section className="mt-7 rounded-lg border border-line bg-surface p-6">
+          <div className="mt-7 rounded-lg border border-line bg-surface p-6">
             <h2 className="m-0 text-2xl font-extrabold">Vé đã phát hành</h2>
             <ul className="mt-4 space-y-3 p-0">
-              {order.tickets.map((ticket) => (
+              {order.tickets.map((ticket, index) => (
                 <li
                   key={ticket.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-4"
                 >
-                  <span className="font-extrabold">{ticket.ticketCode}</span>
+                  <span className="font-extrabold">
+                    {ticket.ticketType?.name ??
+                      issuedTicketTypeNames[index] ??
+                      order.items[0]?.ticketType.name ??
+                      "Vé"}
+                  </span>
                   <span className="text-sm text-ink-soft">{ticket.status}</span>
                   <button
                     className="min-h-10 rounded-md border border-blue-deep/50 px-3 text-sm font-extrabold text-blue-deep"
@@ -173,9 +180,9 @@ export function OrderDetailPage({ orderId, onNavigate }: Props) {
                 </li>
               ))}
             </ul>
-          </section>
+          </div>
         )}
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
