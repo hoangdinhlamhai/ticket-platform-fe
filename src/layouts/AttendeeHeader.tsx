@@ -76,7 +76,7 @@ export function AttendeeHeader({
         </a>
 
         <nav
-          className="order-3 flex w-full items-center gap-1 border-t border-line pt-2 text-[0.82rem] font-bold mobile:order-3"
+          className="order-3 flex w-full flex-wrap items-center gap-1 border-t border-line pt-2 text-[0.82rem] font-bold mobile:order-3"
           aria-label="Điều hướng chính"
         >
           <NavigationLink
@@ -108,6 +108,13 @@ export function AttendeeHeader({
             onNavigate={onNavigate}
           >
             Đơn hàng
+          </NavigationLink>
+          <NavigationLink
+            active={activeRoute === "refunds"}
+            href="/refunds"
+            onNavigate={onNavigate}
+          >
+            Hoàn tiền
           </NavigationLink>
           <NavigationLink
             active={isResaleRoute(activeRoute)}

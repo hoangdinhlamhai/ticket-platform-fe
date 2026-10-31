@@ -22,6 +22,7 @@ import {
   type AttendeeOrder,
   type PrimaryCheckoutSelection,
 } from "./features/orders";
+import { RefundHistoryPage } from "./features/refund";
 import { CustomerProfilePage, type CustomerProfile } from "./features/profile";
 import {
   CreateResaleListingPage,
@@ -152,6 +153,7 @@ function AttendeePage({
     );
   if (route === "orders")
     return <OrderHistoryPage onNavigate={actions.navigate} />;
+  if (route === "refunds") return <RefundHistoryPage />;
   if (route === "order-detail")
     return (
       <OrderDetailPage

@@ -8,6 +8,7 @@ export type AttendeeRoute =
   | "ticket-status"
   | "orders"
   | "order-detail"
+  | "refunds"
   | "event-detail"
   | "primary-checkout"
   | "primary-result"
@@ -28,6 +29,7 @@ export type AttendeePath =
   | "/profile"
   | "/tickets"
   | "/orders"
+  | "/refunds"
   | "/resale"
   | "/resale/my-listings"
   | `/events/${string}`
@@ -108,6 +110,7 @@ export function getAttendeeRoute(pathname: string): AttendeeRoute {
   if (/^\/events\/[^/]+\/checkout\/result$/.test(path)) return "primary-result";
   if (/^\/events\/[^/]+\/checkout$/.test(path)) return "primary-checkout";
   if (path === "/orders") return "orders";
+  if (path === "/refunds") return "refunds";
   if (getAttendeeOrderId(path)) return "order-detail";
   if (path === "/resale/my-listings") return "my-resale-listings";
   if (getResaleSellTicketId(path)) return "resale-sell";
