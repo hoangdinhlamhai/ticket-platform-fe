@@ -33,11 +33,17 @@ function getEligibleOrders(
         order.status === "PAID" &&
         order.payment?.status === "PAID" &&
         order.payment.provider === "XENDIT" &&
+        order.payment.refundable &&
         !existingRequestOrderIds.has(order.id),
     )
     .map((order) => ({
       id: order.id,
       eventTitle: order.event.title,
+      eventStartAt: order.event.startAt,
+      items: order.items.map((item) => ({
+        ticketTypeName: item.ticketType.name,
+        quantity: item.quantity,
+      })),
       amount: Number(order.total),
     }));
 }

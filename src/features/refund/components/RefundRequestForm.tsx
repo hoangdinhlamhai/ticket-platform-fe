@@ -3,6 +3,8 @@ import { useState, type FormEvent } from "react";
 export type RefundEligibleOrder = {
   id: string;
   eventTitle: string;
+  eventStartAt: string;
+  items: readonly { ticketTypeName: string; quantity: number }[];
   amount: number;
 };
 
@@ -79,32 +81,68 @@ export function RefundRequestForm({
 
       {orders.length ? (
         <>
-          <label
-            className="mt-5 block text-sm font-bold text-ink"
-            htmlFor="refund-order"
-          >
+          <p className="mt-5 mb-0 text-sm font-bold text-ink">
             Đơn hàng cần hoàn tiền
-          </label>
-          <select
-            id="refund-order"
-            className="mt-2 min-h-12 w-full rounded-md border border-line bg-paper px-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-deep"
-            value={orderId}
+          </p>
+          <fieldset
+            className="mt-2 max-h-72 space-y-2 overflow-y-auto rounded-md"
             disabled={isSubmitting}
-            onChange={(event) => setOrderId(event.target.value)}
+            aria-label="Chọn đơn hàng cần hoàn tiền"
           >
-            {orders.map((order) => (
-              <option key={order.id} value={order.id}>
-                {order.eventTitle} · {order.id}
-              </option>
-            ))}
-          </select>
-
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-paper-deep px-4 py-3">
-            <span className="text-sm text-ink-soft">Số tiền yêu cầu</span>
-            <strong className="text-sm text-blue-deep">
-              {selectedOrder ? formatMoney(selectedOrder.amount) : "—"}
-            </strong>
-          </div>
+            {orders.map((order) => {
+              const selected = order.id === orderId;
+              return (
+                <label
+                  key={order.id}
+                  className={`block cursor-pointer rounded-md border p-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue-deep ${
+                    selected
+                      ? "border-blue-deep bg-blue/10"
+                      : "border-line bg-paper hover:border-blue-deep/60"
+                  }`}
+                >
+                  <span className="flex items-start gap-3">
+                    <input
+                      className="mt-1 h-4 w-4 shrink-0 accent-blue-deep"
+                      type="radio"
+                      name="refund-order"
+                      value={order.id}
+                      checked={selected}
+                      onChange={() => setOrderId(order.id)}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold leading-5 text-pine">
+                        {order.eventTitle}
+                      </span>
+                      <span className="mt-1 block text-xs text-ink-soft">
+                        {new Date(order.eventStartAt).toLocaleString("vi-VN", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                        {" · Mã đơn "}
+                        {order.id.slice(0, 8)}
+                      </span>
+                      <span className="mt-2 block space-y-1 text-sm text-ink">
+                        {order.items.map((item, index) => (
+                          <span
+                            className="block"
+                            key={`${item.ticketTypeName}-${index}`}
+                          >
+                            {item.ticketTypeName} × {item.quantity}
+                          </span>
+                        ))}
+                      </span>
+                      <span className="mt-2 flex items-center justify-between gap-2 border-t border-line pt-2 text-xs text-ink-soft">
+                        <span>Số tiền hoàn</span>
+                        <strong className="text-sm text-blue-deep">
+                          {formatMoney(order.amount)}
+                        </strong>
+                      </span>
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </fieldset>
 
           <label
             className="mt-5 block text-sm font-bold text-ink"

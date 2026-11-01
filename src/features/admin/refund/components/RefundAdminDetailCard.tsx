@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { refundStatusPresentation } from "../helpers/refund-status.ts";
 import type { AdminRefund } from "../types/admin-refund.ts";
 
 type RefundAction = "APPROVED" | "REJECTED" | "RETRY";
@@ -8,7 +8,7 @@ type Props = {
   actionError: string;
   isWorking: boolean;
   onBack: () => void;
-  onAction: (action: RefundAction, reason: string) => Promise<void>;
+  onAction: (action: RefundAction) => Promise<void>;
 };
 
 function formatMoney(amount: number | string) {
@@ -34,19 +34,10 @@ export function RefundAdminDetailCard({
   onBack,
   onAction,
 }: Props) {
-  const [reason, setReason] = useState("");
-  const [validationError, setValidationError] = useState("");
   const canDecide = refund.status === "PENDING";
   const canRetry = refund.status === "FAILED";
 
-  const submitAction = (action: RefundAction) => {
-    if (!reason.trim()) {
-      setValidationError("Nhập lý do xử lý trước khi tiếp tục.");
-      return;
-    }
-    setValidationError("");
-    void onAction(action, reason.trim());
-  };
+  const status = refundStatusPresentation[refund.status];
 
   return (
     <section className="grid gap-5" aria-labelledby="refund-detail-title">
@@ -71,8 +62,10 @@ export function RefundAdminDetailCard({
               {refund.id}
             </h1>
           </div>
-          <span className="rounded-sm border border-line bg-paper-deep px-3 py-2 text-sm font-extrabold">
-            {refund.status}
+          <span
+            className={`rounded-sm border px-3 py-2 text-sm font-extrabold ${status.className}`}
+          >
+            {status.label}
           </span>
         </header>
 
@@ -156,31 +149,13 @@ export function RefundAdminDetailCard({
           <h2 className="m-0 font-body text-2xl font-extrabold tracking-[-0.05em] text-pine">
             {canRetry ? "Thử lại refund" : "Quyết định yêu cầu"}
           </h2>
-          <label
-            className="mt-4 block text-sm font-bold"
-            htmlFor="refund-admin-reason"
-          >
-            Lý do xử lý
-          </label>
-          <textarea
-            id="refund-admin-reason"
-            className="mt-2 min-h-24 w-full rounded-md border border-line bg-paper px-3 py-3 text-base leading-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-deep"
-            maxLength={1000}
-            value={reason}
-            disabled={isWorking}
-            aria-invalid={Boolean(validationError || actionError)}
-            aria-describedby={
-              validationError || actionError ? "refund-admin-error" : undefined
-            }
-            onChange={(event) => setReason(event.target.value)}
-          />
-          {validationError || actionError ? (
+          {actionError ? (
             <p
               id="refund-admin-error"
               className="mt-2 mb-0 text-sm font-semibold text-error"
               role="alert"
             >
-              {validationError || actionError}
+              {actionError}
             </p>
           ) : null}
           <div className="mt-4 flex flex-wrap gap-3">
@@ -190,7 +165,7 @@ export function RefundAdminDetailCard({
                   className="min-h-11 rounded-md bg-mint px-4 text-sm font-extrabold text-success disabled:opacity-50"
                   type="button"
                   disabled={isWorking}
-                  onClick={() => submitAction("APPROVED")}
+                  onClick={() => void onAction("APPROVED")}
                 >
                   {isWorking ? "Đang xử lý…" : "Duyệt và gửi Xendit"}
                 </button>
@@ -198,7 +173,7 @@ export function RefundAdminDetailCard({
                   className="min-h-11 rounded-md border border-error/40 bg-error/10 px-4 text-sm font-extrabold text-error disabled:opacity-50"
                   type="button"
                   disabled={isWorking}
-                  onClick={() => submitAction("REJECTED")}
+                  onClick={() => void onAction("REJECTED")}
                 >
                   Từ chối yêu cầu
                 </button>
@@ -208,7 +183,7 @@ export function RefundAdminDetailCard({
                 className="min-h-11 rounded-md bg-coral px-4 text-sm font-extrabold text-paper disabled:opacity-50"
                 type="button"
                 disabled={isWorking}
-                onClick={() => submitAction("RETRY")}
+                onClick={() => void onAction("RETRY")}
               >
                 {isWorking ? "Đang gửi lại…" : "Gửi lại tới Xendit"}
               </button>

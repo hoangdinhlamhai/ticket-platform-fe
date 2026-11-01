@@ -19,18 +19,14 @@ export const findRefundById = (id: string) =>
     `/admin/refunds/${encodeURIComponent(id)}`,
   );
 
-export const decideRefund = (
-  id: string,
-  decision: "APPROVED" | "REJECTED",
-  reason: string,
-) =>
+export const decideRefund = (id: string, decision: "APPROVED" | "REJECTED") =>
   axiosClient.post<AdminRefundResponse>(
     `/admin/refunds/${encodeURIComponent(id)}/decision`,
-    { decision, reason },
+    { decision },
   );
 
-export const retryRefund = (id: string, reason: string) =>
+export const retryRefund = (id: string) =>
   axiosClient.post<AdminRefundResponse>(
     `/admin/refunds/${encodeURIComponent(id)}/retry`,
-    { reason },
+    {},
   );

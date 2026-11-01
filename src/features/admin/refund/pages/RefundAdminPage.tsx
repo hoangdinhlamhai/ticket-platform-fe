@@ -107,10 +107,7 @@ export function RefundAdminPage() {
     setDetailError("");
   };
 
-  const handleAction = async (
-    action: "APPROVED" | "REJECTED" | "RETRY",
-    reason: string,
-  ) => {
+  const handleAction = async (action: "APPROVED" | "REJECTED" | "RETRY") => {
     if (!selectedId) return;
     setIsWorking(true);
     setActionError("");
@@ -119,8 +116,8 @@ export function RefundAdminPage() {
     try {
       const response =
         action === "RETRY"
-          ? await refundAdminApi.retryRefund(selectedId, reason)
-          : await refundAdminApi.decideRefund(selectedId, action, reason);
+          ? await refundAdminApi.retryRefund(selectedId)
+          : await refundAdminApi.decideRefund(selectedId, action);
       setSelectedRefund(response.data.refund);
       setIsLoading(true);
       setReloadKey((key) => key + 1);

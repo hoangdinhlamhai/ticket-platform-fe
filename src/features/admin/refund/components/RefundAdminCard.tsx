@@ -1,34 +1,9 @@
+import { refundStatusPresentation } from "../helpers/refund-status.ts";
 import type { AdminRefund } from "../types/admin-refund.ts";
 
 type Props = {
   refund: AdminRefund;
   onOpen: (id: string) => void;
-};
-
-const statusPresentation: Record<
-  AdminRefund["status"],
-  { label: string; className: string }
-> = {
-  PENDING: {
-    label: "Chờ duyệt",
-    className: "border-blue/40 bg-google-hover text-blue-deep",
-  },
-  PROCESSING: {
-    label: "Đang xử lý",
-    className: "border-coral-dark/40 bg-coral/20 text-coral-dark",
-  },
-  SUCCEEDED: {
-    label: "Đã hoàn tiền",
-    className: "border-success/40 bg-mint text-success",
-  },
-  FAILED: {
-    label: "Thất bại · cần xử lý",
-    className: "border-error/35 bg-error-ring text-error",
-  },
-  REJECTED: {
-    label: "Đã từ chối",
-    className: "border-line bg-paper-deep text-ink-soft",
-  },
 };
 
 function formatMoney(amount: number | string) {
@@ -47,7 +22,7 @@ function formatDate(value: string) {
 }
 
 export function RefundAdminCard({ refund, onOpen }: Props) {
-  const status = statusPresentation[refund.status];
+  const status = refundStatusPresentation[refund.status];
 
   return (
     <article className="rounded-lg border border-line bg-surface p-5 sm:p-6">

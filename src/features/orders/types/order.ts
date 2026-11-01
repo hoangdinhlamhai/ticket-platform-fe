@@ -79,6 +79,7 @@ export type OrderPaymentSummary = {
   amount: OrderMoney;
   status: string;
   paidAt: string | null;
+  refundable: boolean;
 };
 
 export type AttendeeOrderRecord = {
