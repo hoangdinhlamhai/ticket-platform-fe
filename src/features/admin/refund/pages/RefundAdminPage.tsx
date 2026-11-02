@@ -92,6 +92,43 @@ export function RefundAdminPage() {
     };
   }, [selectedId]);
 
+  useEffect(() => {
+    if (!selectedId || selectedRefund?.status !== "PROCESSING") return;
+
+    let active = true;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const refreshProcessingRefund = async () => {
+      try {
+        const { data } = await refundAdminApi.findRefundById(selectedId);
+        if (!active) return;
+
+        setSelectedRefund(data.refund);
+        if (data.refund.status === "PROCESSING") {
+          timeout = setTimeout(() => void refreshProcessingRefund(), 3000);
+          return;
+        }
+
+        setNotice(
+          data.refund.status === "SUCCEEDED"
+            ? "Xendit đã hoàn tiền thành công."
+            : "Xendit không thể xử lý hoàn tiền. Xem lý do thất bại bên dưới.",
+        );
+        setReloadKey((key) => key + 1);
+      } catch {
+        if (active) {
+          timeout = setTimeout(() => void refreshProcessingRefund(), 5000);
+        }
+      }
+    };
+
+    timeout = setTimeout(() => void refreshProcessingRefund(), 3000);
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+    };
+  }, [selectedId, selectedRefund?.status]);
+
   const openRefund = (id: string) => {
     setSelectedId(id);
     setSelectedRefund(null);
@@ -188,7 +225,11 @@ export function RefundAdminPage() {
           <>
             {notice ? (
               <p
-                className="m-0 rounded-md border border-success/30 bg-mint px-4 py-3 text-sm font-semibold text-success"
+                className={`m-0 rounded-md border px-4 py-3 text-sm font-semibold ${
+                  selectedRefund.status === "FAILED"
+                    ? "border-error/30 bg-error/10 text-error"
+                    : "border-success/30 bg-mint text-success"
+                }`}
                 role="status"
               >
                 {notice}
