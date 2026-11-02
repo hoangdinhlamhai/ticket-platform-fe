@@ -22,6 +22,7 @@ import {
   type AttendeeOrder,
   type PrimaryCheckoutSelection,
 } from "./features/orders";
+import { RefundHistoryPage, RefundRequestDetailPage } from "./features/refund";
 import { CustomerProfilePage, type CustomerProfile } from "./features/profile";
 import {
   CreateResaleListingPage,
@@ -44,6 +45,7 @@ import { AttendeeLayout } from "./layouts/AttendeeLayout";
 import {
   getAttendeeEventId,
   getAttendeeOrderId,
+  getAttendeeRefundId,
   getAttendeeResaleListingId,
   getAttendeeRoute,
   getAttendeeTicketId,
@@ -152,6 +154,15 @@ function AttendeePage({
     );
   if (route === "orders")
     return <OrderHistoryPage onNavigate={actions.navigate} />;
+  if (route === "refunds")
+    return <RefundHistoryPage onNavigate={actions.navigate} />;
+  if (route === "refund-detail")
+    return (
+      <RefundRequestDetailPage
+        refundId={getAttendeeRefundId(pathname) ?? ""}
+        onNavigate={actions.navigate}
+      />
+    );
   if (route === "order-detail")
     return (
       <OrderDetailPage
