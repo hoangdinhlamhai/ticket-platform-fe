@@ -9,6 +9,7 @@ export type AttendeeRoute =
   | "orders"
   | "order-detail"
   | "refunds"
+  | "refund-detail"
   | "event-detail"
   | "primary-checkout"
   | "primary-result"
@@ -37,6 +38,7 @@ export type AttendeePath =
   | `/events/${string}/checkout/result`
   | `/tickets/${string}`
   | `/orders/${string}`
+  | `/refunds/${string}`
   | `/resale/sell/${string}`
   | `/resale/${string}`
   | `/resale/${string}/checkout`
@@ -82,6 +84,9 @@ export function getAttendeeTicketId(pathname: string) {
 export function getAttendeeOrderId(pathname: string) {
   return extract(pathname, /^\/orders\/([^/]+)$/);
 }
+export function getAttendeeRefundId(pathname: string) {
+  return extract(pathname, /^\/refunds\/([^/]+)$/);
+}
 export function getResaleSellTicketId(pathname: string) {
   return extract(pathname, /^\/resale\/sell\/([^/]+)$/);
 }
@@ -110,6 +115,7 @@ export function getAttendeeRoute(pathname: string): AttendeeRoute {
   if (/^\/events\/[^/]+\/checkout\/result$/.test(path)) return "primary-result";
   if (/^\/events\/[^/]+\/checkout$/.test(path)) return "primary-checkout";
   if (path === "/orders") return "orders";
+  if (getAttendeeRefundId(path)) return "refund-detail";
   if (path === "/refunds") return "refunds";
   if (getAttendeeOrderId(path)) return "order-detail";
   if (path === "/resale/my-listings") return "my-resale-listings";

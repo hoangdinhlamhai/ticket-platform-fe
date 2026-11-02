@@ -16,3 +16,8 @@ export const createRefundRequest = (
 
 export const findMyRefundRequests = () =>
   axiosClient.get<MyRefundRequestsResponse>("/refund-requests/mine");
+
+export const findMyRefundRequestById = (id: string) =>
+  axiosClient.get<CreateRefundRequestResponse>(
+    `/refund-requests/mine/${encodeURIComponent(id)}`,
+  );

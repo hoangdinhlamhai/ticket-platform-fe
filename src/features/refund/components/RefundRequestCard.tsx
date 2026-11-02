@@ -1,40 +1,10 @@
+import { refundStatusPresentation } from "../helpers/refund-status";
 import type { RefundRequest } from "../types/refund";
+import type { AttendeePath } from "../../../routes/attendee-route";
 
 type Props = {
   request: RefundRequest;
-};
-
-const statusPresentation: Record<
-  RefundRequest["status"],
-  { label: string; className: string; description: string }
-> = {
-  PENDING: {
-    label: "Chờ xét duyệt",
-    className: "border-blue/40 bg-google-hover text-blue-deep",
-    description: "Yêu cầu đã được ghi nhận và đang chờ đội ngũ hỗ trợ xem xét.",
-  },
-  PROCESSING: {
-    label: "Đang chuyển tiền",
-    className: "border-coral-dark/40 bg-coral/20 text-coral-dark",
-    description:
-      "Xendit đang xử lý khoản tiền hoàn về phương thức thanh toán gốc.",
-  },
-  SUCCEEDED: {
-    label: "Đã xử lý hoàn tiền",
-    className: "border-success/40 bg-mint text-success",
-    description:
-      "Yêu cầu đã được gửi tới kênh thanh toán; thời gian tiền về tùy ngân hàng hoặc ví.",
-  },
-  FAILED: {
-    label: "Cần được hỗ trợ thêm",
-    className: "border-error/35 bg-error-ring text-error",
-    description: "Yêu cầu chưa hoàn tất. Hãy liên hệ hỗ trợ để được kiểm tra.",
-  },
-  REJECTED: {
-    label: "Không được chấp thuận",
-    className: "border-line bg-paper-deep text-ink-soft",
-    description: "Yêu cầu không đáp ứng điều kiện hoàn tiền của đơn hàng.",
-  },
+  onNavigate: (path: AttendeePath) => void;
 };
 
 function formatDate(value: string) {
@@ -52,8 +22,8 @@ function formatMoney(value: number | string) {
   }).format(Number(value));
 }
 
-export function RefundRequestCard({ request }: Props) {
-  const status = statusPresentation[request.status];
+export function RefundRequestCard({ request, onNavigate }: Props) {
+  const status = refundStatusPresentation[request.status];
 
   return (
     <article className="rounded-lg border border-line bg-surface p-5 sm:p-6">
@@ -118,6 +88,16 @@ export function RefundRequestCard({ request }: Props) {
           </p>
         </div>
       ) : null}
+
+      <div className="mt-5 flex justify-end border-t border-line pt-4">
+        <button
+          className="min-h-11 rounded-md border border-blue-deep/50 px-4 text-sm font-extrabold text-blue-deep hover:bg-google-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-deep"
+          type="button"
+          onClick={() => onNavigate(`/refunds/${request.id}`)}
+        >
+          Xem chi tiết yêu cầu
+        </button>
+      </div>
     </article>
   );
 }

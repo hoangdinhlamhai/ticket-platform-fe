@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import type { AttendeePath } from "../../../routes/attendee-route";
 import { findMine as findOrders } from "../../orders/api/orderApi";
 import type { AttendeeOrderRecord } from "../../orders/types/order";
 import { createRefundRequest, findMyRefundRequests } from "../api/refundApi";
@@ -48,7 +49,11 @@ function getEligibleOrders(
     }));
 }
 
-export function RefundHistoryPage() {
+type Props = {
+  onNavigate: (path: AttendeePath) => void;
+};
+
+export function RefundHistoryPage({ onNavigate }: Props) {
   const [requests, setRequests] = useState<RefundRequest[]>([]);
   const [orders, setOrders] = useState<AttendeeOrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -189,7 +194,7 @@ export function RefundHistoryPage() {
                 </button>
               </div>
             ) : (
-              <RefundRequestList requests={requests} />
+              <RefundRequestList requests={requests} onNavigate={onNavigate} />
             )}
           </div>
 

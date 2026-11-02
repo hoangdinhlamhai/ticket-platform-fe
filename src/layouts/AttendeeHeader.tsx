@@ -110,7 +110,9 @@ export function AttendeeHeader({
             Đơn hàng
           </NavigationLink>
           <NavigationLink
-            active={activeRoute === "refunds"}
+            active={
+              activeRoute === "refunds" || activeRoute === "refund-detail"
+            }
             href="/refunds"
             onNavigate={onNavigate}
           >

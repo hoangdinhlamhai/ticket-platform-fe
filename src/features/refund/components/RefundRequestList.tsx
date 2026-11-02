@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { AttendeePath } from "../../../routes/attendee-route";
 import type { RefundRequest } from "../types/refund";
 import { RefundRequestCard } from "./RefundRequestCard";
 
@@ -6,6 +7,7 @@ type Filter = "ALL" | "ACTIVE" | "SUCCEEDED" | "ATTENTION";
 
 type Props = {
   requests: readonly RefundRequest[];
+  onNavigate: (path: AttendeePath) => void;
 };
 
 const filters: { id: Filter; label: string }[] = [
@@ -26,7 +28,7 @@ function matchesFilter(request: RefundRequest, filter: Filter) {
   return true;
 }
 
-export function RefundRequestList({ requests }: Props) {
+export function RefundRequestList({ requests, onNavigate }: Props) {
   const [filter, setFilter] = useState<Filter>("ALL");
   const visibleRequests = requests.filter((request) =>
     matchesFilter(request, filter),
@@ -72,7 +74,11 @@ export function RefundRequestList({ requests }: Props) {
       <div className="mt-4 space-y-4" aria-live="polite">
         {visibleRequests.length ? (
           visibleRequests.map((request) => (
-            <RefundRequestCard key={request.id} request={request} />
+            <RefundRequestCard
+              key={request.id}
+              request={request}
+              onNavigate={onNavigate}
+            />
           ))
         ) : (
           <div className="rounded-lg border border-dashed border-line bg-surface px-6 py-12 text-center">
