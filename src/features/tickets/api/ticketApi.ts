@@ -57,6 +57,7 @@ export function toOwnedTicket(
     }).format(new Date(paidAt ?? ticket.createdAt)),
     status:
       startAt.getTime() > Date.now() ? "Sắp diễn ra" : "Sẵn sàng check-in",
+    ticketStatus: ticket.status,
     source: "primary",
     orderId: ticket.order.id,
     credentialCode: ticket.ticketCode,

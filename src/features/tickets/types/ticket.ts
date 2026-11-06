@@ -26,7 +26,8 @@ export type OwnedTicket = {
   holderName: string;
   referenceCode: string;
   purchaseLabel: string;
-  status: "Sẵn sàng check-in" | "Sắp diễn ra";
+  status: string;
+  ticketStatus: string;
   journey: readonly TicketJourneyItem[];
   source: OwnedTicketSource;
   orderId: string | null;

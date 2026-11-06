@@ -10,6 +10,10 @@ import type { OwnedTicket } from "../types/ticket";
 type Props = {
   isLoading: boolean;
   tickets: readonly OwnedTicket[];
+  filteredTickets: readonly OwnedTicket[];
+  ticketStatuses: readonly string[];
+  statusFilter: string;
+  onStatusFilterChange: (status: string) => void;
   onTicketAction: (
     ticket: OwnedTicket,
     event: MouseEvent<HTMLAnchorElement>,
@@ -32,6 +36,10 @@ export function OwnedListTicketSummary({
   onSell,
   onTicketAction,
   tickets,
+  filteredTickets,
+  ticketStatuses,
+  statusFilter,
+  onStatusFilterChange,
 }: Props) {
   return (
     <section
@@ -70,6 +78,21 @@ export function OwnedListTicketSummary({
               Vé đã thuộc về bạn.
             </h1>
           </header>
+          <label className="mt-5 flex items-center gap-3 text-sm font-bold">
+            Lọc theo trạng thái
+            <select
+              className="min-h-10 rounded-md border border-line bg-surface px-3"
+              value={statusFilter}
+              onChange={(event) => onStatusFilterChange(event.target.value)}
+            >
+              <option value="ALL">Tất cả trạng thái ({tickets.length})</option>
+              {ticketStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="mt-5 space-y-4">
             {isLoading ? (
               <p
@@ -79,8 +102,12 @@ export function OwnedListTicketSummary({
               >
                 Đang tải vé của bạn…
               </p>
+            ) : filteredTickets.length === 0 ? (
+              <p className="rounded-lg border border-line/70 bg-surface p-6 text-center text-ink-soft">
+                Không có vé nào ở trạng thái này.
+              </p>
             ) : (
-              tickets.map((ticket) => {
+              filteredTickets.map((ticket) => {
                 const listingStatus = resaleLabel(ticket);
                 return (
                   <article
@@ -93,7 +120,7 @@ export function OwnedListTicketSummary({
                           <span
                             className={`inline-flex rounded-sm border px-2 py-1 text-xs font-extrabold ${getStatusClass(ticket.status)}`}
                           >
-                            {ticket.status}
+                            {ticket.ticketStatus}
                           </span>
                           {listingStatus && (
                             <span className="rounded-sm border border-coral/40 bg-paper-deep px-2 py-1 text-xs font-extrabold text-coral-dark">

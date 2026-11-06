@@ -18,6 +18,7 @@ export function OwnedTicketsPage({
 }: OwnedTicketsPageProps) {
   const [tickets, setTickets] = useState<OwnedTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   useEffect(() => {
     let active = true;
     const loadTickets = async () => {
@@ -52,9 +53,21 @@ export function OwnedTicketsPage({
     [onNavigate],
   );
 
+  const ticketStatuses = [
+    ...new Set(tickets.map((ticket) => ticket.ticketStatus)),
+  ];
+  const filteredTickets =
+    statusFilter === "ALL"
+      ? tickets
+      : tickets.filter((ticket) => ticket.ticketStatus === statusFilter);
+
   return (
     <OwnedListTicketSummary
       tickets={tickets}
+      filteredTickets={filteredTickets}
+      ticketStatuses={ticketStatuses}
+      statusFilter={statusFilter}
+      onStatusFilterChange={setStatusFilter}
       isLoading={isLoading}
       onSell={onSellTicket}
       onTicketAction={viewTicket}

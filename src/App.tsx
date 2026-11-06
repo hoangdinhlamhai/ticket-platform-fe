@@ -26,7 +26,7 @@ import { RefundHistoryPage, RefundRequestDetailPage } from "./features/refund";
 import { CustomerProfilePage, type CustomerProfile } from "./features/profile";
 import {
   CreateResaleListingPage,
-  MOCK_RESALE_LISTINGS,
+  findResaleListings,
   MyResaleListingsPage,
   ResaleCheckoutPage,
   ResaleListingPage,
@@ -288,9 +288,7 @@ function AttendeeApplication() {
         };
   const [orders, setOrders] = useState<AttendeeOrder[]>([]);
   const [tickets] = useState<OwnedTicket[]>([]);
-  const [listings, setListings] = useState<ResaleListing[]>(() => [
-    ...MOCK_RESALE_LISTINGS,
-  ]);
+  const [listings, setListings] = useState<ResaleListing[]>([]);
   const [selection, setSelection] = useState<PrimaryCheckoutSelection | null>(
     null,
   );
@@ -367,6 +365,23 @@ function AttendeeApplication() {
     },
     [],
   );
+
+  useEffect(() => {
+    let active = true;
+    const loadResaleListings = async () => {
+      try {
+        const { data } = await findResaleListings();
+        if (active) setListings(data.listings);
+      } catch {
+        if (active) setNotice('Không thể tải danh sách vé resale. Vui lòng thử lại sau.');
+      }
+    };
+
+    void loadResaleListings();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const initialIndex = getHistoryIndex(window.history.state);

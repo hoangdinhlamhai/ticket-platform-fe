@@ -1,4 +1,4 @@
-export { MOCK_RESALE_LISTINGS } from './mock/resaleData'
+export { findResaleListings } from './api/resaleApi'
 export { ResaleMarketplacePage } from './pages/ResaleMarketplacePage'
 export { CreateResaleListingPage } from './pages/CreateResaleListingPage'
 export { MyResaleListingsPage } from './pages/MyResaleListingsPage'
