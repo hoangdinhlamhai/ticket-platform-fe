@@ -1,5 +1,5 @@
 import { useCallback, type ReactNode } from "react";
-import { AdminLayout } from "../layouts/AdminLayout.tsx";
+import { AdminLayout } from "../layouts/admin/AdminLayout.tsx";
 import {
   getAdminEventId,
   getAdminPayoutId,
