@@ -47,7 +47,10 @@ export type OrganizerEventFinance = {
   readonly accountHolder: string;
   readonly accountNumber: string;
   readonly bankName: string;
+  readonly bankCode?: string;
   readonly branch: string;
+  readonly recipientCity?: string;
+  readonly recipientAddress?: string;
   readonly businessType: string;
   readonly invoiceName?: string | null;
   readonly invoiceAddress?: string | null;

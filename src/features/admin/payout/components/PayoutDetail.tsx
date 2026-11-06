@@ -3,6 +3,9 @@ import type { AdminPayout } from "../types/admin-payout.ts";
 type Props = {
   payout: AdminPayout;
   onBack: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  isWorking: boolean;
 };
 
 function formatMoney(amount: string | number, currency: string) {
@@ -30,7 +33,22 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function PayoutDetail({ payout, onBack }: Props) {
+export function PayoutDetail({
+  payout,
+  onBack,
+  onApprove,
+  onReject,
+  isWorking,
+}: Props) {
+  const canApprove = Boolean(
+    payout.bankAccount?.accountNumber &&
+    payout.bankAccount.recipientCity &&
+    payout.bankAccount.recipientAddress &&
+    payout.bankAccount.bankCode &&
+    (/^[A-Z0-9]{8}([A-Z0-9]{3})?$/i.test(payout.bankAccount.bankCode) ||
+      payout.bankAccount.bankCode.toUpperCase() === "VCB"),
+  );
+
   return (
     <section className="grid gap-6">
       <header>
@@ -58,6 +76,47 @@ export function PayoutDetail({ payout, onBack }: Props) {
           <Detail label="Ngày tạo" value={formatDate(payout.createdAt)} />
         </dl>
       </section>
+
+      {payout.breakdown?.grossAmount !== null &&
+        payout.breakdown?.grossAmount !== undefined && (
+          <section className="rounded-lg border border-line bg-surface p-5">
+            <h2 className="m-0 text-xl font-extrabold">Đối soát payout</h2>
+            <dl className="mt-5 grid gap-5 sm:grid-cols-2">
+              <Detail
+                label="Doanh thu thanh toán thành công"
+                value={formatMoney(
+                  payout.breakdown.grossAmount ?? 0,
+                  payout.currency,
+                )}
+              />
+              <Detail
+                label="Refund đã hoàn tất"
+                value={formatMoney(
+                  payout.breakdown.refundAmount ?? 0,
+                  payout.currency,
+                )}
+              />
+              <Detail
+                label="Phí nền tảng (5%)"
+                value={formatMoney(
+                  payout.breakdown.platformFee ?? 0,
+                  payout.currency,
+                )}
+              />
+              <Detail
+                label="Phí thanh toán (1%)"
+                value={formatMoney(
+                  payout.breakdown.paymentFee ?? 0,
+                  payout.currency,
+                )}
+              />
+              <Detail
+                label="Thực nhận"
+                value={formatMoney(payout.amount, payout.currency)}
+              />
+            </dl>
+          </section>
+        )}
 
       <section className="rounded-lg border border-line bg-surface p-5">
         <h2 className="m-0 text-xl font-extrabold">Sự kiện</h2>
@@ -92,7 +151,19 @@ export function PayoutDetail({ payout, onBack }: Props) {
               value={payout.bankAccount.accountNumber}
             />
             <Detail label="Ngân hàng" value={payout.bankAccount.bankName} />
+            <Detail
+              label="Mã SWIFT/BIC"
+              value={payout.bankAccount.bankCode ?? ""}
+            />
             <Detail label="Chi nhánh" value={payout.bankAccount.branch} />
+            <Detail
+              label="Thành phố người nhận"
+              value={payout.bankAccount.recipientCity ?? ""}
+            />
+            <Detail
+              label="Địa chỉ người nhận"
+              value={payout.bankAccount.recipientAddress ?? ""}
+            />
           </dl>
         ) : (
           <p className="mt-4 text-sm text-ink-soft">
@@ -101,20 +172,39 @@ export function PayoutDetail({ payout, onBack }: Props) {
         )}
       </section>
 
-      <section className="flex flex-wrap justify-end gap-3 rounded-lg border border-line bg-surface p-5">
-        <button
-          className="min-h-11 rounded border border-error/40 px-4 font-extrabold text-error"
-          type="button"
-        >
-          Từ chối payout
-        </button>
-        <button
-          className="min-h-11 rounded bg-pine px-4 font-extrabold text-paper"
-          type="button"
-        >
-          Duyệt payout
-        </button>
-      </section>
+      {payout.status === "PENDING_APPROVAL" && (
+        <section className="rounded-lg border border-line bg-surface p-5">
+          {payout.failureReason && (
+            <p className="mb-4 rounded border border-error/40 bg-error/10 p-3 text-sm text-error">
+              Lần gửi trước thất bại: {payout.failureReason}
+            </p>
+          )}
+          {!canApprove && (
+            <p className="mb-4 text-sm text-error">
+              Chưa thể gửi lệnh chi: cần số tài khoản, mã SWIFT/BIC hợp lệ và
+              địa chỉ người nhận (thành phố, địa chỉ đường).
+            </p>
+          )}
+          <div className="flex flex-wrap justify-end gap-3">
+            <button
+              className="min-h-11 rounded border border-error/40 px-4 font-extrabold text-error disabled:cursor-not-allowed disabled:opacity-50"
+              type="button"
+              disabled={isWorking}
+              onClick={onReject}
+            >
+              Từ chối payout
+            </button>
+            <button
+              className="min-h-11 rounded bg-pine px-4 font-extrabold text-paper disabled:cursor-not-allowed disabled:opacity-50"
+              type="button"
+              disabled={isWorking || !canApprove}
+              onClick={onApprove}
+            >
+              {isWorking ? "Đang gửi lệnh…" : "Gửi lệnh chi"}
+            </button>
+          </div>
+        </section>
+      )}
     </section>
   );
 }
