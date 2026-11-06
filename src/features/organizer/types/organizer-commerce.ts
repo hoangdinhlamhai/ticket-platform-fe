@@ -9,7 +9,15 @@ export type OrganizerTicketSaleStatus =
   (typeof ORGANIZER_TICKET_SALE_STATUSES)[number];
 export type OrganizerPaymentStatus = "paid" | "pending" | "refunded";
 export type OrganizerCredentialStatus = "valid" | "checked_in" | "void";
-export type OrganizerPayoutStatus = "scheduled" | "pending" | "paid";
+export type OrganizerPayoutStatus =
+  | "scheduled"
+  | "pending"
+  | "paid"
+  | "PENDING_APPROVAL"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED"
+  | "REJECTED";
 
 export type OrganizerTicketTier = {
   readonly id: string;
@@ -82,6 +90,11 @@ export type OrganizerPayout = {
   readonly status: OrganizerPayoutStatus;
   readonly scheduledAt: string;
   readonly paidAt: string | null;
+  readonly eventTitle?: string;
+  readonly grossAmount?: number;
+  readonly refundAmount?: number;
+  readonly platformFee?: number;
+  readonly paymentFee?: number;
 };
 export type OrganizerCheckInActivity = {
   readonly id: string;

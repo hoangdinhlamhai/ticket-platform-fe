@@ -15,7 +15,10 @@ export type EventPayoutInfo = {
   accountHolder: string;
   accountNumber: string;
   bankName: string;
+  bankCode?: string;
   branch: string;
+  recipientCity?: string;
+  recipientAddress?: string;
   businessType: string;
   invoiceName?: string | null;
   invoiceAddress?: string | null;

@@ -1,20 +1,18 @@
 import type { OrganizerFinanceSummary as Summary } from "../helpers/select-organizer-metrics.ts";
 
-type Props = { summary: Summary };
+type Props = { summary: Summary; pendingPayoutAmount: number };
 
 const money = (value: number) => `${value.toLocaleString("vi-VN")}đ`;
 
-export function OrganizerFinanceSummary({ summary }: Props) {
+export function OrganizerFinanceSummary({
+  summary,
+  pendingPayoutAmount,
+}: Props) {
   const metrics = [
     ["Tổng thu đã thanh toán", money(summary.grossRevenue)],
     ["Tổng hoàn tiền", money(summary.refundTotal)],
     ["Doanh thu ròng", money(summary.netRevenue)],
-    [
-      "Chờ/đã lên lịch chi trả",
-      money(
-        summary.payoutsByStatus.pending + summary.payoutsByStatus.scheduled,
-      ),
-    ],
+    ["Chờ/đã lên lịch chi trả", money(pendingPayoutAmount)],
   ];
   return (
     <section

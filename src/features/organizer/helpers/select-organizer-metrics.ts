@@ -1,7 +1,6 @@
 import type {
   OrganizerAttendee,
   OrganizerOrder,
-  OrganizerPayoutStatus,
   OrganizerTicketTier,
 } from "../types/organizer-commerce.ts";
 import type { OrganizerWorkspace } from "../types/organizer-workspace.ts";
@@ -50,7 +49,9 @@ export type OrganizerFinanceSummary = {
   readonly grossRevenue: number;
   readonly refundTotal: number;
   readonly netRevenue: number;
-  readonly payoutsByStatus: Readonly<Record<OrganizerPayoutStatus, number>>;
+  readonly payoutsByStatus: Readonly<
+    Record<"scheduled" | "pending" | "paid", number>
+  >;
 };
 
 type OrganizerReportingScope = {
@@ -222,14 +223,24 @@ export function selectOrganizerFinanceSummary(
     (total, refund) => total + refund.amount,
     0,
   );
-  const payoutsByStatus: Record<OrganizerPayoutStatus, number> = {
+  const payoutsByStatus: Record<"scheduled" | "pending" | "paid", number> = {
     scheduled: 0,
     pending: 0,
     paid: 0,
   };
 
-  for (const payout of workspace.payouts)
-    payoutsByStatus[payout.status] += payout.amount;
+  for (const payout of workspace.payouts) {
+    if (payout.status === "scheduled")
+      payoutsByStatus.scheduled += payout.amount;
+    else if (
+      payout.status === "pending" ||
+      payout.status === "PENDING_APPROVAL" ||
+      payout.status === "PROCESSING"
+    )
+      payoutsByStatus.pending += payout.amount;
+    else if (payout.status === "paid" || payout.status === "COMPLETED")
+      payoutsByStatus.paid += payout.amount;
+  }
 
   return {
     grossRevenue,
