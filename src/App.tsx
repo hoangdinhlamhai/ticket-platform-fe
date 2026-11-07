@@ -175,6 +175,7 @@ function AttendeePage({
       <DetailTicketPage
         ticketId={getAttendeeTicketId(pathname) ?? ""}
         onNavigate={actions.navigate}
+        onSellTicket={actions.sellTicket}
       />
     );
   if (route === "tickets")
@@ -373,7 +374,8 @@ function AttendeeApplication() {
         const { data } = await findResaleListings();
         if (active) setListings(data.listings);
       } catch {
-        if (active) setNotice('Không thể tải danh sách vé resale. Vui lòng thử lại sau.');
+        if (active)
+          setNotice("Không thể tải danh sách vé resale. Vui lòng thử lại sau.");
       }
     };
 
