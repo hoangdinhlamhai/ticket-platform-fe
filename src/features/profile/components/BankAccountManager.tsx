@@ -13,6 +13,11 @@ const emptyDraft: BankAccountPayload = {
   accountNumber: "",
   accountHolder: "",
   branch: "",
+  bankCode: "",
+  recipientGivenName: "",
+  recipientSurname: "",
+  recipientCity: "",
+  recipientAddress: "",
 };
 
 const inputClass =
@@ -86,6 +91,11 @@ export function BankAccountManager() {
       accountNumber: account.accountNumber,
       accountHolder: account.accountHolder,
       branch: account.branch ?? "",
+      bankCode: account.bankCode ?? "",
+      recipientGivenName: account.recipientGivenName ?? "",
+      recipientSurname: account.recipientSurname ?? "",
+      recipientCity: account.recipientCity ?? "",
+      recipientAddress: account.recipientAddress ?? "",
     });
     setError("");
     setNotice("");
@@ -122,7 +132,7 @@ export function BankAccountManager() {
           Tài khoản ngân hàng
         </h2>
         <p className="mt-2 mb-0 text-sm text-ink-soft">
-          Quản lý thông tin ngân hàng dùng cho các giao dịch của bạn.
+          Thông tin tài khoản và người nhận.
         </p>
       </div>
 
@@ -163,6 +173,10 @@ export function BankAccountManager() {
                   {account.branch}
                 </span>
               ) : null}
+              <span className="mt-1 block text-xs text-ink-soft">
+                {account.bankCode || "Thiếu mã SWIFT/BIC"} ·{" "}
+                {account.recipientCity || "Thiếu thành phố nhận"}
+              </span>
             </div>
             <div className="flex gap-2">
               <button
@@ -197,6 +211,23 @@ export function BankAccountManager() {
             ["accountNumber", "Số tài khoản", "Nhập số tài khoản"],
             ["accountHolder", "Chủ tài khoản", "Tên in trên tài khoản"],
             ["branch", "Chi nhánh", "Không bắt buộc"],
+            ["bankCode", "Mã ngân hàng SWIFT/BIC", "Ví dụ: VCBVVNVX"],
+            [
+              "recipientGivenName",
+              "Tên người nhận (given name)",
+              "Tên theo giấy tờ",
+            ],
+            ["recipientSurname", "Họ người nhận (surname)", "Họ theo giấy tờ"],
+            [
+              "recipientCity",
+              "Thành phố người nhận",
+              "Ví dụ: Thành phố Hồ Chí Minh",
+            ],
+            [
+              "recipientAddress",
+              "Địa chỉ người nhận",
+              "Số nhà, đường, phường/xã",
+            ],
           ] as const
         ).map(([name, label, placeholder]) => (
           <label key={name} className="block text-sm font-bold text-ink">
@@ -207,7 +238,15 @@ export function BankAccountManager() {
               value={draft[name] ?? ""}
               placeholder={placeholder}
               required={name !== "branch"}
-              maxLength={name === "accountNumber" ? 100 : 255}
+              maxLength={
+                name === "accountNumber"
+                  ? 100
+                  : name === "bankCode" ||
+                      name === "recipientGivenName" ||
+                      name === "recipientSurname"
+                    ? 50
+                    : 255
+              }
               onChange={(event) =>
                 setDraft((current) => ({
                   ...current,

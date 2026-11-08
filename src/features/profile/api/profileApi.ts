@@ -15,6 +15,11 @@ export type BankAccount = {
   accountNumber: string;
   accountHolder: string;
   branch: string | null;
+  bankCode: string | null;
+  recipientGivenName: string | null;
+  recipientSurname: string | null;
+  recipientCity: string | null;
+  recipientAddress: string | null;
   status: string;
 };
 
@@ -25,6 +30,11 @@ type BankAccountResponse = {
   soTaiKhoan: string;
   chuTaiKhoan: string;
   chiNhanh: string | null;
+  maNganHang: string | null;
+  tenNguoiNhan: string | null;
+  hoNguoiNhan: string | null;
+  thanhPhoNguoiNhan: string | null;
+  diaChiNguoiNhan: string | null;
   trangThai: string;
 };
 
@@ -48,6 +58,11 @@ function mapBankAccount(account: BankAccountResponse): BankAccount {
     accountNumber: account.soTaiKhoan,
     accountHolder: account.chuTaiKhoan,
     branch: account.chiNhanh,
+    bankCode: account.maNganHang,
+    recipientGivenName: account.tenNguoiNhan,
+    recipientSurname: account.hoNguoiNhan,
+    recipientCity: account.thanhPhoNguoiNhan,
+    recipientAddress: account.diaChiNguoiNhan,
     status: account.trangThai,
   };
 }
