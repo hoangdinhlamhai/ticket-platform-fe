@@ -66,26 +66,24 @@ export function CreateResaleListingPage({
     };
   }, [ticketId, tickets]);
 
-  useEffect(() => {
-    if (ticket && price === "") setPrice(String(ticket.originalPrice));
-  }, [price, ticket]);
+  const resalePrice = price || (ticket ? String(ticket.originalPrice) : "");
 
   const preview = useMemo(
     () =>
       ticket
-        ? createPreview(ticket, Math.max(Number(price) || 1, 1), profile)
+        ? createPreview(ticket, Math.max(Number(resalePrice) || 1, 1), profile)
         : null,
-    [price, profile, ticket],
+    [profile, resalePrice, ticket],
   );
 
   const publish = async () => {
-    if (!ticket || Number(price) > ticket.originalPrice) return;
+    if (!ticket || Number(resalePrice) > ticket.originalPrice) return;
     setIsSubmitting(true);
     setSubmitError("");
     try {
       const { data } = await createResaleListingRequest({
         ticketId: ticket.id,
-        price: Number(price),
+        price: Number(resalePrice),
         termsAccepted: accepted,
       });
       onPublish(data.listing);
@@ -143,7 +141,7 @@ export function CreateResaleListingPage({
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)] gap-8 max-[1100px]:block">
           <ResaleListingForm
             ticket={ticket}
-            price={price}
+            price={resalePrice}
             accepted={accepted}
             isSubmitting={isSubmitting}
             error={submitError}
@@ -153,7 +151,10 @@ export function CreateResaleListingPage({
           />
           <div className="max-[1100px]:mt-7">
             <ResaleListingPreview
-              listing={{ ...preview, price: Number(price) || preview.price }}
+              listing={{
+                ...preview,
+                price: Number(resalePrice) || preview.price,
+              }}
             />
           </div>
         </div>

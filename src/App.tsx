@@ -33,7 +33,6 @@ import {
   ResaleMarketplacePage,
   ResaleResultPage,
   updateResaleListingStatus,
-  type ResaleCheckoutCompletion,
   type ResaleListing,
 } from "./features/resale";
 import {
@@ -73,7 +72,6 @@ type Actions = {
   saveProfile: (value: CustomerProfile) => void;
   startCheckout: (value: PrimaryCheckoutSelection) => void;
   completePrimary: (value: PrimaryCheckoutSubmission) => void;
-  completeResale: (value: ResaleCheckoutCompletion) => void;
   sellTicket: (ticket: OwnedTicket) => void;
   publishListing: (listing: ResaleListing) => void;
   withdrawListing: (id: string) => void;
@@ -217,27 +215,15 @@ function AttendeePage({
   if (route === "resale-checkout")
     return (
       <ResaleCheckoutPage
-        completedListingIds={state.completedListingIds}
         listingId={listingId}
         listings={state.listings}
-        onComplete={actions.completeResale}
         onNavigate={actions.navigate}
         profile={state.profile}
       />
     );
   if (route === "resale-result")
     return (
-      <ResaleResultPage
-        listingId={listingId}
-        listings={state.listings}
-        onNavigate={actions.navigate}
-        order={
-          state.orders.find(
-            (order) =>
-              order.source === "resale" && order.resaleListingId === listingId,
-          ) ?? null
-        }
-      />
+      <ResaleResultPage listingId={listingId} onNavigate={actions.navigate} />
     );
   if (route === "resale-listing")
     return (
@@ -294,10 +280,7 @@ function AttendeeApplication() {
     null,
   );
   const [primaryOrderId, setPrimaryOrderId] = useState<string | null>(null);
-  const [completedListingIds, setCompletedListingIds] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const completingListingIds = useRef(new Set<string>());
+  const [completedListingIds] = useState<Set<string>>(() => new Set());
   const acceptedPathRef = useRef(pathname);
   const historyIndexRef = useRef(0);
   const restoringHistoryIndexRef = useRef<number | null>(null);
@@ -482,56 +465,6 @@ function AttendeeApplication() {
     },
     [navigate],
   );
-  const completeResale = useCallback(
-    (completion: ResaleCheckoutCompletion) => {
-      if (
-        completedListingIds.has(completion.listingId) ||
-        completingListingIds.current.has(completion.listingId)
-      ) {
-        navigate(`/resale/${completion.listingId}`);
-        return;
-      }
-      const source = listings.find(
-        (listing) => listing.id === completion.listingId,
-      );
-      if (
-        !source ||
-        source.availability !== "available" ||
-        (source.listingStatus && source.listingStatus !== "active")
-      ) {
-        navigate("/resale");
-        return;
-      }
-      completingListingIds.current.add(completion.listingId);
-      const id = createSessionId("RS");
-      const order = createAttendeeOrder({
-        id,
-        source: "resale",
-        status: "completed",
-        eventId: source.eventId ?? source.id,
-        eventTitle: source.eventTitle,
-        buyer: completion.buyer,
-        items: [
-          {
-            label: `${source.ticketType} · ${source.quantity} vé`,
-            quantity: 1,
-            unitPrice: completion.amount,
-          },
-        ],
-        issuedTicketIds: [],
-        resaleListingId: completion.listingId,
-      });
-      setOrders((current) => [order, ...current]);
-      setListings((current) =>
-        updateResaleListingStatus(current, completion.listingId, "sold"),
-      );
-      setCompletedListingIds((current) =>
-        new Set(current).add(completion.listingId),
-      );
-      navigate(`/resale/${completion.listingId}/result`);
-    },
-    [completedListingIds, listings, navigate],
-  );
   const publishListing = useCallback(
     (listing: ResaleListing) => {
       setListings((current) => [listing, ...current]);
@@ -587,7 +520,6 @@ function AttendeeApplication() {
     saveProfile: setProfile,
     startCheckout,
     completePrimary,
-    completeResale,
     sellTicket: (ticket) => navigate(`/resale/sell/${ticket.id}`),
     publishListing,
     withdrawListing,

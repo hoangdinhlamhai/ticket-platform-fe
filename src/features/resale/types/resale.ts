@@ -33,7 +33,7 @@ export type ResaleListing = {
   readonly posterTone: ResalePosterTone;
   readonly sourceTicketId?: string;
   readonly ownerLabel?: "current-profile";
-  readonly listingStatus?: "active" | "sold" | "withdrawn";
+  readonly listingStatus?: "active" | "reserved" | "sold" | "withdrawn";
 };
 
 export type ResaleMarketplaceFilters = {
