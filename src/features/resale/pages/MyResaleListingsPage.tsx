@@ -1,17 +1,9 @@
 import { useEffect, useState } from "react";
 import type { AttendeePath } from "../../../routes/attendee-route";
 import { findMyResaleListings } from "../api/resaleApi";
-import {
-  findMyResaleSales,
-  requestResalePayout,
-  type ResaleTransaction,
-} from "../api/resaleApi";
+import { findMyResaleSales, type ResaleTransaction } from "../api/resaleApi";
 import { MyResaleListingCard } from "../components/MyResaleListingCard";
 import type { ResaleListing } from "../types/resale";
-import {
-  getMyBankAccounts,
-  type BankAccount,
-} from "../../profile/api/profileApi";
 
 type Props = {
   listings: readonly ResaleListing[];
@@ -27,53 +19,31 @@ function payoutStatusLabel(status: string) {
     case "EXPIRED":
       return "Thanh toán thất bại hoặc hết hạn";
     case "PAID":
-      return "Đã thanh toán, chờ yêu cầu payout";
+      return "Đã thanh toán, đang khởi tạo payout tự động";
     case "PAYOUT_PROCESSING":
-      return "Xendit đang xử lý payout";
+      return "Xendit đang xử lý payout; vé sẽ chuyển sau khi payout thành công";
     case "PAYOUT_FAILED":
-      return "Payout thất bại, có thể thử lại";
+      return "Payout chưa thành công; vé vẫn thuộc về bạn";
     case "PAYMENT_REVIEW":
       return "Cần Ticketly hỗ trợ giao dịch";
     case "COMPLETED":
-      return "Đã payout cho người bán";
+      return "Đã payout cho người bán và chuyển vé cho người mua";
     default:
       return status;
   }
 }
 
-function hasPayoutDetails(account: BankAccount | undefined) {
-  return Boolean(
-    account?.bankCode &&
-    account.recipientGivenName &&
-    account.recipientSurname &&
-    account.recipientCity &&
-    account.recipientAddress,
-  );
-}
-
 function SellerTransactions() {
   const [transactions, setTransactions] = useState<ResaleTransaction[]>([]);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState("");
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let active = true;
     const loadSales = async () => {
       try {
-        const [salesResponse, accountsResponse] = await Promise.all([
-          findMyResaleSales(),
-          getMyBankAccounts(),
-        ]);
-        if (!active) return;
-        setTransactions(salesResponse.data.transactions);
-        setBankAccounts(accountsResponse.data.bankAccounts);
-        setSelectedAccountId(
-          accountsResponse.data.bankAccounts.find(hasPayoutDetails)?.id ?? "",
-        );
+        const response = await findMyResaleSales();
+        if (active) setTransactions(response.data.transactions);
       } catch {
         if (active) setError("Không tải được giao dịch resale của bạn.");
       } finally {
@@ -88,56 +58,24 @@ function SellerTransactions() {
 
   useEffect(() => {
     if (
-      !transactions.some(
-        (transaction) => transaction.status === "PAYOUT_PROCESSING",
+      !transactions.some((transaction) =>
+        ["PAID", "PAYOUT_PROCESSING"].includes(transaction.status),
       )
-    ) {
+    )
       return;
-    }
     const timeoutId = window.setTimeout(() => {
       const refreshSales = async () => {
         try {
           const response = await findMyResaleSales();
           setTransactions(response.data.transactions);
         } catch {
-          // Keep the last known payout status available while the API is unavailable.
+          // Keep the last known payout status while the API is unavailable.
         }
       };
       void refreshSales();
     }, 3000);
     return () => window.clearTimeout(timeoutId);
   }, [transactions]);
-
-  const submitPayout = async (transactionId: string, bankAccountId: string) => {
-    if (!bankAccountId || processingId) return;
-    setError("");
-    setNotice("");
-    setProcessingId(transactionId);
-    try {
-      const response = await requestResalePayout(transactionId, bankAccountId);
-      setTransactions((current) =>
-        current.map((transaction) =>
-          transaction.id === transactionId
-            ? response.data.transaction
-            : transaction,
-        ),
-      );
-      setNotice("Đã gửi yêu cầu payout cho Xendit.");
-    } catch (cause: unknown) {
-      const responseData = (
-        cause as { response?: { data?: { message?: unknown } } }
-      ).response?.data?.message;
-      setError(
-        typeof responseData === "string"
-          ? responseData
-          : "Không gửi được yêu cầu payout. Vui lòng thử lại.",
-      );
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const readyAccounts = bankAccounts.filter(hasPayoutDetails);
 
   return (
     <section className="mt-10 rounded-lg border border-line bg-surface p-5">
@@ -149,18 +87,14 @@ function SellerTransactions() {
           Giao dịch bán vé
         </h2>
         <p className="mt-2 mb-0 text-sm text-ink-soft">
-          Sau khi người mua thanh toán, chọn tài khoản nhận tiền để yêu cầu
-          payout.
+          Payout được tự động gửi đến tài khoản ngân hàng trong hồ sơ sau khi
+          người mua thanh toán. Vé chỉ chuyển chủ khi Xendit xác nhận payout
+          thành công.
         </p>
       </header>
       {error ? (
         <p className="text-sm text-error" role="alert">
           {error}
-        </p>
-      ) : null}
-      {notice ? (
-        <p className="text-sm text-green-800" role="status">
-          {notice}
         </p>
       ) : null}
       {loading ? (
@@ -172,118 +106,50 @@ function SellerTransactions() {
         </p>
       ) : null}
       <div className="space-y-3">
-        {transactions.map((transaction) => {
-          const canRequestPayout =
-            ["PAID", "PAYOUT_FAILED"].includes(transaction.status) ||
-            transaction.payoutNeedsConfirmation;
-          const payoutAccountId = transaction.payoutNeedsConfirmation
-            ? (transaction.payoutBankAccountId ?? "")
-            : selectedAccountId;
-          const payoutAccount = bankAccounts.find(
-            (account) => account.id === payoutAccountId,
-          );
-          return (
-            <article
-              key={transaction.id}
-              className="rounded-md border border-line p-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="m-0 font-extrabold text-ink">
-                    {transaction.eventTitle}
-                  </h3>
-                  <p className="mt-1 mb-0 text-sm text-ink-soft">
-                    {transaction.ticketType} ·{" "}
-                    {new Date(transaction.createdAt).toLocaleString("vi-VN")}
-                  </p>
-                </div>
-                <strong className="text-blue-deep">
-                  {new Intl.NumberFormat("vi-VN").format(transaction.amount)}₫
-                </strong>
+        {transactions.map((transaction) => (
+          <article
+            key={transaction.id}
+            className="rounded-md border border-line p-4"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="m-0 font-extrabold text-ink">
+                  {transaction.eventTitle}
+                </h3>
+                <p className="mt-1 mb-0 text-sm text-ink-soft">
+                  {transaction.ticketType} ·{" "}
+                  {new Date(transaction.createdAt).toLocaleString("vi-VN")}
+                </p>
               </div>
-              <p className="mt-3 mb-0 text-sm font-bold" role="status">
-                {payoutStatusLabel(transaction.status)}
+              <strong className="text-blue-deep">
+                {new Intl.NumberFormat("vi-VN").format(transaction.amount)}₫
+              </strong>
+            </div>
+            <p className="mt-3 mb-0 text-sm font-bold" role="status">
+              {payoutStatusLabel(transaction.status)}
+            </p>
+            {transaction.payoutError ? (
+              <p className="mt-2 mb-0 text-sm text-error">
+                {transaction.payoutError}
               </p>
-              {transaction.payoutError ? (
-                <p className="mt-2 mb-0 text-sm text-error">
-                  {transaction.payoutError}
-                </p>
-              ) : null}
-              {canRequestPayout ? (
-                <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-line pt-4">
-                  <label className="min-w-64 flex-1 text-sm font-bold text-ink">
-                    Tài khoản nhận payout
-                    <select
-                      className="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 font-normal"
-                      value={payoutAccountId}
-                      disabled={transaction.payoutNeedsConfirmation}
-                      onChange={(event) =>
-                        setSelectedAccountId(event.target.value)
-                      }
-                    >
-                      <option value="">
-                        Chọn tài khoản đã hoàn thiện hồ sơ
-                      </option>
-                      {transaction.payoutNeedsConfirmation &&
-                      payoutAccountId &&
-                      !readyAccounts.some(
-                        (account) => account.id === payoutAccountId,
-                      ) ? (
-                        <option value={payoutAccountId}>
-                          Tài khoản đã dùng cho yêu cầu payout đang chờ xác nhận
-                        </option>
-                      ) : null}
-                      {readyAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.bankName} · {account.accountHolder} ·{" "}
-                          {account.accountNumber}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    className="min-h-11 rounded-md bg-coral px-4 text-sm font-extrabold text-paper disabled:opacity-50"
-                    type="button"
-                    disabled={
-                      (transaction.payoutNeedsConfirmation
-                        ? !payoutAccountId
-                        : !hasPayoutDetails(payoutAccount)) ||
-                      processingId === transaction.id
-                    }
-                    onClick={() =>
-                      void submitPayout(transaction.id, payoutAccountId)
-                    }
-                  >
-                    {processingId === transaction.id
-                      ? "Đang gửi…"
-                      : transaction.payoutNeedsConfirmation
-                        ? "Kiểm tra / gửi lại yêu cầu"
-                        : transaction.status === "PAYOUT_FAILED"
-                          ? "Thử payout lại"
-                          : "Nhận tiền"}
-                  </button>
-                </div>
-              ) : null}
-              {canRequestPayout && readyAccounts.length === 0 ? (
-                <p className="mt-3 mb-0 text-sm text-ink-soft">
-                  Hãy thêm tài khoản ngân hàng và thông tin người nhận trong{" "}
-                  <a
-                    className="font-bold text-blue-deep underline"
-                    href="/profile"
-                  >
-                    hồ sơ của bạn
-                  </a>{" "}
-                  trước khi yêu cầu payout.
-                </p>
-              ) : null}
-            </article>
-          );
-        })}
+            ) : null}
+            {["PAID", "PAYOUT_PROCESSING", "PAYOUT_FAILED"].includes(
+              transaction.status,
+            ) ? (
+              <p className="mt-2 mb-0 text-sm text-ink-soft">
+                Vé vẫn thuộc về bạn cho đến khi payout được Xendit xác nhận
+                thành công.
+                {transaction.status === "PAYOUT_FAILED"
+                  ? " Vui lòng kiểm tra thông tin nhận tiền trong hồ sơ hoặc liên hệ hỗ trợ."
+                  : ""}
+              </p>
+            ) : null}
+          </article>
+        ))}
       </div>
     </section>
   );
 }
-
 export function MyResaleListingsPage({
   listings,
   onNavigate,

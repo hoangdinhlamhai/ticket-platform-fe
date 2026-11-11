@@ -13,12 +13,10 @@ type Props = {
   onNavigate: (path: AttendeePath) => void;
 };
 
-const ticketTransferredStatuses = new Set([
-  "PAID",
-  "PAYOUT_PROCESSING",
-  "COMPLETED",
-  "PAYOUT_FAILED",
-]);
+const ticketTransferredStatuses = new Set(["COMPLETED"]);
+
+const transactionIsPendingTransfer = (status: string) =>
+  ["PAID", "PAYOUT_PROCESSING"].includes(status);
 
 export function ResaleResultPage({ listingId, onNavigate }: Props) {
   const transactionId = new URLSearchParams(window.location.search).get(
@@ -42,7 +40,11 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
           return;
         }
         setTransaction(data.transaction);
-        if (data.transaction.status === "PENDING_PAYMENT") {
+        if (
+          ["PENDING_PAYMENT", "PAID", "PAYOUT_PROCESSING"].includes(
+            data.transaction.status,
+          )
+        ) {
           timeoutId = window.setTimeout(loadTransaction, 2500);
         }
       } catch {
@@ -58,15 +60,21 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
 
   const transferred =
     transaction !== null && ticketTransferredStatuses.has(transaction.status);
+  const waitingForPayout =
+    transaction !== null && transactionIsPendingTransfer(transaction.status);
   const title = transferred
     ? "Vé resale đã thuộc về bạn."
     : transaction?.status === "PENDING_PAYMENT"
       ? "Đang xác nhận thanh toán."
-      : transaction?.status === "PAYMENT_REVIEW"
-        ? "Giao dịch cần được hỗ trợ."
-        : transaction
-          ? "Thanh toán chưa hoàn tất."
-          : "Đang tải giao dịch.";
+      : waitingForPayout
+        ? "Đã thanh toán, đang chờ hoàn tất chuyển vé."
+        : transaction?.status === "PAYMENT_REVIEW"
+          ? "Giao dịch cần được hỗ trợ."
+          : transaction?.status === "PAYOUT_FAILED"
+            ? "Đã thanh toán, payout chưa thành công."
+            : transaction
+              ? "Thanh toán chưa hoàn tất."
+              : "Đang tải giao dịch.";
 
   return (
     <div className="px-6 py-[clamp(3.5rem,7vw,6.5rem)] mobile:px-5">
@@ -75,7 +83,11 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
         <header className="mt-10 text-center">
           <TicketIcon className="mx-auto h-12 w-12 text-coral" />
           <p className="mt-5 text-xs font-extrabold tracking-[0.12em] text-success">
-            {transferred ? "ĐÃ XÁC NHẬN QUA XENDIT" : "TRẠNG THÁI GIAO DỊCH"}
+            {transferred
+              ? "ĐÃ CHUYỂN VÉ"
+              : waitingForPayout
+                ? "ĐÃ THANH TOÁN · ĐANG CHỜ PAYOUT"
+                : "TRẠNG THÁI GIAO DỊCH"}
           </p>
           <h1 className="mt-4 font-body text-[clamp(3rem,7vw,6rem)] leading-[0.84] font-extrabold tracking-[-0.1em]">
             {title}
@@ -83,13 +95,17 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
           <p className="mx-auto mt-5 max-w-[42rem] leading-[1.7] text-ink-soft">
             {transaction?.status === "PENDING_PAYMENT"
               ? "Xendit đang gửi kết quả thanh toán. Trang sẽ tự cập nhật khi nhận được xác nhận."
-              : transaction?.status === "PAYMENT_REVIEW"
-                ? "Thanh toán đã được ghi nhận nhưng vé chưa thể chuyển tự động. Vui lòng liên hệ Ticketly để được hỗ trợ."
-                : transferred
-                  ? "Quyền sở hữu vé đã được cập nhật sau khi Xendit xác nhận khoản thanh toán."
-                  : transaction
-                    ? "Thanh toán chưa được xác nhận. Listing sẽ được mở lại nếu phiên thanh toán thất bại hoặc hết hạn."
-                    : "Đang truy vấn trạng thái giao dịch từ máy chủ."}
+              : waitingForPayout
+                ? "Thanh toán của bạn đã được xác nhận. Hệ thống đang chờ Xendit chuyển tiền thành công cho người bán; vé sẽ được chuyển sang tài khoản của bạn ngay sau đó. Trang sẽ tự cập nhật trạng thái."
+                : transaction?.status === "PAYMENT_REVIEW"
+                  ? "Thanh toán đã được ghi nhận nhưng vé chưa thể chuyển tự động. Vui lòng liên hệ Ticketly để được hỗ trợ."
+                  : transaction?.status === "PAYOUT_FAILED"
+                    ? "Thanh toán đã được ghi nhận nhưng Xendit chưa xác nhận payout cho người bán. Vé vẫn thuộc về người bán; vui lòng liên hệ Ticketly để được hỗ trợ."
+                    : transferred
+                      ? "Quyền sở hữu vé đã được cập nhật sau khi Xendit xác nhận khoản thanh toán."
+                      : transaction
+                        ? "Thanh toán chưa được xác nhận. Listing sẽ được mở lại nếu phiên thanh toán thất bại hoặc hết hạn."
+                        : "Đang truy vấn trạng thái giao dịch từ máy chủ."}
           </p>
         </header>
 
@@ -97,7 +113,11 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
           <section className="mt-10 overflow-hidden rounded-lg border border-line bg-surface">
             <div className="bg-pine p-6 text-paper">
               <p className="text-xs font-extrabold tracking-[0.1em] text-mint">
-                {transferred ? "VÉ RESALE ĐÃ ĐƯỢC CHUYỂN" : "GIAO DỊCH RESALE"}
+                {transferred
+                  ? "VÉ RESALE ĐÃ ĐƯỢC CHUYỂN"
+                  : waitingForPayout
+                    ? "ĐANG CHỜ XÁC NHẬN PAYOUT"
+                    : "GIAO DỊCH RESALE"}
               </p>
               <h2 className="mt-3 font-body text-5xl font-extrabold tracking-[-0.09em]">
                 {transaction.eventTitle}

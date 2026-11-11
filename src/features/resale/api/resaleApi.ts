@@ -64,12 +64,3 @@ export const findResaleTransaction = (transactionId: string) =>
   axiosClient.get<ResaleTransactionResponse>(
     `/resale/transactions/${encodeURIComponent(transactionId)}`,
   );
-
-export const requestResalePayout = (
-  transactionId: string,
-  bankAccountId: string,
-) =>
-  axiosClient.post<ResaleTransactionResponse>(
-    `/resale/transactions/${encodeURIComponent(transactionId)}/payout`,
-    { bankAccountId },
-  );

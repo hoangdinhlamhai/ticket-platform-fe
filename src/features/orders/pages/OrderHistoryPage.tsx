@@ -20,24 +20,44 @@ export function OrderHistoryPage({ onNavigate }: Props) {
 
   useEffect(() => {
     let isActive = true;
+    let timeoutId: number | undefined;
+    let hasLoaded = false;
 
     const loadOrders = async () => {
-      setIsLoading(true);
+      if (!hasLoaded) setIsLoading(true);
       setHasError(false);
 
       try {
         const { data } = await findMine();
-        if (isActive) setOrders(data.orders);
+        if (isActive) {
+          setOrders(data.orders);
+          hasLoaded = true;
+          if (
+            data.orders.some(
+              (order) =>
+                order.source === "RESALE" &&
+                ["PENDING_PAYMENT", "PAID", "PAYOUT_PROCESSING"].includes(
+                  order.status,
+                ),
+            )
+          ) {
+            timeoutId = window.setTimeout(loadOrders, 3000);
+          }
+        }
       } catch {
         if (isActive) setHasError(true);
       } finally {
-        if (isActive) setIsLoading(false);
+        if (isActive) {
+          hasLoaded = true;
+          setIsLoading(false);
+        }
       }
     };
 
     void loadOrders();
     return () => {
       isActive = false;
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     };
   }, [reloadKey]);
 

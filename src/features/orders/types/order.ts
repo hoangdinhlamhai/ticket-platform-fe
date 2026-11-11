@@ -42,7 +42,16 @@ export type PrimaryCheckoutSelection = {
   totalPrice?: number;
 };
 export type OrderFilters = {
-  status: "all" | "PENDING_PAYMENT" | "PAID" | "FAILED" | "EXPIRED";
+  status:
+    | "all"
+    | "PENDING_PAYMENT"
+    | "PAID"
+    | "PAYOUT_PROCESSING"
+    | "PAYOUT_FAILED"
+    | "PAYMENT_REVIEW"
+    | "COMPLETED"
+    | "FAILED"
+    | "EXPIRED";
 };
 
 export type CreateOrderInput = {
@@ -84,6 +93,8 @@ export type OrderPaymentSummary = {
 
 export type AttendeeOrderRecord = {
   id: string;
+  source?: "PRIMARY" | "RESALE";
+  listingId?: string;
   total: OrderMoney;
   status: string;
   expiresAt: string | null;

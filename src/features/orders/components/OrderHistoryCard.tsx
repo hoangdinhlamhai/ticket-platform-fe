@@ -13,7 +13,10 @@ type Props = {
 };
 
 export function OrderHistoryCard({ order, onNavigate }: Props) {
-  const href: AttendeePath = `/orders/${order.id}`;
+  const href: AttendeePath =
+    order.source === "RESALE" && order.listingId
+      ? `/resale/${order.listingId}/result?transactionId=${encodeURIComponent(order.id)}`
+      : `/orders/${order.id}`;
   const open = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!shouldUseClientNavigation(event)) return;
     event.preventDefault();
@@ -24,7 +27,12 @@ export function OrderHistoryCard({ order, onNavigate }: Props) {
     <article className="rounded-lg border border-line bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} source={order.source} />
+          {order.source === "RESALE" ? (
+            <span className="ml-2 inline-flex rounded-sm border border-coral-dark/35 bg-paper-deep px-2 py-1 text-[0.68rem] font-extrabold tracking-[0.05em] text-coral-dark">
+              VE RESALE
+            </span>
+          ) : null}
           <p className="mt-3 mb-0 text-xs font-extrabold tracking-[0.08em] text-blue-deep">
             MÃ ĐƠN · {order.id}
           </p>
