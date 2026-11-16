@@ -36,9 +36,7 @@ export function OrderHistoryPage({ onNavigate }: Props) {
             data.orders.some(
               (order) =>
                 order.source === "RESALE" &&
-                ["PENDING_PAYMENT", "PAID", "PAYOUT_PROCESSING"].includes(
-                  order.status,
-                ),
+                ["PENDING_PAYMENT", "PAID"].includes(order.status),
             )
           ) {
             timeoutId = window.setTimeout(loadOrders, 3000);

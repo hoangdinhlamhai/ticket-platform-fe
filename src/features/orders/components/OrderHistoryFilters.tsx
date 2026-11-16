@@ -19,9 +19,6 @@ export function OrderHistoryFilters({ filters, onChange }: Props) {
         <option value="all">Tất cả trạng thái</option>
         <option value="PENDING_PAYMENT">Chờ thanh toán</option>
         <option value="PAID">Đã thanh toán</option>
-        <option value="PAYOUT_PROCESSING">Đang chờ payout</option>
-        <option value="PAYOUT_FAILED">Payout cần xử lý</option>
-        <option value="PAYMENT_REVIEW">Giao dịch cần hỗ trợ</option>
         <option value="COMPLETED">Đã chuyển vé</option>
         <option value="FAILED">Thanh toán thất bại</option>
         <option value="EXPIRED">Đã hết hạn</option>

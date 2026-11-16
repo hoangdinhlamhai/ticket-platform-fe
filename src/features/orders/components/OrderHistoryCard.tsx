@@ -27,7 +27,7 @@ export function OrderHistoryCard({ order, onNavigate }: Props) {
     <article className="rounded-lg border border-line bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <OrderStatusBadge status={order.status} source={order.source} />
+          <OrderStatusBadge status={order.status} />
           {order.source === "RESALE" ? (
             <span className="ml-2 inline-flex rounded-sm border border-coral-dark/35 bg-paper-deep px-2 py-1 text-[0.68rem] font-extrabold tracking-[0.05em] text-coral-dark">
               VE RESALE

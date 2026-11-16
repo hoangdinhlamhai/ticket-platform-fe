@@ -47,13 +47,34 @@ export function MyResaleListingCard({
         </strong>
       </div>
       <div className="mt-4 flex flex-wrap gap-3 border-t border-line pt-4">
-        <button
-          className="min-h-11 rounded-md border border-blue-deep/50 px-4 text-sm font-extrabold text-blue-deep"
-          type="button"
-          onClick={() => onNavigate(`/resale/${listing.id}`)}
-        >
-          Xem listing
-        </button>
+        {status === "active" ? (
+          <button
+            className="min-h-11 rounded-md border border-blue-deep/50 px-4 text-sm font-extrabold text-blue-deep"
+            type="button"
+            onClick={() => onNavigate(`/resale/${listing.id}`)}
+          >
+            Xem listing
+          </button>
+        ) : listing.sourceTicketId && status !== "sold" ? (
+          <>
+            <button
+              className="min-h-11 rounded-md border border-blue-deep/50 px-4 text-sm font-extrabold text-blue-deep"
+              type="button"
+              onClick={() => onNavigate(`/tickets/${listing.sourceTicketId}`)}
+            >
+              Xem vé
+            </button>
+            <p className="m-0 self-center text-sm text-ink-soft" role="status">
+              {status === "reserved"
+                ? "Vé đang được giữ cho giao dịch. Theo dõi payout trong mục Giao dịch bán vé bên dưới."
+                : "Listing đã rút khỏi chợ; vé vẫn thuộc về bạn."}
+            </p>
+          </>
+        ) : (
+          <p className="m-0 self-center text-sm text-ink-soft" role="status">
+            Vé đã chuyển cho người mua nên không còn trong vé của bạn.
+          </p>
+        )}
         {status === "active" ? (
           <button
             className="min-h-11 rounded-md bg-coral px-4 text-sm font-extrabold text-paper"

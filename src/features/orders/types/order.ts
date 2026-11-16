@@ -43,15 +43,7 @@ export type PrimaryCheckoutSelection = {
 };
 export type OrderFilters = {
   status:
-    | "all"
-    | "PENDING_PAYMENT"
-    | "PAID"
-    | "PAYOUT_PROCESSING"
-    | "PAYOUT_FAILED"
-    | "PAYMENT_REVIEW"
-    | "COMPLETED"
-    | "FAILED"
-    | "EXPIRED";
+    "all" | "PENDING_PAYMENT" | "PAID" | "COMPLETED" | "FAILED" | "EXPIRED";
 };
 
 export type CreateOrderInput = {

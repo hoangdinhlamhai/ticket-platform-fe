@@ -3,6 +3,7 @@ import type { AttendeePath } from "../../../routes/attendee-route";
 import { TicketIcon } from "../../../components/icons/TicketlyIcons";
 import { formatTicketPrice } from "../../events";
 import {
+  createResaleRefundRequest,
   findResaleTransaction,
   type ResaleTransaction,
 } from "../api/resaleApi";
@@ -15,8 +16,16 @@ type Props = {
 
 const ticketTransferredStatuses = new Set(["COMPLETED"]);
 
-const transactionIsPendingTransfer = (status: string) =>
-  ["PAID", "PAYOUT_PROCESSING"].includes(status);
+const transactionIsPendingTransfer = (status: string) => status === "PAID";
+
+const transactionStatusLabel: Record<string, string> = {
+  PENDING_PAYMENT: "Đang chờ thanh toán",
+  PAID: "Đã thanh toán",
+  COMPLETED: "Đã chuyển vé",
+  REFUNDED: "Đã hoàn tiền",
+  EXPIRED: "Đã hết hạn",
+  PAYMENT_FAILED: "Thanh toán thất bại",
+};
 
 export function ResaleResultPage({ listingId, onNavigate }: Props) {
   const transactionId = new URLSearchParams(window.location.search).get(
@@ -26,6 +35,9 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
     null,
   );
   const [loadError, setLoadError] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [refundError, setRefundError] = useState("");
 
   useEffect(() => {
     if (!transactionId) return;
@@ -41,8 +53,9 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
         }
         setTransaction(data.transaction);
         if (
-          ["PENDING_PAYMENT", "PAID", "PAYOUT_PROCESSING"].includes(
-            data.transaction.status,
+          ["PENDING_PAYMENT", "PAID"].includes(data.transaction.status) ||
+          ["PENDING", "PROCESSING"].includes(
+            data.transaction.refundStatus ?? "",
           )
         ) {
           timeoutId = window.setTimeout(loadTransaction, 2500);
@@ -62,19 +75,37 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
     transaction !== null && ticketTransferredStatuses.has(transaction.status);
   const waitingForPayout =
     transaction !== null && transactionIsPendingTransfer(transaction.status);
+  const payoutSucceededWithoutTransfer =
+    transaction?.status === "PAID" && transaction.payoutStatus === "SUCCEEDED";
   const title = transferred
     ? "Vé resale đã thuộc về bạn."
     : transaction?.status === "PENDING_PAYMENT"
       ? "Đang xác nhận thanh toán."
-      : waitingForPayout
-        ? "Đã thanh toán, đang chờ hoàn tất chuyển vé."
-        : transaction?.status === "PAYMENT_REVIEW"
-          ? "Giao dịch cần được hỗ trợ."
-          : transaction?.status === "PAYOUT_FAILED"
-            ? "Đã thanh toán, payout chưa thành công."
-            : transaction
-              ? "Thanh toán chưa hoàn tất."
-              : "Đang tải giao dịch.";
+      : payoutSucceededWithoutTransfer
+        ? "Thanh toán đã xong, cần hỗ trợ chuyển vé."
+        : waitingForPayout
+          ? "Đã thanh toán, đang chờ hoàn tất chuyển vé."
+          : transaction
+            ? "Thanh toán chưa hoàn tất."
+            : "Đang tải giao dịch.";
+
+  const requestRefund = async () => {
+    if (!transaction || !refundReason.trim()) return;
+    setRefundSubmitting(true);
+    setRefundError("");
+    try {
+      await createResaleRefundRequest(transaction.id, refundReason.trim());
+      const { data } = await findResaleTransaction(transaction.id);
+      setTransaction(data.transaction);
+      setRefundReason("");
+    } catch {
+      setRefundError(
+        "Không thể gửi yêu cầu hoàn tiền. Vui lòng tải lại giao dịch và thử lại.",
+      );
+    } finally {
+      setRefundSubmitting(false);
+    }
+  };
 
   return (
     <div className="px-6 py-[clamp(3.5rem,7vw,6.5rem)] mobile:px-5">
@@ -85,9 +116,11 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
           <p className="mt-5 text-xs font-extrabold tracking-[0.12em] text-success">
             {transferred
               ? "ĐÃ CHUYỂN VÉ"
-              : waitingForPayout
-                ? "ĐÃ THANH TOÁN · ĐANG CHỜ PAYOUT"
-                : "TRẠNG THÁI GIAO DỊCH"}
+              : payoutSucceededWithoutTransfer
+                ? "PAYOUT THÀNH CÔNG · ĐANG KIỂM TRA CHUYỂN VÉ"
+                : waitingForPayout
+                  ? "ĐÃ THANH TOÁN · ĐANG CHỜ PAYOUT"
+                  : "TRẠNG THÁI GIAO DỊCH"}
           </p>
           <h1 className="mt-4 font-body text-[clamp(3rem,7vw,6rem)] leading-[0.84] font-extrabold tracking-[-0.1em]">
             {title}
@@ -95,17 +128,19 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
           <p className="mx-auto mt-5 max-w-[42rem] leading-[1.7] text-ink-soft">
             {transaction?.status === "PENDING_PAYMENT"
               ? "Xendit đang gửi kết quả thanh toán. Trang sẽ tự cập nhật khi nhận được xác nhận."
-              : waitingForPayout
-                ? "Thanh toán của bạn đã được xác nhận. Hệ thống đang chờ Xendit chuyển tiền thành công cho người bán; vé sẽ được chuyển sang tài khoản của bạn ngay sau đó. Trang sẽ tự cập nhật trạng thái."
-                : transaction?.status === "PAYMENT_REVIEW"
-                  ? "Thanh toán đã được ghi nhận nhưng vé chưa thể chuyển tự động. Vui lòng liên hệ Ticketly để được hỗ trợ."
-                  : transaction?.status === "PAYOUT_FAILED"
-                    ? "Thanh toán đã được ghi nhận nhưng Xendit chưa xác nhận payout cho người bán. Vé vẫn thuộc về người bán; vui lòng liên hệ Ticketly để được hỗ trợ."
-                    : transferred
-                      ? "Quyền sở hữu vé đã được cập nhật sau khi Xendit xác nhận khoản thanh toán."
-                      : transaction
-                        ? "Thanh toán chưa được xác nhận. Listing sẽ được mở lại nếu phiên thanh toán thất bại hoặc hết hạn."
-                        : "Đang truy vấn trạng thái giao dịch từ máy chủ."}
+              : payoutSucceededWithoutTransfer
+                ? "Xendit đã xác nhận payout nhưng hệ thống chưa thể hoàn tất chuyển vé tự động. Ticketly đang kiểm tra giao dịch."
+                : waitingForPayout
+                  ? ["FAILED", "REVERSED", "REJECTED"].includes(
+                      transaction?.payoutStatus ?? "",
+                    )
+                    ? "Thanh toán đã được ghi nhận nhưng payout chưa thành công. Vé vẫn thuộc về người bán trong khi Admin xử lý."
+                    : "Thanh toán của bạn đã được xác nhận. Hệ thống đang chờ Xendit chuyển tiền thành công cho người bán; vé sẽ được chuyển sang tài khoản của bạn ngay sau đó. Trang sẽ tự cập nhật trạng thái."
+                  : transferred
+                    ? "Quyền sở hữu vé đã được cập nhật sau khi Xendit xác nhận khoản thanh toán."
+                    : transaction
+                      ? "Thanh toán chưa được xác nhận. Listing sẽ được mở lại nếu phiên thanh toán thất bại hoặc hết hạn."
+                      : "Đang truy vấn trạng thái giao dịch từ máy chủ."}
           </p>
         </header>
 
@@ -127,7 +162,13 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
             <dl className="grid grid-cols-2 gap-px bg-line mobile:grid-cols-1">
               {[
                 ["Mã giao dịch", transaction.id],
-                ["Trạng thái", transaction.status],
+                [
+                  "Trạng thái",
+                  transaction.status === "PAID" && transaction.payoutStatus
+                    ? `Đã thanh toán · payout ${transaction.payoutStatus}`
+                    : (transactionStatusLabel[transaction.status] ??
+                      "Đang xử lý"),
+                ],
                 ["Giá thanh toán", formatTicketPrice(transaction.amount)],
                 ["Thời gian thanh toán", transaction.paidAt ?? "Đang chờ"],
               ].map(([label, value]) => (
@@ -141,6 +182,64 @@ export function ResaleResultPage({ listingId, onNavigate }: Props) {
                 </div>
               ))}
             </dl>
+          </section>
+        ) : null}
+
+        {transaction?.buyerPayoutMessage || transaction?.refundStatus ? (
+          <section className="mt-6 rounded-lg border border-warning/40 bg-warning/10 p-5">
+            {transaction.buyerPayoutMessage ? (
+              <p className="m-0 text-sm leading-6 text-ink">
+                {transaction.buyerPayoutMessage}
+              </p>
+            ) : null}
+            {transaction.refundStatus ? (
+              <p className="mt-3 mb-0 font-bold" role="status">
+                {transaction.refundStatus === "PENDING"
+                  ? "Yêu cầu hoàn tiền đang chờ Admin duyệt. Vé vẫn được giữ cho bạn trong thời gian xử lý."
+                  : transaction.refundStatus === "PROCESSING"
+                    ? "Yêu cầu hoàn tiền đang được Xendit xử lý. Vé vẫn được giữ cho bạn đến khi Xendit xác nhận."
+                    : transaction.refundStatus === "SUCCEEDED"
+                      ? "Xendit đã xác nhận hoàn tiền thành công."
+                      : transaction.refundStatus === "REJECTED"
+                        ? "Admin đã từ chối yêu cầu hoàn tiền. Vé vẫn được giữ cho bạn."
+                        : "Yêu cầu hoàn tiền chưa hoàn tất; Admin đang kiểm tra."}
+              </p>
+            ) : null}
+            {transaction.canRequestRefund && !transaction.refundStatus ? (
+              <div className="mt-4 grid gap-3">
+                <label
+                  className="grid gap-2 text-sm font-semibold"
+                  htmlFor="resale-refund-reason"
+                >
+                  Lý do yêu cầu hoàn tiền
+                  <textarea
+                    id="resale-refund-reason"
+                    className="min-h-24 rounded-md border border-line bg-surface p-3 font-normal"
+                    maxLength={1000}
+                    value={refundReason}
+                    onChange={(event) => setRefundReason(event.target.value)}
+                    required
+                  />
+                </label>
+                {refundError ? (
+                  <p className="m-0 text-sm text-error" role="alert">
+                    {refundError}
+                  </p>
+                ) : null}
+                <button
+                  className="min-h-11 w-fit rounded-md bg-coral px-4 font-extrabold text-paper disabled:opacity-50"
+                  type="button"
+                  disabled={refundSubmitting || !refundReason.trim()}
+                  onClick={() => void requestRefund()}
+                >
+                  {refundSubmitting ? "Đang gửi yêu cầu…" : "Yêu cầu hoàn tiền"}
+                </button>
+                <p className="m-0 text-xs text-ink-soft">
+                  Vé sẽ được giữ cho bạn cho đến khi Xendit xác nhận hoàn tiền
+                  thành công.
+                </p>
+              </div>
+            ) : null}
           </section>
         ) : null}
 

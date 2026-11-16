@@ -22,6 +22,12 @@ export type ResaleTransaction = {
   payoutAt: string | null;
   payoutNeedsConfirmation: boolean;
   payoutError: string | null;
+  payoutStatus: string | null;
+  payoutUpdatedAt: string | null;
+  payoutAccountUpdated: boolean;
+  buyerPayoutMessage: string | null;
+  canRequestRefund: boolean;
+  refundStatus: string | null;
   payoutBankAccountId: string | null;
   isSeller: boolean;
   isBuyer: boolean;
@@ -63,4 +69,13 @@ export const findMyResaleSales = () =>
 export const findResaleTransaction = (transactionId: string) =>
   axiosClient.get<ResaleTransactionResponse>(
     `/resale/transactions/${encodeURIComponent(transactionId)}`,
+  );
+
+export const createResaleRefundRequest = (
+  transactionId: string,
+  reason: string,
+) =>
+  axiosClient.post<{ refund: { id: string; status: string } }>(
+    `/resale/transactions/${encodeURIComponent(transactionId)}/refund-requests`,
+    { reason },
   );

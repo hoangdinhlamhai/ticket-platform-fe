@@ -11,7 +11,7 @@ type Props = {
   onWithdraw: (id: string) => void;
 };
 
-function payoutStatusLabel(status: string) {
+function payoutStatusLabel(status: string, payoutStatus: string | null) {
   switch (status) {
     case "PENDING_PAYMENT":
       return "Chờ người mua thanh toán";
@@ -19,13 +19,13 @@ function payoutStatusLabel(status: string) {
     case "EXPIRED":
       return "Thanh toán thất bại hoặc hết hạn";
     case "PAID":
-      return "Đã thanh toán, đang khởi tạo payout tự động";
-    case "PAYOUT_PROCESSING":
-      return "Xendit đang xử lý payout; vé sẽ chuyển sau khi payout thành công";
-    case "PAYOUT_FAILED":
-      return "Payout chưa thành công; vé vẫn thuộc về bạn";
-    case "PAYMENT_REVIEW":
-      return "Cần Ticketly hỗ trợ giao dịch";
+      if (["FAILED", "REVERSED", "REJECTED"].includes(payoutStatus ?? "")) {
+        return "Người mua đã thanh toán; payout chưa thành công, vé vẫn thuộc về bạn";
+      }
+      if (payoutStatus === "SUCCEEDED") {
+        return "Payout thành công; đang hoàn tất chuyển vé";
+      }
+      return "Đã thanh toán, đang chờ Xendit xử lý payout";
     case "COMPLETED":
       return "Đã payout cho người bán và chuyển vé cho người mua";
     default:
@@ -57,11 +57,7 @@ function SellerTransactions() {
   }, []);
 
   useEffect(() => {
-    if (
-      !transactions.some((transaction) =>
-        ["PAID", "PAYOUT_PROCESSING"].includes(transaction.status),
-      )
-    )
+    if (!transactions.some((transaction) => transaction.status === "PAID"))
       return;
     const timeoutId = window.setTimeout(() => {
       const refreshSales = async () => {
@@ -126,20 +122,36 @@ function SellerTransactions() {
               </strong>
             </div>
             <p className="mt-3 mb-0 text-sm font-bold" role="status">
-              {payoutStatusLabel(transaction.status)}
+              {payoutStatusLabel(transaction.status, transaction.payoutStatus)}
             </p>
             {transaction.payoutError ? (
               <p className="mt-2 mb-0 text-sm text-error">
                 {transaction.payoutError}
               </p>
             ) : null}
-            {["PAID", "PAYOUT_PROCESSING", "PAYOUT_FAILED"].includes(
-              transaction.status,
-            ) ? (
+            {transaction.refundStatus ? (
+              <p
+                className="mt-2 mb-0 text-sm font-semibold text-info"
+                role="status"
+              >
+                {transaction.refundStatus === "PENDING"
+                  ? "Yêu cầu hoàn tiền đang chờ Admin duyệt"
+                  : transaction.refundStatus === "PROCESSING"
+                    ? "Yêu cầu hoàn tiền đang được Xendit xử lý"
+                    : transaction.refundStatus === "SUCCEEDED"
+                      ? "Xendit đã xác nhận hoàn tiền"
+                      : transaction.refundStatus === "REJECTED"
+                        ? "Yêu cầu hoàn tiền đã bị từ chối"
+                        : "Yêu cầu hoàn tiền chưa hoàn tất; Admin đang kiểm tra"}
+              </p>
+            ) : null}
+            {transaction.status === "PAID" ? (
               <p className="mt-2 mb-0 text-sm text-ink-soft">
                 Vé vẫn thuộc về bạn cho đến khi payout được Xendit xác nhận
                 thành công.
-                {transaction.status === "PAYOUT_FAILED"
+                {["FAILED", "REVERSED", "REJECTED"].includes(
+                  transaction.payoutStatus ?? "",
+                )
                   ? " Vui lòng kiểm tra thông tin nhận tiền trong hồ sơ hoặc liên hệ hỗ trợ."
                   : ""}
               </p>
