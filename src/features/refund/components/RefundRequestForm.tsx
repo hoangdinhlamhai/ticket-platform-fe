@@ -42,10 +42,6 @@ export function RefundRequestForm({
       setError("Hiện chưa có đơn hàng phù hợp để gửi yêu cầu.");
       return;
     }
-    if (!reason.trim()) {
-      setError("Hãy cho chúng tôi biết lý do bạn cần hoàn tiền.");
-      return;
-    }
     setError("");
     void onSubmit(selectedOrder, reason.trim());
   };
@@ -148,7 +144,7 @@ export function RefundRequestForm({
             className="mt-5 block text-sm font-bold text-ink"
             htmlFor="refund-reason"
           >
-            Lý do hoàn tiền
+            Lý do hoàn tiền (không bắt buộc)
           </label>
           <textarea
             id="refund-reason"

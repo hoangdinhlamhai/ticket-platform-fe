@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AttendeePath } from "../../../routes/attendee-route";
-import { findMyResaleListings } from "../api/resaleApi";
-import { findMyResaleSales, type ResaleTransaction } from "../api/resaleApi";
+import {
+  findMyResaleListings,
+  findMyResaleSales,
+  type ResaleTransaction,
+} from "../api/resaleApi";
 import { MyResaleListingCard } from "../components/MyResaleListingCard";
 import type { ResaleListing } from "../types/resale";
 
@@ -11,51 +14,13 @@ type Props = {
   onWithdraw: (id: string) => void;
 };
 
-function payoutStatusLabel(status: string, payoutStatus: string | null) {
-  switch (status) {
-    case "PENDING_PAYMENT":
-      return "Chờ người mua thanh toán";
-    case "PAYMENT_FAILED":
-    case "EXPIRED":
-      return "Thanh toán thất bại hoặc hết hạn";
-    case "PAID":
-      if (["FAILED", "REVERSED", "REJECTED"].includes(payoutStatus ?? "")) {
-        return "Người mua đã thanh toán; payout chưa thành công, vé vẫn thuộc về bạn";
-      }
-      if (payoutStatus === "SUCCEEDED") {
-        return "Payout thành công; đang hoàn tất chuyển vé";
-      }
-      return "Đã thanh toán, đang chờ Xendit xử lý payout";
-    case "COMPLETED":
-      return "Đã payout cho người bán và chuyển vé cho người mua";
-    default:
-      return status;
-  }
-}
-
-function SellerTransactions() {
-  const [transactions, setTransactions] = useState<ResaleTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    const loadSales = async () => {
-      try {
-        const response = await findMyResaleSales();
-        if (active) setTransactions(response.data.transactions);
-      } catch {
-        if (active) setError("Không tải được giao dịch resale của bạn.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-    void loadSales();
-    return () => {
-      active = false;
-    };
-  }, []);
-
+function SellerPayoutPolling({
+  transactions,
+  onUpdate,
+}: {
+  transactions: ResaleTransaction[];
+  onUpdate: (transactions: ResaleTransaction[]) => void;
+}) {
   useEffect(() => {
     if (!transactions.some((transaction) => transaction.status === "PAID"))
       return;
@@ -63,7 +28,7 @@ function SellerTransactions() {
       const refreshSales = async () => {
         try {
           const response = await findMyResaleSales();
-          setTransactions(response.data.transactions);
+          onUpdate(response.data.transactions);
         } catch {
           // Keep the last known payout status while the API is unavailable.
         }
@@ -71,96 +36,8 @@ function SellerTransactions() {
       void refreshSales();
     }, 3000);
     return () => window.clearTimeout(timeoutId);
-  }, [transactions]);
-
-  return (
-    <section className="mt-10 rounded-lg border border-line bg-surface p-5">
-      <header className="mb-5 border-b border-line pb-4">
-        <p className="m-0 text-xs font-extrabold tracking-[0.1em] text-coral-dark">
-          THANH TOÁN NGƯỜI BÁN
-        </p>
-        <h2 className="mt-2 mb-0 font-body text-3xl font-extrabold tracking-[-0.07em]">
-          Giao dịch bán vé
-        </h2>
-        <p className="mt-2 mb-0 text-sm text-ink-soft">
-          Payout được tự động gửi đến tài khoản ngân hàng trong hồ sơ sau khi
-          người mua thanh toán. Vé chỉ chuyển chủ khi Xendit xác nhận payout
-          thành công.
-        </p>
-      </header>
-      {error ? (
-        <p className="text-sm text-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {loading ? (
-        <p className="text-sm text-ink-soft">Đang tải giao dịch…</p>
-      ) : null}
-      {!loading && transactions.length === 0 ? (
-        <p className="text-sm text-ink-soft">
-          Chưa có giao dịch bán vé resale.
-        </p>
-      ) : null}
-      <div className="space-y-3">
-        {transactions.map((transaction) => (
-          <article
-            key={transaction.id}
-            className="rounded-md border border-line p-4"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="m-0 font-extrabold text-ink">
-                  {transaction.eventTitle}
-                </h3>
-                <p className="mt-1 mb-0 text-sm text-ink-soft">
-                  {transaction.ticketType} ·{" "}
-                  {new Date(transaction.createdAt).toLocaleString("vi-VN")}
-                </p>
-              </div>
-              <strong className="text-blue-deep">
-                {new Intl.NumberFormat("vi-VN").format(transaction.amount)}₫
-              </strong>
-            </div>
-            <p className="mt-3 mb-0 text-sm font-bold" role="status">
-              {payoutStatusLabel(transaction.status, transaction.payoutStatus)}
-            </p>
-            {transaction.payoutError ? (
-              <p className="mt-2 mb-0 text-sm text-error">
-                {transaction.payoutError}
-              </p>
-            ) : null}
-            {transaction.refundStatus ? (
-              <p
-                className="mt-2 mb-0 text-sm font-semibold text-info"
-                role="status"
-              >
-                {transaction.refundStatus === "PENDING"
-                  ? "Yêu cầu hoàn tiền đang chờ Admin duyệt"
-                  : transaction.refundStatus === "PROCESSING"
-                    ? "Yêu cầu hoàn tiền đang được Xendit xử lý"
-                    : transaction.refundStatus === "SUCCEEDED"
-                      ? "Xendit đã xác nhận hoàn tiền"
-                      : transaction.refundStatus === "REJECTED"
-                        ? "Yêu cầu hoàn tiền đã bị từ chối"
-                        : "Yêu cầu hoàn tiền chưa hoàn tất; Admin đang kiểm tra"}
-              </p>
-            ) : null}
-            {transaction.status === "PAID" ? (
-              <p className="mt-2 mb-0 text-sm text-ink-soft">
-                Vé vẫn thuộc về bạn cho đến khi payout được Xendit xác nhận
-                thành công.
-                {["FAILED", "REVERSED", "REJECTED"].includes(
-                  transaction.payoutStatus ?? "",
-                )
-                  ? " Vui lòng kiểm tra thông tin nhận tiền trong hồ sơ hoặc liên hệ hỗ trợ."
-                  : ""}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
+  }, [transactions, onUpdate]);
+  return null;
 }
 export function MyResaleListingsPage({
   listings,
@@ -172,6 +49,15 @@ export function MyResaleListingsPage({
   );
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [transactions, setTransactions] = useState<ResaleTransaction[]>([]);
+  const [salesLoading, setSalesLoading] = useState(true);
+  const [salesError, setSalesError] = useState(false);
+
+  const updateTransactions = useCallback(
+    (nextTransactions: ResaleTransaction[]) =>
+      setTransactions(nextTransactions),
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -186,6 +72,24 @@ export function MyResaleListingsPage({
       }
     };
     void loadListings();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadSales = async () => {
+      try {
+        const response = await findMyResaleSales();
+        if (active) setTransactions(response.data.transactions);
+      } catch {
+        if (active) setSalesError(true);
+      } finally {
+        if (active) setSalesLoading(false);
+      }
+    };
+    void loadSales();
     return () => {
       active = false;
     };
@@ -225,6 +129,10 @@ export function MyResaleListingsPage({
                 <MyResaleListingCard
                   key={listing.id}
                   listing={listing}
+                  transaction={transactions.find(
+                    (transaction) => transaction.listingId === listing.id,
+                  )}
+                  transactionLoading={salesLoading}
                   onNavigate={onNavigate}
                   onWithdraw={onWithdraw}
                 />
@@ -246,7 +154,20 @@ export function MyResaleListingsPage({
             </>
           )}
         </div>
-        <SellerTransactions />
+        {salesError ? (
+          <p className="mt-4 text-sm text-error" role="alert">
+            Không tải được trạng thái giao dịch resale. Vui lòng tải lại trang.
+          </p>
+        ) : null}
+        {salesLoading ? (
+          <p className="mt-4 text-sm text-ink-soft" role="status">
+            Đang tải trạng thái giao dịch…
+          </p>
+        ) : null}
+        <SellerPayoutPolling
+          transactions={transactions}
+          onUpdate={updateTransactions}
+        />
       </div>
     </section>
   );

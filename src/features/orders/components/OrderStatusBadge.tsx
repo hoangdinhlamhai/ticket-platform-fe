@@ -15,6 +15,10 @@ const statusPresentation: Record<string, { label: string; style: string }> = {
     label: "Thanh toán thất bại",
     style: "border-error/35 bg-error-ring text-error",
   },
+  PAYOUT_FAILED: {
+    label: "Payout thất bại",
+    style: "border-error/35 bg-error-ring text-error",
+  },
   FAILED: {
     label: "Thanh toán thất bại",
     style: "border-error/35 bg-error-ring text-error",

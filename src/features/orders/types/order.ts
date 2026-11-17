@@ -94,6 +94,10 @@ export type AttendeeOrderRecord = {
   event: OrderEventSummary;
   items: OrderItemSummary[];
   payment: OrderPaymentSummary | null;
+  payoutStatus?: string | null;
+  payoutFailureCode?: string | null;
+  canRequestRefund?: boolean;
+  refundStatus?: string | null;
 };
 
 export type AttendeeOrderDetail = Omit<
