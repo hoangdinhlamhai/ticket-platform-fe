@@ -27,12 +27,12 @@ const navigation: readonly {
       {
         label: "Tất cả sự kiện",
         path: "/admin/events",
-        routes: ["events-all"],
-      },
-      {
-        label: "Đang chờ duyệt",
-        path: "/admin/events/review",
-        routes: ["event-reviews", "event-review-detail"],
+        routes: [
+          "events-all",
+          "event-reviews",
+          "event-review-detail",
+          "event-detail",
+        ],
       },
     ],
   },

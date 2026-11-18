@@ -1,25 +1,33 @@
 import axios from "axios";
-import type { InternalAxiosRequestConfig } from "axios";
 
-let accessToken: string | null = null;
+const ACCESS_TOKEN_KEY = "ticketly_access_token";
+
+function readStoredAccessToken(): string | null {
+  try {
+    return typeof window === "undefined"
+      ? null
+      : window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+let accessToken: string | null = readStoredAccessToken();
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
+  try {
+    if (typeof window === "undefined") return;
+    if (token) window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    else window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  } catch {
+    // Keep the in-memory session usable when browser storage is unavailable.
+  }
 }
 
 const axiosClient = axios.create({
   baseURL: import.meta.env?.VITE_API_BASE_URL ?? "/api",
 });
-
-let refreshPromise: Promise<string> | null = null;
-
-type RetriableRequest = InternalAxiosRequestConfig & {
-  _retriedAfterRefresh?: boolean;
-};
-
-function isAuthRequest(url: string | undefined): boolean {
-  return /\/auth\/(login|register|refresh|logout)(?:\?|$)/.test(url ?? "");
-}
 
 axiosClient.interceptors.request.use((config) => {
   if (accessToken) config.headers.set("Authorization", `Bearer ${accessToken}`);
@@ -28,45 +36,18 @@ axiosClient.interceptors.request.use((config) => {
 
 axiosClient.interceptors.response.use(
   (response) => response,
-  async (error: unknown) => {
-    if (!axios.isAxiosError(error) || error.response?.status !== 401) {
-      throw error;
-    }
-
-    const request = error.config as RetriableRequest | undefined;
+  (error: unknown) => {
     if (
-      !request ||
-      request._retriedAfterRefresh ||
-      isAuthRequest(request.url)
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      !/\/auth\/(login|register)(?:\?|$)/.test(error.config?.url ?? "")
     ) {
-      throw error;
+      setAccessToken(null);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("auth:session-expired"));
+      }
     }
-
-    request._retriedAfterRefresh = true;
-    refreshPromise ??= axios
-      .post<{ accessToken: string }>(
-        `${axiosClient.defaults.baseURL ?? "/api"}/auth/refresh`,
-        {},
-        { withCredentials: true },
-      )
-      .then(({ data }) => {
-        setAccessToken(data.accessToken);
-        return data.accessToken;
-      })
-      .catch((refreshError: unknown) => {
-        setAccessToken(null);
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("auth:session-expired"));
-        }
-        throw refreshError;
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
-
-    const newToken = await refreshPromise;
-    request.headers.set("Authorization", `Bearer ${newToken}`);
-    return axiosClient.request(request);
+    throw error;
   },
 );
 

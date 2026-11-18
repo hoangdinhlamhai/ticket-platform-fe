@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { OrganizerImagePicker } from "./OrganizerImagePicker.tsx";
 import {
   validateOrganizerTicketTier,
   type OrganizerTicketTierDraft,
@@ -163,12 +162,6 @@ export function OrganizerEventTierDialog({
             onChange={(event) => update("description", event.target.value)}
           />
         </label>
-        <OrganizerImagePicker
-          label="Ảnh vé"
-          value={fields.image}
-          onChange={(value) => update("image", value)}
-          maxMb={1}
-        />
         {message && (
           <p className="mt-3 text-sm font-bold text-error" role="alert">
             {message}

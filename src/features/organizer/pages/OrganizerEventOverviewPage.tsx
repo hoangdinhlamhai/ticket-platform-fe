@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { OrganizerEmptyState } from "../components/OrganizerEmptyState.tsx";
 import { OrganizerEventNavigation } from "../components/OrganizerEventNavigation.tsx";
-import { OrganizerEventReviewPanel } from "../components/OrganizerEventReviewPanel.tsx";
 import { OrganizerPageHeader } from "../components/OrganizerPageHeader.tsx";
 import { OrganizerReportingRangePicker } from "../components/OrganizerReportingRangePicker.tsx";
 import { OrganizerRevenueTicketsChart } from "../components/OrganizerRevenueTicketsChart.tsx";
@@ -67,8 +66,6 @@ export function OrganizerEventOverviewPage({
   activeRoute,
   eventId,
   onNavigate,
-  onPublish,
-  onSubmitReview,
   workspace,
   report,
   loadEventReport,
@@ -121,13 +118,11 @@ export function OrganizerEventOverviewPage({
         ["Doanh thu", `${summary.revenue.toLocaleString("vi-VN")}đ`],
         ["Đã bán", `${summary.soldTicketCount}/${summary.capacity}`],
         ["Còn lại", String(summary.remainingTicketCount)],
-        ["Check-in", String(summary.checkInCount)],
       ]
     : [
         ["Doanh thu", "—"],
         ["Đã bán", "—"],
         ["Còn lại", "—"],
-        ["Check-in", "—"],
       ];
   return (
     <div className="mx-auto max-w-7xl space-y-7">
@@ -180,7 +175,7 @@ export function OrganizerEventOverviewPage({
           </button>
         </section>
       )}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-3">
         {cards.map(([label, value]) => (
           <article
             key={label}
@@ -200,7 +195,7 @@ export function OrganizerEventOverviewPage({
             : "Chưa có số liệu báo cáo."}
         </p>
       )}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,.7fr)]">
+      <div>
         <section className="rounded-lg border border-line bg-surface p-5">
           <h2 className="m-0 text-xl font-extrabold">Bán vé và vận hành</h2>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -224,11 +219,6 @@ export function OrganizerEventOverviewPage({
             mục điều hướng của sự kiện.
           </p>
         </section>
-        <OrganizerEventReviewPanel
-          event={event}
-          onPublish={onPublish}
-          onSubmitReview={onSubmitReview}
-        />
       </div>
       {data && <OrganizerRevenueTicketsChart timeline={data.timeline} />}
     </div>

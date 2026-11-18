@@ -1,30 +1,29 @@
 // Canonical backend roles are USER and ADMIN (ROLE_NOT_ALLOWED for a wrong-role call).
 // The type name is retained to avoid churn across the attendee UI; the role union is canonical.
-export type AuthUserRole = 'USER' | 'ADMIN'
+export type AuthUserRole = "USER" | "ADMIN";
 
 export type AttendeeUser = {
-  id: string
-  email: string
-  fullName: string
-  phone: string | null
-  role: AuthUserRole
-  status: 'ACTIVE'
-}
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  role: AuthUserRole;
+  status: "ACTIVE";
+};
 
 export type AuthSessionResponse = {
-  user: AttendeeUser
-  accessToken: string
-  expiresIn: number
-}
+  user: AttendeeUser;
+  accessToken: string;
+};
 
 export type LoginPayload = {
-  email: string
-  password: string
-}
+  email: string;
+  password: string;
+};
 
 export type RegisterPayload = {
-  fullName: string
-  email: string
-  password: string
-  phone?: string
-}
+  fullName: string;
+  email: string;
+  password: string;
+  phone?: string;
+};

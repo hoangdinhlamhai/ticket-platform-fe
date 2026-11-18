@@ -21,7 +21,6 @@ import { OrganizerPageHeader } from "../components/OrganizerPageHeader.tsx";
 import { OrganizerEventFormLayout } from "../components/create-event/OrganizerEventFormLayout.tsx";
 import { OrganizerEventStepBasic } from "../components/create-event/OrganizerEventStepBasic.tsx";
 import { OrganizerEventStepSchedule } from "../components/create-event/OrganizerEventStepSchedule.tsx";
-import { OrganizerEventStepConfirmation } from "../components/create-event/OrganizerEventStepConfirmation.tsx";
 import { OrganizerEventStepFinance } from "../components/create-event/OrganizerEventStepFinance.tsx";
 import { useOrganizerEventForm } from "../hooks/use-organizer-event-form.ts";
 import {
@@ -66,7 +65,9 @@ export function OrganizerEventEditPage({
     const value = Number(
       new URLSearchParams(window.location.search).get("step"),
     );
-    return Number.isInteger(value) && value >= 0 && value <= 3 ? value : 0;
+    return Number.isInteger(value) && value >= 0 && value <= 3
+      ? Math.min(value, 2)
+      : 0;
   });
   const [seatMap, setSeatMap] = useState<SeatMap | null>(null);
   const [seatMapImageFile, setSeatMapImageFile] = useState<File | null>(null);
@@ -76,6 +77,7 @@ export function OrganizerEventEditPage({
   const [seatMapError, setSeatMapError] = useState("");
   const [seatMapRetry, setSeatMapRetry] = useState(0);
   const savedMap = useRef<string | null>(null);
+  const mapBaselineCaptured = useRef(false);
   const [mapDirty, setMapDirty] = useState(false);
   const [tierKeys, setTierKeys] = useState<string[]>([]);
   const persistedTiers = useRef(new Map<string, string>());
@@ -130,6 +132,7 @@ export function OrganizerEventEditPage({
         setSeatMap(map);
         seatMapExists.current = map !== null;
         savedMap.current = map === null ? null : JSON.stringify(map);
+        mapBaselineCaptured.current = false;
         setMapDirty(false);
       } catch {
         if (active)
@@ -150,11 +153,18 @@ export function OrganizerEventEditPage({
   useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
   const handleMapChange = useCallback((next: SeatMap) => {
+    if (seatMapLoading) return;
     const serialized = JSON.stringify(next);
-    if (savedMap.current === null) savedMap.current = serialized;
+    if (!mapBaselineCaptured.current) {
+      savedMap.current = serialized;
+      mapBaselineCaptured.current = true;
+      setSeatMap(next);
+      setMapDirty(false);
+      return;
+    }
     setMapDirty(serialized !== savedMap.current);
     setSeatMap(next);
-  }, []);
+  }, [seatMapLoading]);
 
   const saveTier = (draft: OrganizerTicketTierDraft, index: number | null) => {
     form.setValues((current) => ({
@@ -349,12 +359,6 @@ export function OrganizerEventEditPage({
       onSaveTier={saveTier}
       onRemoveTier={removeTier}
     />,
-    <OrganizerEventStepConfirmation
-      key="confirmation"
-      disabled={disabled}
-      value={form.values.confirmationMessage}
-      onChange={form.onChange}
-    />,
     <OrganizerEventStepFinance
       key="finance"
       disabled={disabled}
@@ -413,6 +417,7 @@ export function OrganizerEventEditPage({
       <fieldset disabled={disabled}>
         <OrganizerEventFormLayout
           wizard={false}
+          readOnly={locked}
           activeSection={step}
           step={step}
           sections={sections}
@@ -425,7 +430,7 @@ export function OrganizerEventEditPage({
             event.preventDefault();
             void save();
           }}
-          onNext={() => setStep((value) => Math.min(3, value + 1))}
+          onNext={() => setStep((value) => Math.min(2, value + 1))}
           onPrevious={() => setStep((value) => Math.max(0, value - 1))}
           onCancel={() => onNavigate(`/organizer/events/${eventId}`)}
         />
