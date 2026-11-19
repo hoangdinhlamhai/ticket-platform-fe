@@ -4,6 +4,7 @@ import { OrganizerEventWizardProgress } from "./OrganizerEventWizardProgress.tsx
 
 type Props = {
   wizard: boolean;
+  readOnly?: boolean;
   activeSection?: number;
   step: number;
   sections: readonly ReactNode[];
@@ -20,6 +21,7 @@ type Props = {
 
 export function OrganizerEventFormLayout({
   wizard,
+  readOnly = false,
   activeSection,
   step,
   sections,
@@ -95,7 +97,7 @@ export function OrganizerEventFormLayout({
                 </section>
               ),
           )}
-          <div className="flex gap-3">
+          {!readOnly && <div className="flex gap-3">
             <button
               className="min-h-12 rounded-md bg-coral px-5 font-extrabold text-paper"
               type="submit"
@@ -112,7 +114,7 @@ export function OrganizerEventFormLayout({
                 Hủy
               </button>
             )}
-          </div>
+          </div>}
         </div>
       )}
       {error && (

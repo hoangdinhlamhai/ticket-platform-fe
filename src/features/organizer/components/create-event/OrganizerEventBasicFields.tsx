@@ -335,7 +335,7 @@ export function OrganizerEventBasicFields({
         <label className="block text-sm font-bold">
           Mô tả ban tổ chức
           <textarea
-            className={inputClass}
+            className={`${inputClass} min-h-24`}
             name="organizerBio"
             value={values.organizerBio}
             onChange={onChange}

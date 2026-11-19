@@ -73,7 +73,7 @@ export function SeatMapViewer({ seatMap }: { seatMap: SeatMap }) {
                     fontSize="16"
                     fontWeight="700"
                   >
-                    V?t th?
+                    {item.name || "V\u1EADt th\u1EC3"}
                   </text>
                 </g>
               )}

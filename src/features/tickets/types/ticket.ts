@@ -23,10 +23,12 @@ export type OwnedTicket = {
   venue: string;
   address: string;
   ticketType: string;
+  originalPrice: number;
   holderName: string;
   referenceCode: string;
   purchaseLabel: string;
-  status: "Sẵn sàng check-in" | "Sắp diễn ra";
+  status: string;
+  ticketStatus: string;
   journey: readonly TicketJourneyItem[];
   source: OwnedTicketSource;
   orderId: string | null;

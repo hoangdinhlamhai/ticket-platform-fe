@@ -16,6 +16,8 @@ type TicketApiRecord = {
     venueName: string | null;
   };
   ticketType: { id: string; name: string };
+  originalPrice: number;
+  resaleStatus: OwnedTicket["resaleStatus"];
   seat: { id: string; number: string; row: string } | null;
   order: { id: string; payment: { paidAt: string | null } | null };
 };
@@ -50,6 +52,7 @@ export function toOwnedTicket(
     ticketType: [ticket.ticketType.name, seatLabel].filter(Boolean).join(" · "),
     holderName: "Vé của bạn",
     referenceCode: ticket.ticketCode,
+    originalPrice: ticket.originalPrice,
     purchaseLabel: new Intl.DateTimeFormat("vi-VN", {
       day: "2-digit",
       month: "2-digit",
@@ -57,11 +60,12 @@ export function toOwnedTicket(
     }).format(new Date(paidAt ?? ticket.createdAt)),
     status:
       startAt.getTime() > Date.now() ? "Sắp diễn ra" : "Sẵn sàng check-in",
+    ticketStatus: ticket.status,
     source: "primary",
     orderId: ticket.order.id,
     credentialCode: ticket.ticketCode,
     credentialStatus: "pending",
-    resaleStatus: "ineligible",
+    resaleStatus: ticket.resaleStatus,
     row: ticket.seat?.row ?? null,
     seats: seatLabel ? [seatLabel] : undefined,
     journey: [

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import * as adminEventApi from "../api/adminEventApi.ts";
 import { AdminEventSeatMap } from "./AdminEventSeatMap.tsx";
 import { adminStatusLabel } from "../../helpers/admin-display.ts";
@@ -15,24 +15,49 @@ const money = (amount: number) =>
     amount,
   );
 
-export function AdminEventDetail({ eventId, reviewMode, navigate }: Props) {
+const formatDate = (value: string) => new Date(value).toLocaleString("vi-VN");
+
+function DetailField({
+  label,
+  children,
+  className = "",
+}: {
+  readonly label: string;
+  readonly children: ReactNode;
+  readonly className?: string;
+}) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+        {label}
+      </dt>
+      <dd className="mb-0 mt-1 break-words text-sm leading-6 text-ink">
+        {children}
+      </dd>
+    </div>
+  );
+}
+
+export function AdminEventDetail({ eventId, navigate }: Props) {
   return (
     <AdminEventDetailLoader
       key={eventId}
       eventId={eventId}
-      reviewMode={reviewMode}
       navigate={navigate}
     />
   );
 }
 
-function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
+function AdminEventDetailLoader({
+  eventId,
+  navigate,
+}: Pick<Props, "eventId" | "navigate">) {
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reason, setReason] = useState("");
-  const backPath = reviewMode ? "/admin/events/review" : "/admin/events";
+  const backPath = "/admin/events";
 
   useEffect(() => {
     let active = true;
@@ -59,18 +84,10 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
 
   async function decide(decision: "APPROVED" | "REJECTED") {
     if (!event) return;
-    if (decision === "REJECTED" && !reason.trim()) {
-      setError("Vui lòng nhập lý do từ chối.");
-      return;
-    }
     setBusy(true);
     setError("");
     try {
-      await adminEventApi.review(
-        event.id,
-        decision,
-        reason.trim() || undefined,
-      );
+      await adminEventApi.review(event.id, decision, reason.trim());
       navigate(backPath);
     } catch (cause: unknown) {
       setError(
@@ -85,7 +102,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
 
   if (loading)
     return (
-      <p className="rounded border border-line bg-surface p-5" role="status">
+      <p className="rounded-lg border border-line bg-surface p-5" role="status">
         Đang tải chi tiết sự kiện...
       </p>
     );
@@ -93,7 +110,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
     return (
       <section className="grid gap-4 rounded-lg border border-line bg-surface p-5">
         <button
-          className="w-fit font-bold underline"
+          className="min-h-10 w-fit font-bold underline underline-offset-4"
           type="button"
           onClick={() => navigate(backPath)}
         >
@@ -106,7 +123,7 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
     );
   if (!event)
     return (
-      <p className="rounded border border-line bg-surface p-5">
+      <p className="rounded-lg border border-line bg-surface p-5">
         Không tìm thấy sự kiện.
       </p>
     );
@@ -122,280 +139,354 @@ function AdminEventDetailLoader({ eventId, reviewMode, navigate }: Props) {
   const isPendingReview = event.status.toUpperCase() === "PENDING_REVIEW";
 
   return (
-    <div className="grid gap-5">
+    <div className="mx-auto grid w-full max-w-[1600px] gap-5">
       <button
-        className="w-fit font-bold underline"
+        className="min-h-10 w-fit rounded-md px-2 text-sm font-bold text-pine underline decoration-pine/40 underline-offset-4 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
         type="button"
         onClick={() => navigate(backPath)}
       >
         ← Quay lại danh sách
       </button>
-      <header className="grid gap-3 rounded-lg bg-pine p-6 text-paper">
-        <p className="m-0 text-xs font-bold uppercase tracking-widest text-mint">
+
+      <header
+        className="grid min-w-0 gap-2 rounded-xl bg-pine text-paper"
+        style={{ padding: "1.5rem", minHeight: "7rem" }}
+      >
+        <p className="m-0 text-xs font-bold uppercase tracking-[.14em] text-mint">
           Chi tiết sự kiện · {adminStatusLabel(event.status)}
         </p>
-        <h1 className="m-0 text-3xl font-extrabold">{event.title}</h1>
-        <p className="m-0">
-          {event.venueName ?? "Chưa có địa điểm"} ·{" "}
-          {new Date(event.startAt).toLocaleString("vi-VN")} –{" "}
-          {new Date(event.endAt).toLocaleString("vi-VN")}
+        <h1 className="m-0 break-words text-2xl font-extrabold sm:text-3xl">
+          {event.title}
+        </h1>
+        <p className="m-0 break-words text-sm text-paper/85 sm:text-base">
+          {event.venueName ?? "Chưa có địa điểm"} · {formatDate(event.startAt)}
+          {" – "}
+          {formatDate(event.endAt)}
         </p>
       </header>
 
       {error && (
         <p
-          className="rounded border border-error bg-error/10 p-4 text-error"
+          className="m-0 rounded-lg border border-error bg-error/10 p-4 text-sm text-error"
           role="alert"
         >
           {error}
         </p>
       )}
 
-      {(event.coverImage || event.thumbnail) && (
-        <section className="grid gap-5 rounded-lg border border-line bg-surface p-5 md:grid-cols-2">
-          {event.thumbnail && (
-            <figure className="m-0 grid content-start gap-2">
-              <figcaption className="font-bold">Ảnh thumbnail</figcaption>
-              <img
-                className="max-h-[28rem] w-full rounded-lg object-cover"
-                src={event.thumbnail}
-                alt={`Thumbnail: ${event.title}`}
-              />
-            </figure>
-          )}
-          {event.coverImage && (
-            <figure className="m-0 grid content-start gap-2">
-              <figcaption className="font-bold">Ảnh cover</figcaption>
-              <img
-                className="max-h-[28rem] w-full rounded-lg object-cover"
-                src={event.coverImage}
-                alt={`Cover: ${event.title}`}
-              />
-            </figure>
-          )}
+      {event.coverImage && (
+        <section
+          className="grid gap-3 rounded-xl border border-line bg-surface p-4 sm:p-5"
+          aria-labelledby="event-cover-heading"
+        >
+          <h2 id="event-cover-heading" className="m-0 text-base font-extrabold">
+            Ảnh cover
+          </h2>
+          <figure className="m-0 w-full overflow-hidden rounded-lg bg-paper-deep">
+            <img
+              className="block w-full object-cover"
+              style={{ height: "clamp(12rem, 28vw, 22rem)" }}
+              src={event.coverImage}
+              alt={`Ảnh cover: ${event.title}`}
+            />
+          </figure>
         </section>
       )}
-      <section className="grid gap-5 rounded-lg border border-line bg-surface p-5 lg:grid-cols-2">
-        <div>
-          <h2 className="mt-0 text-xl font-extrabold">Thông tin sự kiện</h2>
-          <dl className="grid gap-3">
-            <div>
-              <dt className="text-sm text-ink-soft">Danh mục</dt>
-              <dd className="m-0">{event.category.name}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Địa chỉ</dt>
-              <dd className="m-0">{location}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Hiển thị</dt>
-              <dd className="m-0">{event.visibility}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Mô tả</dt>
-              <dd className="m-0 whitespace-pre-wrap">
-                {event.description || "Chưa có mô tả."}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Tin nhắn xác nhận</dt>
-              <dd className="m-0 whitespace-pre-wrap">
-                {event.confirmationMessage || "Chưa thiết lập."}
-              </dd>
-            </div>
-            {event.rejectionReason && (
-              <div>
-                <dt className="text-sm text-ink-soft">Lý do từ chối</dt>
-                <dd className="m-0">{event.rejectionReason}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
-        <div>
-          <h2 className="mt-0 text-xl font-extrabold">Organizer</h2>
-          {event.organizerLogo && (
-            <img
-              className="mb-4 max-h-32 max-w-48 rounded object-contain"
-              src={event.organizerLogo}
-              alt={`Logo ${event.organizerName ?? event.organizer.fullName}`}
-            />
-          )}
-          <dl className="grid gap-3">
-            <div>
-              <dt className="text-sm text-ink-soft">Tài khoản</dt>
-              <dd className="m-0">{event.organizer.email}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Tên hiển thị</dt>
-              <dd className="m-0">
-                {event.organizerName || "Chưa thiết lập."}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Giới thiệu</dt>
-              <dd className="m-0 whitespace-pre-wrap">
-                {event.organizerBio || "Chưa có giới thiệu."}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Gửi duyệt / Tạo lúc</dt>
-              <dd className="m-0">
-                {event.submittedAt
-                  ? new Date(event.submittedAt).toLocaleString("vi-VN")
-                  : "Chưa gửi duyệt"}{" "}
-                · {new Date(event.createdAt).toLocaleString("vi-VN")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Người xét duyệt</dt>
-              <dd className="m-0">
-                {event.reviewedBy
-                  ? `${event.reviewedBy.fullName} (${event.reviewedBy.email})`
-                  : "Chưa xét duyệt"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-ink-soft">Thời điểm duyệt</dt>
-              <dd className="m-0">
-                {event.reviewedAt
-                  ? new Date(event.reviewedAt).toLocaleString("vi-VN")
-                  : "Chưa xét duyệt"}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </section>
 
-      <section className="rounded-lg border border-line bg-surface p-5">
-        <h2 className="mt-0 text-xl font-extrabold">Các loại vé</h2>
+      <div className="grid items-stretch gap-4 xl:grid-cols-2">
+        <section
+          className="grid content-start gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5"
+          aria-labelledby="event-information-heading"
+        >
+          <h2
+            id="event-information-heading"
+            className="m-0 text-lg font-extrabold"
+          >
+            Thông tin sự kiện
+          </h2>
+
+          <div className="grid gap-4 sm:grid-cols-[5rem_minmax(0,1fr)]">
+            {event.thumbnail && (
+              <figure className="m-0 grid content-start gap-2">
+                <figcaption className="text-xs font-semibold text-ink-soft">
+                  Ảnh thumbnail
+                </figcaption>
+                <img
+                  className="shrink-0 rounded-lg border border-line bg-paper-deep object-contain"
+                  style={{ width: "6rem", height: "6rem" }}
+                  src={event.thumbnail}
+                  alt={`Thumbnail: ${event.title}`}
+                />
+              </figure>
+            )}
+            <dl className="m-0 grid content-start grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
+              <DetailField label="Danh mục">{event.category.name}</DetailField>
+              <DetailField label="Chế độ hiển thị">
+                {event.visibility}
+              </DetailField>
+              <DetailField label="Địa điểm" className="sm:col-span-2">
+                {location || "Chưa có địa chỉ"}
+              </DetailField>
+              <DetailField label="Bắt đầu">
+                {formatDate(event.startAt)}
+              </DetailField>
+              <DetailField label="Kết thúc">
+                {formatDate(event.endAt)}
+              </DetailField>
+            </dl>
+          </div>
+
+          <DetailField label="Mô tả" className="border-t border-line pt-3">
+            <span className="whitespace-pre-wrap">
+              {event.description || "Chưa có mô tả."}
+            </span>
+          </DetailField>
+
+          {event.rejectionReason && (
+            <div className="rounded-lg border border-error/30 bg-error/5 p-3">
+              <p className="m-0 text-xs font-bold uppercase tracking-wide text-error">
+                Lý do từ chối
+              </p>
+              <p className="mb-0 mt-1 whitespace-pre-wrap text-sm leading-6 text-ink">
+                {event.rejectionReason}
+              </p>
+            </div>
+          )}
+        </section>
+
+        <section
+          className="grid content-start gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5"
+          aria-labelledby="organizer-information-heading"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            {event.organizerLogo && (
+              <img
+                className="shrink-0 rounded-lg border border-line bg-paper p-1 object-contain"
+                style={{ width: "6rem", height: "6rem" }}
+                src={event.organizerLogo}
+                alt={`Logo ${event.organizerName ?? event.organizer.fullName}`}
+              />
+            )}
+            <div className="min-w-0">
+              <p className="m-0 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                Organizer
+              </p>
+              <h2
+                id="organizer-information-heading"
+                className="m-0 break-words text-lg font-extrabold"
+              >
+                {event.organizerName || event.organizer.fullName}
+              </h2>
+            </div>
+          </div>
+          <dl className="m-0 grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
+            <DetailField label="Tên hiển thị">
+              {event.organizerName || "Chưa thiết lập"}
+            </DetailField>
+            <DetailField label="Tài khoản">{event.organizer.email}</DetailField>
+            <DetailField label="Gửi duyệt">
+              {event.submittedAt
+                ? formatDate(event.submittedAt)
+                : "Chưa gửi duyệt"}
+            </DetailField>
+            <DetailField label="Tạo lúc">
+              {formatDate(event.createdAt)}
+            </DetailField>
+            <DetailField label="Người xét duyệt">
+              {event.reviewedBy
+                ? `${event.reviewedBy.fullName} (${event.reviewedBy.email})`
+                : "Chưa xét duyệt"}
+            </DetailField>
+            <DetailField label="Thời điểm duyệt">
+              {event.reviewedAt
+                ? formatDate(event.reviewedAt)
+                : "Chưa xét duyệt"}
+            </DetailField>
+            <DetailField label="Giới thiệu" className="sm:col-span-2">
+              <span className="whitespace-pre-wrap">
+                {event.organizerBio || "Chưa có giới thiệu."}
+              </span>
+            </DetailField>
+          </dl>
+        </section>
+      </div>
+
+      <section
+        className="grid gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5"
+        aria-labelledby="ticket-types-heading"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h2 id="ticket-types-heading" className="m-0 text-lg font-extrabold">
+            Các loại vé
+          </h2>
+          <span className="text-sm text-ink-soft">
+            {event.ticketTypes.length} loại vé
+          </span>
+        </div>
         {event.ticketTypes.length ? (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3">
             {event.ticketTypes.map((ticket) => (
               <article
-                className="rounded border border-line p-4"
+                className="grid content-start gap-3 rounded-lg border border-line bg-paper/60 p-4"
                 key={ticket.id}
               >
                 {ticket.image && (
                   <img
-                    className="mb-3 max-h-40 w-full rounded object-cover"
+                    className="h-36 w-full rounded-md bg-paper-deep object-contain"
                     src={ticket.image}
                     alt={`Ảnh hạng vé ${ticket.name}`}
                   />
                 )}
-                <h3 className="m-0 text-lg font-bold">{ticket.name}</h3>
-                <p className="mt-2">
-                  {money(ticket.price)} · Số lượng: {ticket.quantity}
-                </p>
-                <p className="whitespace-pre-wrap">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <h3 className="m-0 text-base font-bold">{ticket.name}</h3>
+                  <strong className="text-sm font-extrabold text-pine">
+                    {money(ticket.price)}
+                  </strong>
+                </div>
+                <div className="grid grid-cols-2 gap-2 rounded-md bg-paper-deep/70 p-3 text-sm">
+                  <p className="m-0">
+                    <span className="block text-xs text-ink-soft">
+                      Số lượng
+                    </span>
+                    <strong>{ticket.quantity}</strong>
+                  </p>
+                  <p className="m-0">
+                    <span className="block text-xs text-ink-soft">Mỗi đơn</span>
+                    <strong>
+                      {ticket.minPerOrder}–{ticket.maxPerOrder}
+                    </strong>
+                  </p>
+                </div>
+                <p className="m-0 whitespace-pre-wrap text-sm leading-5 text-ink-soft">
                   {ticket.description || "Không có mô tả."}
                 </p>
-                <p className="text-sm text-ink-soft">
-                  Mỗi đơn: {ticket.minPerOrder}–{ticket.maxPerOrder} · Bán từ{" "}
+                <p className="m-0 text-xs leading-5 text-ink-soft">
+                  Mở bán:{" "}
                   {ticket.saleStartAt
-                    ? new Date(ticket.saleStartAt).toLocaleString("vi-VN")
-                    : "không giới hạn"}{" "}
-                  đến{" "}
+                    ? formatDate(ticket.saleStartAt)
+                    : "Không giới hạn"}
+                  {" – "}
                   {ticket.saleEndAt
-                    ? new Date(ticket.saleEndAt).toLocaleString("vi-VN")
-                    : "không giới hạn"}
+                    ? formatDate(ticket.saleEndAt)
+                    : "Không giới hạn"}
                 </p>
               </article>
             ))}
           </div>
         ) : (
-          <p>Chưa có loại vé.</p>
+          <p className="m-0 rounded-lg bg-paper-deep/60 p-4 text-sm text-ink-soft">
+            Chưa có loại vé.
+          </p>
         )}
       </section>
 
-      <section className="rounded-lg border border-line bg-surface p-5">
+      <section
+        className="grid gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5"
+        aria-label="Sơ đồ chỗ ngồi"
+      >
         <AdminEventSeatMap eventId={event.id} />
       </section>
-      <section className="rounded-lg border border-line bg-surface p-5">
+
+      <section
+        className="grid content-start gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5"
+        aria-labelledby="payout-information-heading"
+      >
         <div>
-          <h2 className="mt-0 text-xl font-extrabold">Thông tin thanh toán</h2>
-          {payout ? (
-            <dl className="grid gap-2">
-              <div>
-                <dt className="text-sm text-ink-soft">Chủ tài khoản</dt>
-                <dd className="m-0">{payout.accountHolder || "-"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-soft">Số tài khoản</dt>
-                <dd className="m-0">{payout.accountNumber || "-"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-soft">Tên ngân hàng</dt>
-                <dd className="m-0">{payout.bankName || "-"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-soft">Chi nhánh</dt>
-                <dd className="m-0">{payout.branch || "-"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-soft">Loại hình kinh doanh</dt>
-                <dd className="m-0">{payout.businessType || "-"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-soft">Tên xuất hóa đơn</dt>
-                <dd className="m-0">{payout.invoiceName || "-"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-soft">Địa chỉ hóa đơn</dt>
-                <dd className="m-0">{payout.invoiceAddress || "-"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-soft">Mã số thuế</dt>
-                <dd className="m-0">{payout.taxCode || "-"}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p>Chưa có thông tin thanh toán.</p>
-          )}
+          <h2
+            id="payout-information-heading"
+            className="m-0 text-lg font-extrabold"
+          >
+            Thông tin thanh toán
+          </h2>
+          <p className="mb-0 mt-1 text-sm text-ink-soft">
+            Thông tin nhận thanh toán và xuất hóa đơn của Organizer.
+          </p>
         </div>
+        {payout ? (
+          <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-4 rounded-lg bg-paper/60 p-4 sm:grid-cols-2 xl:grid-cols-4">
+            <DetailField label="Chủ tài khoản">
+              {payout.accountHolder || "—"}
+            </DetailField>
+            <DetailField label="Số tài khoản">
+              {payout.accountNumber || "—"}
+            </DetailField>
+            <DetailField label="Ngân hàng">
+              {payout.bankName || "—"}
+            </DetailField>
+            <DetailField label="Chi nhánh">{payout.branch || "—"}</DetailField>
+            <DetailField label="Loại hình kinh doanh">
+              {payout.businessType || "—"}
+            </DetailField>
+            <DetailField label="Tên xuất hóa đơn">
+              {payout.invoiceName || "—"}
+            </DetailField>
+            <DetailField label="Địa chỉ hóa đơn">
+              {payout.invoiceAddress || "—"}
+            </DetailField>
+            <DetailField label="Mã số thuế">
+              {payout.taxCode || "—"}
+            </DetailField>
+          </dl>
+        ) : (
+          <p className="m-0 rounded-lg bg-paper-deep/60 p-4 text-sm text-ink-soft">
+            Chưa có thông tin thanh toán.
+          </p>
+        )}
       </section>
+
       {isPendingReview && (
         <section
-          className="grid gap-3 rounded-lg border border-line bg-surface p-5 shadow-sm"
+          className="grid gap-4 rounded-xl border border-pine/20 bg-surface p-4 sm:p-5"
           aria-labelledby="event-review-heading"
         >
           <div>
+            <p className="m-0 text-xs font-bold uppercase tracking-[.14em] text-ink-soft">
+              Quyết định kiểm duyệt
+            </p>
             <h2
               id="event-review-heading"
-              className="m-0 text-xl font-extrabold"
+              className="mb-0 mt-1 text-lg font-extrabold"
             >
               Duyệt sự kiện
             </h2>
             <p className="mb-0 mt-1 text-sm text-ink-soft">
-              Xem xét thông tin và chọn quyết định cho sự kiện này.
+              Xem xét thông tin trước khi chấp thuận hoặc gửi phản hồi cho
+              Organizer.
             </p>
           </div>
-          <label className="grid gap-2 font-bold" htmlFor="event-review-reason">
-            Lý do từ chối (bắt buộc khi từ chối)
-          </label>
-          <textarea
-            id="event-review-reason"
-            className="min-h-24 rounded border border-line bg-paper p-3"
-            value={reason}
-            onChange={(change) => setReason(change.target.value)}
-            disabled={busy}
-          />
-          <div className="flex flex-wrap gap-3">
-            <button
-              disabled={busy}
-              className="min-h-11 rounded bg-mint px-4 font-extrabold text-success disabled:opacity-50"
-              type="button"
-              onClick={() => void decide("APPROVED")}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-end">
+            <label
+              className="grid gap-2 text-sm font-bold"
+              htmlFor="event-review-reason"
             >
-              Duyệt
-            </button>
-            <button
-              disabled={busy}
-              className="min-h-11 rounded bg-error px-4 font-extrabold text-paper disabled:opacity-50"
-              type="button"
-              onClick={() => void decide("REJECTED")}
-            >
-              Từ chối
-            </button>
+              Lý do từ chối
+              <span className="font-normal text-ink-soft">Không bắt buộc.</span>
+              <textarea
+                id="event-review-reason"
+                className="min-h-28 w-full resize-y rounded-lg border border-line bg-paper p-3 font-normal outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/15"
+                value={reason}
+                onChange={(change) => setReason(change.target.value)}
+                disabled={busy}
+              />
+            </label>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <button
+                disabled={busy}
+                className="min-h-11 rounded-lg bg-pine px-4 font-extrabold text-paper transition hover:bg-pine/90 disabled:cursor-wait disabled:opacity-50"
+                type="button"
+                onClick={() => void decide("APPROVED")}
+              >
+                {busy ? "Đang xử lý..." : "Duyệt sự kiện"}
+              </button>
+              <button
+                disabled={busy}
+                className="min-h-11 rounded-lg border border-error/40 bg-error/5 px-4 font-extrabold text-error transition hover:bg-error/10 disabled:cursor-wait disabled:opacity-50"
+                type="button"
+                onClick={() => void decide("REJECTED")}
+              >
+                Từ chối sự kiện
+              </button>
+            </div>
           </div>
         </section>
       )}

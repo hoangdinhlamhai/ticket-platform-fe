@@ -159,7 +159,17 @@ export function AttendeeHeader({
               >
                 Tạo sự kiện
               </a>
-              <div className="flex min-h-11 items-center gap-2 rounded-md border border-blue/30 bg-google-hover px-2 text-left">
+              <a
+                className={`flex min-h-11 items-center gap-2 rounded-md border px-2 text-left no-underline ${activeRoute === "profile" ? "border-blue/40 bg-google-hover text-blue-deep" : "border-blue/30 bg-google-hover text-ink hover:border-blue/50"}`}
+                href="/profile"
+                aria-label={`Mở hồ sơ của ${authenticatedUser.fullName}`}
+                aria-current={activeRoute === "profile" ? "page" : undefined}
+                onClick={(event) => {
+                  if (!shouldUseClientNavigation(event)) return;
+                  event.preventDefault();
+                  onNavigate("/profile");
+                }}
+              >
                 <span
                   className="grid h-9 w-9 place-items-center rounded-md bg-pine text-[0.72rem] font-extrabold tracking-[0.06em] text-paper"
                   aria-hidden="true"
@@ -170,7 +180,7 @@ export function AttendeeHeader({
                   {authenticatedUser.fullName}
                 </span>
                 <span className="sr-only">Đã đăng nhập</span>
-              </div>
+              </a>
               <button
                 className="min-h-11 border border-line bg-paper px-3 text-[0.78rem] font-bold text-ink"
                 type="button"
@@ -180,18 +190,6 @@ export function AttendeeHeader({
               </button>
             </>
           ) : null}
-          <a
-            className={`flex min-h-11 items-center gap-2 rounded-md border px-1 text-left no-underline ${activeRoute === "profile" ? "border-blue/40 bg-google-hover text-blue-deep" : "border-transparent text-ink hover:border-line/70"}`}
-            href="/profile"
-            aria-current={activeRoute === "profile" ? "page" : undefined}
-            onClick={(event) => {
-              if (!shouldUseClientNavigation(event)) return;
-              event.preventDefault();
-              onNavigate("/profile");
-            }}
-          >
-            <span className="sr-only">Mở hồ sơ demo</span>
-          </a>
           <a
             className="flex min-h-11 items-center gap-2 rounded-md border border-coral-dark/50 bg-coral px-3 text-[0.8rem] font-extrabold text-paper no-underline hover:bg-coral-dark"
             href="/tickets"

@@ -3,6 +3,7 @@ import { AdminLayout } from "../layouts/admin/AdminLayout.tsx";
 import {
   getAdminEventId,
   getAdminPayoutId,
+  getAdminResaleTransactionId,
   getAdminRoute,
   type AdminPath,
 } from "../routes/admin-route.ts";
@@ -19,6 +20,7 @@ import {
   PayoutListPage,
 } from "../features/admin/payout/index.ts";
 import { RefundAdminPage } from "../features/admin/refund/index.ts";
+import { ResaleTransactionsPage } from "../features/admin/resale/ResaleTransactionsPage.tsx";
 import { RealAdminPage } from "../features/admin/components/RealAdminPage.tsx";
 import { getAdminAccessState } from "./admin-access.ts";
 import type { AuthStatus } from "../features/auth/hooks/useAuth.ts";
@@ -58,6 +60,7 @@ export function AdminApplication({
   });
   const eventId = getAdminEventId(pathname);
   const payoutId = getAdminPayoutId(pathname);
+  const resaleTransactionId = getAdminResaleTransactionId(pathname);
   const navigate = useCallback(
     (destination: AdminPath) => {
       if (destination === pathname) return;
@@ -104,8 +107,16 @@ export function AdminApplication({
     page = <PayoutDetailPage payoutId={payoutId} navigate={navigate} />;
   else if (route === "categories") page = <RealAdminPage kind="categories" />;
   else if (route === "resale") page = <RealAdminPage kind="resale" />;
-  else if (route === "resale-transactions")
-    page = <RealAdminPage kind="resale-transactions" />;
+  else if (
+    route === "resale-transactions" ||
+    route === "resale-transaction-detail"
+  )
+    page = (
+      <ResaleTransactionsPage
+        transactionId={resaleTransactionId}
+        navigate={navigate}
+      />
+    );
   else if (route === "event-reviews")
     page = <AdminPendingEventsPage navigate={navigatePage} />;
   else if (route === "event-review-detail" && eventId)

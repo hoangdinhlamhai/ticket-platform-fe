@@ -247,44 +247,6 @@ export function OrganizerTicketTierForm({
             onChange={(event) => update("description", event.target.value)}
           />
         </label>
-        <label className="mt-4 block text-sm font-bold">
-          Ảnh vé (PNG/JPEG/WebP, tối đa 1MB)
-          <input
-            className="mt-2 block text-sm"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (
-                !file ||
-                file.size > 1024 * 1024 ||
-                !["image/png", "image/jpeg", "image/webp"].includes(file.type)
-              )
-                return;
-              const reader = new FileReader();
-              reader.onload = () =>
-                typeof reader.result === "string" &&
-                update("image", reader.result);
-              reader.readAsDataURL(file);
-            }}
-          />
-          {fields.image && (
-            <span className="mt-2 flex items-center gap-3">
-              <img
-                className="h-16 w-24 rounded object-cover"
-                src={fields.image}
-                alt="Ảnh vé xem trước"
-              />
-              <button
-                className="text-sm text-coral-dark"
-                type="button"
-                onClick={() => update("image", "")}
-              >
-                Xóa ảnh
-              </button>
-            </span>
-          )}
-        </label>
         {message && (
           <p className="mt-4 text-sm font-bold text-coral-dark" role="alert">
             {message}

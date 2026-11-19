@@ -42,7 +42,8 @@ export type AttendeePath =
   | `/resale/sell/${string}`
   | `/resale/${string}`
   | `/resale/${string}/checkout`
-  | `/resale/${string}/result`;
+  | `/resale/${string}/result`
+  | `/resale/${string}/result?transactionId=${string}`;
 
 type ResalePathMatch = {
   listingId: string;
