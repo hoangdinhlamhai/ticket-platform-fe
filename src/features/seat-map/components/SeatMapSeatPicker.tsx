@@ -12,6 +12,14 @@ type Props = {
   onContinue: (selection: PrimaryCheckoutSelection) => void;
 };
 
+const formatSeatLabel = (rowLabel: string, seatNumber: string) => {
+  const row = rowLabel.replace(/^Hàng\s+/i, "");
+  const number = seatNumber.startsWith(row)
+    ? seatNumber.slice(row.length)
+    : seatNumber;
+  return `Hàng ${row} - Ghế ${number}`;
+};
+
 export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
   const mapWidth = seatMap.width ?? 900;
   const mapHeight = seatMap.height ?? 620;
@@ -98,8 +106,8 @@ export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
       unitPrice: total / selected.length,
       quantity: selected.length,
       seatIds: selected.map(({ seat }) => seat.id!),
-      seatLabels: selected.map(
-        ({ rowLabel, seat }) => `${rowLabel}${seat.number}`,
+      seatLabels: selected.map(({ rowLabel, seat }) =>
+        formatSeatLabel(rowLabel, seat.number),
       ),
       totalPrice: total,
     });
@@ -252,7 +260,7 @@ export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
         <span>
           {selected.length} ghế đã chọn
           {selected.length > 0
-            ? `: ${selected.map(({ rowLabel, seat }) => `${rowLabel}${seat.number}`).join(", ")}`
+            ? `: ${selected.map(({ rowLabel, seat }) => formatSeatLabel(rowLabel, seat.number)).join(", ")}`
             : ""}
         </span>
         <strong>{total.toLocaleString("vi-VN")}₫</strong>

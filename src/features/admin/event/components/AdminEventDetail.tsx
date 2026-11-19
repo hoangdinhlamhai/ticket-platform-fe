@@ -84,18 +84,10 @@ function AdminEventDetailLoader({
 
   async function decide(decision: "APPROVED" | "REJECTED") {
     if (!event) return;
-    if (decision === "REJECTED" && !reason.trim()) {
-      setError("Vui lòng nhập lý do từ chối.");
-      return;
-    }
     setBusy(true);
     setError("");
     try {
-      await adminEventApi.review(
-        event.id,
-        decision,
-        reason.trim() || undefined,
-      );
+      await adminEventApi.review(event.id, decision, reason.trim());
       navigate(backPath);
     } catch (cause: unknown) {
       setError(
@@ -468,9 +460,7 @@ function AdminEventDetailLoader({
               htmlFor="event-review-reason"
             >
               Lý do từ chối
-              <span className="font-normal text-ink-soft">
-                Bắt buộc khi từ chối sự kiện.
-              </span>
+              <span className="font-normal text-ink-soft">Không bắt buộc.</span>
               <textarea
                 id="event-review-reason"
                 className="min-h-28 w-full resize-y rounded-lg border border-line bg-paper p-3 font-normal outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/15"
