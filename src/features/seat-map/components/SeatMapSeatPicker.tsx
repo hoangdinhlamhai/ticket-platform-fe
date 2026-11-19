@@ -167,6 +167,17 @@ export function SeatMapSeatPicker({ seatMap, event, onContinue }: Props) {
                       fillOpacity=".8"
                       stroke="#475569"
                     />
+                    <text
+                      x="0"
+                      y="0"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="#172033"
+                      fontSize="16"
+                      fontWeight="700"
+                    >
+                      {item.name || "V\u1EADt th\u1EC3"}
+                    </text>
                   </g>
                 )}
               </g>
