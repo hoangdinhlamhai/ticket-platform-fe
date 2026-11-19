@@ -22,6 +22,7 @@ import {
 import { RefundAdminPage } from "../features/admin/refund/index.ts";
 import { ResaleTransactionsPage } from "../features/admin/resale/ResaleTransactionsPage.tsx";
 import { RealAdminPage } from "../features/admin/components/RealAdminPage.tsx";
+import { AdminPaymentsPage } from "../features/admin/payment/AdminPaymentsPage.tsx";
 import { getAdminAccessState } from "./admin-access.ts";
 import type { AuthStatus } from "../features/auth/hooks/useAuth.ts";
 import type { AttendeeUser } from "../features/auth/types/authContract.ts";
@@ -100,7 +101,7 @@ export function AdminApplication({
     page = <AdminEventsPage navigate={navigatePage} />;
   else if (route === "organizers") page = <RealAdminPage kind="organizers" />;
   else if (route === "orders") page = <RealAdminPage kind="orders" />;
-  else if (route === "payments") page = <RealAdminPage kind="payments" />;
+  else if (route === "payments") page = <AdminPaymentsPage />;
   else if (route === "refunds") page = <RefundAdminPage />;
   else if (route === "payouts") page = <PayoutListPage navigate={navigate} />;
   else if (route === "payout-detail" && payoutId)
