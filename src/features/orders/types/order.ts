@@ -42,7 +42,8 @@ export type PrimaryCheckoutSelection = {
   totalPrice?: number;
 };
 export type OrderFilters = {
-  status: "all" | "PENDING_PAYMENT" | "PAID" | "FAILED" | "EXPIRED";
+  status:
+    "all" | "PENDING_PAYMENT" | "PAID" | "COMPLETED" | "FAILED" | "EXPIRED";
 };
 
 export type CreateOrderInput = {
@@ -84,6 +85,8 @@ export type OrderPaymentSummary = {
 
 export type AttendeeOrderRecord = {
   id: string;
+  source?: "PRIMARY" | "RESALE";
+  listingId?: string;
   total: OrderMoney;
   status: string;
   expiresAt: string | null;
@@ -91,6 +94,10 @@ export type AttendeeOrderRecord = {
   event: OrderEventSummary;
   items: OrderItemSummary[];
   payment: OrderPaymentSummary | null;
+  payoutStatus?: string | null;
+  payoutFailureCode?: string | null;
+  canRequestRefund?: boolean;
+  refundStatus?: string | null;
 };
 
 export type AttendeeOrderDetail = Omit<

@@ -6,30 +6,31 @@ import type {
   RegisterPayload,
 } from "../types/authContract.ts";
 
-export async function login(payload: LoginPayload): Promise<AuthSessionResponse> {
-  const response = await axiosClient.post<AuthSessionResponse>("/auth/login", payload, { withCredentials: true });
+export async function login(
+  payload: LoginPayload,
+): Promise<AuthSessionResponse> {
+  const response = await axiosClient.post<AuthSessionResponse>(
+    "/auth/login",
+    payload,
+  );
   return response.data;
 }
 
-export async function register(payload: RegisterPayload): Promise<AuthSessionResponse> {
-  const response = await axiosClient.post<AuthSessionResponse>("/auth/register", payload, { withCredentials: true });
+export async function register(
+  payload: RegisterPayload,
+): Promise<AuthSessionResponse> {
+  const response = await axiosClient.post<AuthSessionResponse>(
+    "/auth/register",
+    payload,
+  );
   return response.data;
 }
 
-export async function refresh(): Promise<AuthSessionResponse> {
-  const response = await axiosClient.post<AuthSessionResponse>("/auth/refresh", {}, { withCredentials: true });
-  return response.data;
-}
-
-export async function logout(): Promise<void> {
-  const response = await axiosClient.post<void>("/auth/logout", {}, { withCredentials: true });
-  return response.data;
-}
+// Refresh and server logout requests are disabled while access tokens are permanent.
 
 export async function me(accessToken: string): Promise<{ user: AttendeeUser }> {
   const response = await axiosClient.get<{ user: AttendeeUser }>("/auth/me", {
     headers: { Authorization: `Bearer ${accessToken}` },
-    withCredentials: true,
   });
   return response.data;
 }

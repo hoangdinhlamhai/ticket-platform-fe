@@ -184,10 +184,12 @@ export function RefundAdminPage() {
   const visibleRefunds = refunds.filter((refund) =>
     [
       refund.id,
-      refund.orderId,
-      refund.order.user.fullName,
-      refund.order.user.email,
-      refund.order.event.title,
+      refund.orderId ?? "",
+      refund.order?.user.fullName ??
+        refund.resaleTransaction?.buyer.hoTen ??
+        "",
+      refund.order?.user.email ?? refund.resaleTransaction?.buyer.email ?? "",
+      refund.order?.event.title ?? refund.resaleTransaction?.event.tieuDe ?? "",
       refund.reason,
     ].some((value) =>
       value.toLocaleLowerCase("vi-VN").includes(normalizedQuery),

@@ -51,10 +51,7 @@ export function OrganizerEventReviewPanel({
     <section className="rounded-lg border border-line bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="m-0 text-xs font-extrabold tracking-[.1em] text-coral-dark">
-            TRẠNG THÁI DUYỆT
-          </p>
-          <h2 className="mt-2 mb-0 text-xl font-extrabold">
+          <h2 className="m-0 text-xl font-extrabold">
             Vòng đời xuất bản
           </h2>
         </div>

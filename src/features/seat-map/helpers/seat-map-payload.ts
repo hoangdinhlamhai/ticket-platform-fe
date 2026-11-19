@@ -19,6 +19,7 @@ export function toSeatMapWritePayload(
     height: seatMap.height,
     imageUrl: seatMap.imageUrl,
     vatThe: seatMap.vatThe.map((item) => ({
+      name: item.name,
       x: item.x,
       y: item.y,
       width: item.width,

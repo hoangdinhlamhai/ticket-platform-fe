@@ -43,6 +43,7 @@ type SeatRow = {
 };
 type SeatZone = {
   id: string;
+  name: string;
   x: number;
   y: number;
   width: number;
@@ -58,6 +59,7 @@ function readSeatMap(seatMap?: SeatMap | null) {
   const seats: Seat[] = [];
   const zones: SeatZone[] = (seatMap?.vatThe ?? []).map((item) => ({
     id: item.id ?? uid(),
+    name: item.name || "Vật thể",
     x: item.x,
     y: item.y,
     width: item.width,
@@ -262,6 +264,7 @@ export function SeatMapEditor({
       height: 620,
       imageUrl: background || null,
       vatThe: zones.map((item) => ({
+        name: item.name,
         x: item.x,
         y: item.y,
         width: item.width,
@@ -799,6 +802,7 @@ export function SeatMapEditor({
                   ...old,
                   {
                     id,
+                    name: "Vật thể",
                     x: 420,
                     y: 300,
                     width: 220,
@@ -1022,7 +1026,7 @@ export function SeatMapEditor({
                       fill="#325241"
                       pointerEvents="none"
                     >
-                      Vật thể
+                      {item.name || "Vật thể"}
                     </text>
                   </g>
                 ))}
@@ -1185,7 +1189,23 @@ export function SeatMapEditor({
               </>
             ) : zone ? (
               <>
-                <h3>Vật thể</h3>
+                <h3>{zone.name || "V\u1EADt th\u1EC3"}</h3>
+                <label className="seat-field">
+                  {"T\u00ean kh\u1ED1i"}
+                  <input
+                    value={zone.name}
+                    maxLength={100}
+                    onChange={(event) =>
+                      setZones((old) =>
+                        old.map((item) =>
+                          item.id === zone.id
+                            ? { ...item, name: event.target.value }
+                            : item,
+                        ),
+                      )
+                    }
+                  />
+                </label>
                 {numberInput(
                   "Rộng khối",
                   zone.width,

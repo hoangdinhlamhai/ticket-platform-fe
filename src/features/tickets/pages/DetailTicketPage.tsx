@@ -13,11 +13,13 @@ import { findMine, findMineOrders, toOwnedTicket } from "../api/ticketApi";
 
 type DetailTicketPageProps = {
   onNavigate: (path: AttendeePath) => void;
+  onSellTicket: (ticket: OwnedTicket) => void;
   ticketId: string;
 };
 
 export function DetailTicketPage({
   onNavigate,
+  onSellTicket,
   ticketId,
 }: DetailTicketPageProps) {
   const [ticket, setTicket] = useState<OwnedTicket>();
@@ -87,6 +89,16 @@ export function DetailTicketPage({
           </div>
           <div className="max-[1100px]:mt-10">
             <TicketCredentialCard ticket={ticket} />
+            {ticket.resaleStatus === "eligible" &&
+              ticket.credentialStatus !== "revoked" && (
+                <button
+                  className="mt-4 min-h-11 w-full rounded-md bg-coral px-4 text-sm font-extrabold text-paper hover:bg-coral-dark"
+                  type="button"
+                  onClick={() => onSellTicket(ticket)}
+                >
+                  Đăng bán lại vé
+                </button>
+              )}
             {ticket.eventId && (
               <a
                 className="mt-4 flex min-h-11 items-center justify-center rounded-md border border-blue-deep/60 bg-paper px-4 text-sm font-extrabold text-blue-deep no-underline hover:bg-blue hover:text-paper"

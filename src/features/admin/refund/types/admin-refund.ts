@@ -5,7 +5,8 @@ export type AdminRefundMoney = number | string;
 
 export type AdminRefund = {
   id: string;
-  orderId: string;
+  orderId: string | null;
+  targetType: "ORDER" | "RESALE";
   amount: AdminRefundMoney;
   reason: string;
   status: AdminRefundStatus;
@@ -27,11 +28,25 @@ export type AdminRefund = {
       id: string;
       title: string;
     };
-  };
+  } | null;
+  resaleTransaction: {
+    id: string;
+    amount: AdminRefundMoney;
+    status: string;
+    payoutStatus: string | null;
+    payoutFailureCode: string | null;
+    payoutUpdatedAt: string | null;
+    buyer: { id: string; hoTen: string; email: string };
+    seller: { id: string; hoTen: string; email: string };
+    event: { id: string; tieuDe: string };
+    listing: { id: string; status: string };
+    ticket: { id: string; type: string; seat: string | null };
+  } | null;
   payment: {
     provider: string;
     paymentRequestId: string | null;
     transactionId: string | null;
+    providerPaymentId: string | null;
     amount: AdminRefundMoney;
     paidAt: string | null;
   } | null;

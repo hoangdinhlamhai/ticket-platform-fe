@@ -8,6 +8,8 @@ export type AdminQuery = {
   categoryId?: string;
   page?: number;
   pageSize?: number;
+  from?: string;
+  to?: string;
 };
 
 type AdminRecord = Record<string, unknown>;
@@ -124,9 +126,79 @@ export const findListings = (params: AdminQuery = {}) =>
   );
 
 export const findResaleTransactions = (params: AdminQuery = {}) =>
-  axiosClient.get<{ transactions: readonly AdminRecord[] }>(
-    "/admin/resale/transactions",
-    { params },
+  axiosClient.get<{
+    transactions: readonly ResaleTransaction[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }>("/admin/resale/transactions", { params });
+
+export type ResaleTransaction = {
+  id: string;
+  maGiaoDich?: string;
+  transactionCode?: string;
+  price: number;
+  amount: number;
+  status: string;
+  createdAt: string;
+  event?: { id?: string; tieuDe?: string; title?: string };
+  eventTitle?: string;
+  suKien?: { tieuDe?: string };
+  ticket?: {
+    id: string;
+    code: string | null;
+    type: string;
+    seat: string | null;
+  };
+  seller?: { id?: string; hoTen?: string; fullName?: string; email?: string };
+  buyer?: { id?: string; hoTen?: string; fullName?: string; email?: string };
+  listing?: {
+    event?: { title?: string };
+    seller?: { fullName?: string; email?: string };
+    ticket?: { ticketCode?: string };
+  };
+  payment: Record<string, unknown>;
+  payout: {
+    providerPayoutId?: string | null;
+    referenceId?: string | null;
+    status?: string | null;
+    failureCode?: string | null;
+    updatedAt?: string | null;
+    bankAccountId?: string | null;
+    attempts?: number;
+    paidAt?: string | null;
+    failureReason?: string | null;
+    recipient?: unknown;
+  };
+  ownershipHistory: readonly {
+    id: string;
+    owner: { hoTen: string; email: string };
+    receivedAt: string;
+    returnedAt: string | null;
+  }[];
+};
+
+export type ResalePayoutBankAccount = {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+};
+
+export const findResaleTransaction = (id: string) =>
+  axiosClient.get<{ transaction: ResaleTransaction }>(
+    `/admin/resale/transactions/${encodeURIComponent(id)}`,
+  );
+
+export const findResalePayoutBankAccounts = (id: string) =>
+  axiosClient.get<{ bankAccounts: ResalePayoutBankAccount[] }>(
+    `/admin/resale/transactions/${encodeURIComponent(id)}/payout/bank-accounts`,
+  );
+
+export const retryResalePayout = (id: string, bankAccountId: string) =>
+  axiosClient.post<{ transaction: { id: string; status: string } }>(
+    `/admin/resale/transactions/${encodeURIComponent(id)}/payout/retry`,
+    { bankAccountId },
   );
 
 export const findCategories = () =>

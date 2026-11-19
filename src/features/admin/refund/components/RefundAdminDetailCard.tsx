@@ -38,6 +38,10 @@ export function RefundAdminDetailCard({
   const canRetry = refund.status === "FAILED";
 
   const status = refundStatusPresentation[refund.status];
+  const resale = refund.resaleTransaction;
+  const eventTitle =
+    refund.order?.event.title ?? resale?.event.tieuDe ?? "Giao dịch";
+  const customer = refund.order?.user ?? resale?.buyer;
 
   return (
     <section className="grid gap-5" aria-labelledby="refund-detail-title">
@@ -71,19 +75,27 @@ export function RefundAdminDetailCard({
 
         <div className="mt-6 grid gap-5 border-t border-line pt-5 sm:grid-cols-2">
           <div>
-            <h2 className="m-0 text-sm font-extrabold">Đơn hàng và sự kiện</h2>
-            <p className="mt-2 mb-0 text-sm leading-6">
-              {refund.order.event.title}
-            </p>
+            <h2 className="m-0 text-sm font-extrabold">
+              {resale ? "Giao dịch resale và sự kiện" : "Đơn hàng và sự kiện"}
+            </h2>
+            <p className="mt-2 mb-0 text-sm leading-6">{eventTitle}</p>
             <p className="mt-1 mb-0 break-all text-xs text-ink-soft">
-              Order {refund.order.id} · trạng thái {refund.order.status}
+              {resale
+                ? `Resale ${resale.id} · payout ${resale.payoutStatus ?? "—"}`
+                : `Order ${refund.order?.id ?? "—"} · trạng thái ${refund.order?.status ?? "—"}`}
             </p>
           </div>
           <div>
             <h2 className="m-0 text-sm font-extrabold">Khách hàng</h2>
-            <p className="mt-2 mb-0 text-sm">{refund.order.user.fullName}</p>
+            <p className="mt-2 mb-0 text-sm">
+              {customer
+                ? "fullName" in customer
+                  ? customer.fullName
+                  : customer.hoTen
+                : "—"}
+            </p>
             <p className="mt-1 mb-0 break-all text-xs text-ink-soft">
-              {refund.order.user.email}
+              {customer?.email ?? "—"}
             </p>
           </div>
           <div>
@@ -114,8 +126,12 @@ export function RefundAdminDetailCard({
             {refund.payment?.provider ?? "Không có dữ liệu"}
           </p>
           <p className="m-0 break-all text-sm leading-6">
-            <span className="font-bold">Payment request ID: </span>
-            {refund.payment?.paymentRequestId ?? "Không có dữ liệu"}
+            <span className="font-bold">
+              {resale ? "Payment ID: " : "Payment request ID: "}
+            </span>
+            {resale
+              ? (refund.payment?.providerPaymentId ?? "Không có dữ liệu")
+              : (refund.payment?.paymentRequestId ?? "Không có dữ liệu")}
           </p>
           <p className="m-0 break-all text-sm leading-6">
             <span className="font-bold">Xendit refund ID: </span>

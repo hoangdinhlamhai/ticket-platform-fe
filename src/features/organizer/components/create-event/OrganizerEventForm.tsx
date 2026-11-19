@@ -10,7 +10,6 @@ import { OrganizerEventBasicFields } from "./OrganizerEventBasicFields.tsx";
 import { OrganizerEventScheduleFields } from "./OrganizerEventScheduleFields.tsx";
 import { OrganizerEventSeatMapSection } from "./OrganizerEventSeatMapSection.tsx";
 import { OrganizerEventTicketTiersSection } from "./OrganizerEventTicketTiersSection.tsx";
-import { OrganizerEventStepConfirmation } from "./OrganizerEventStepConfirmation.tsx";
 import { OrganizerEventStepFinance } from "./OrganizerEventStepFinance.tsx";
 import { OrganizerEventFormLayout } from "./OrganizerEventFormLayout.tsx";
 
@@ -189,13 +188,13 @@ export function OrganizerEventForm({
       (!form.validate(["startAt", "endAt"]) || !validateTiers())
     )
       return;
-    setStep((value) => Math.min(3, value + 1));
+    setStep((value) => Math.min(2, value + 1));
   };
 
   const save = async () => {
     if (locked || saving || seatMapLoading || seatMapError) return;
 
-    if (wizard && step < 3) {
+    if (wizard && step < 2) {
       next();
       return;
     }
@@ -287,14 +286,6 @@ export function OrganizerEventForm({
       )}
     </>
   );
-  const confirmationSection = (
-    <OrganizerEventStepConfirmation
-      disabled={locked}
-      value={form.values.confirmationMessage}
-      onChange={form.onChange}
-    />
-  );
-
   const paymentSection = (
     <OrganizerEventStepFinance
       disabled={locked}
@@ -311,7 +302,6 @@ export function OrganizerEventForm({
   const sections = [
     basicSection,
     scheduleSection,
-    confirmationSection,
     paymentSection,
   ];
   return (

@@ -19,6 +19,7 @@ export type AdminRoute =
   | "events-all"
   | "payments"
   | "resale-transactions"
+  | "resale-transaction-detail"
   | "not-found";
 
 export type AdminPath =
@@ -39,6 +40,7 @@ export type AdminPath =
   | "/admin/events"
   | "/admin/payments"
   | "/admin/resale/transactions"
+  | `/admin/resale/transactions/${string}`
   | `/admin/events/${string}/review`
   | `/admin/events/${string}/details`
   | `/admin/cases/${string}`;
@@ -98,6 +100,10 @@ export function getAdminPayoutId(pathname: string) {
   return extractId(pathname, /^\/admin\/payouts\/([^/]+)$/);
 }
 
+export function getAdminResaleTransactionId(pathname: string) {
+  return extractId(pathname, /^\/admin\/resale\/transactions\/([^/]+)$/);
+}
+
 export function getAdminRoute(pathname: string): AdminRoute {
   const path = normalizePath(pathname);
   const staticRoute = staticRoutes[path];
@@ -108,5 +114,6 @@ export function getAdminRoute(pathname: string): AdminRoute {
     return "event-detail";
   if (getAdminCaseId(path)) return "case-detail";
   if (getAdminPayoutId(path)) return "payout-detail";
+  if (getAdminResaleTransactionId(path)) return "resale-transaction-detail";
   return "not-found";
 }

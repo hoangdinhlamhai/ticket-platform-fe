@@ -13,14 +13,13 @@ export function OrderHistoryFilters({ filters, onChange }: Props) {
         className="mt-2 min-h-11 w-full rounded-md border border-line bg-paper px-3"
         value={filters.status}
         onChange={(event) =>
-          onChange({
-            status: event.target.value as OrderFilters["status"],
-          })
+          onChange({ status: event.target.value as OrderFilters["status"] })
         }
       >
         <option value="all">Tất cả trạng thái</option>
         <option value="PENDING_PAYMENT">Chờ thanh toán</option>
         <option value="PAID">Đã thanh toán</option>
+        <option value="COMPLETED">Đã chuyển vé</option>
         <option value="FAILED">Thanh toán thất bại</option>
         <option value="EXPIRED">Đã hết hạn</option>
       </select>

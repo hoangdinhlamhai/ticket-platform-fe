@@ -6,7 +6,6 @@ import { toSeatMapWritePayload } from "../../seat-map/helpers/seat-map-payload.t
 import { OrganizerPageHeader } from "../components/OrganizerPageHeader.tsx";
 import { OrganizerEventFormLayout } from "../components/create-event/OrganizerEventFormLayout.tsx";
 import { OrganizerEventStepBasic } from "../components/create-event/OrganizerEventStepBasic.tsx";
-import { OrganizerEventStepConfirmation } from "../components/create-event/OrganizerEventStepConfirmation.tsx";
 import { OrganizerEventStepFinance } from "../components/create-event/OrganizerEventStepFinance.tsx";
 import { OrganizerEventStepSchedule } from "../components/create-event/OrganizerEventStepSchedule.tsx";
 import { useOrganizerEventForm } from "../hooks/use-organizer-event-form.ts";
@@ -113,7 +112,7 @@ export function OrganizerEventCreatePage({
 
   const next = () => {
     if (!validateStep(step)) return;
-    setStep((value) => Math.min(3, value + 1));
+    setStep((value) => Math.min(2, value + 1));
   };
 
   const save = async () => {
@@ -231,12 +230,6 @@ export function OrganizerEventCreatePage({
       tierMessage={tierMessage}
       onSaveTier={saveTier}
       onRemoveTier={removeTier}
-    />,
-    <OrganizerEventStepConfirmation
-      key="confirmation"
-      disabled={false}
-      value={form.values.confirmationMessage}
-      onChange={form.onChange}
     />,
     <OrganizerEventStepFinance
       key="finance"

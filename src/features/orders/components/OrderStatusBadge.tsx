@@ -3,12 +3,20 @@ const statusPresentation: Record<string, { label: string; style: string }> = {
     label: "Đã thanh toán",
     style: "border-success/40 bg-mint text-success",
   },
+  COMPLETED: {
+    label: "\u0110\u00e3 chuy\u1ec3n v\u00e9",
+    style: "border-success/40 bg-mint text-success",
+  },
   PENDING_PAYMENT: {
     label: "Chờ thanh toán",
     style: "border-blue/40 bg-google-hover text-blue-deep",
   },
   PAYMENT_FAILED: {
     label: "Thanh toán thất bại",
+    style: "border-error/35 bg-error-ring text-error",
+  },
+  PAYOUT_FAILED: {
+    label: "Payout thất bại",
     style: "border-error/35 bg-error-ring text-error",
   },
   FAILED: {

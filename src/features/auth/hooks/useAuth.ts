@@ -1,13 +1,20 @@
 import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  logout as logoutRequest,
-  refresh as refreshRequest,
-} from "../api/authApi.ts";
+import { me } from "../api/authApi.ts";
 import { setAccessToken as setClientAccessToken } from "../../../api/axiosClient.ts";
 import type { AttendeeUser } from "../types/authContract.ts";
 
 export type AuthStatus = "restoring" | "anonymous" | "authenticated";
+
+const ACCESS_TOKEN_KEY = "ticketly_access_token";
+
+function readAccessToken(): string | null {
+  try {
+    return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
 
 export function useAuth(enabled = true) {
   const [status, setStatus] = useState<AuthStatus>("restoring");
@@ -31,8 +38,21 @@ export function useAuth(enabled = true) {
 
   const refresh = useCallback(async () => {
     setStatus("restoring");
+    const token = readAccessToken();
+    if (!token) {
+      setAccessToken(null);
+      setClientAccessToken(null);
+      setUser(null);
+      setStatus("anonymous");
+      setError(null);
+      setCanRetry(false);
+      return;
+    }
+
+    setClientAccessToken(token);
     try {
-      authenticate(await refreshRequest());
+      const session = await me(token);
+      authenticate({ accessToken: token, user: session.user });
     } catch (cause) {
       setAccessToken(null);
       setClientAccessToken(null);
@@ -60,6 +80,7 @@ export function useAuth(enabled = true) {
   useEffect(() => {
     const handleSessionExpired = () => {
       setAccessToken(null);
+      setClientAccessToken(null);
       setUser(null);
       setStatus("anonymous");
       setError(null);
@@ -78,16 +99,6 @@ export function useAuth(enabled = true) {
     setStatus("anonymous");
     setError(null);
     setCanRetry(false);
-    try {
-      await logoutRequest();
-    } catch (cause) {
-      setError({
-        message:
-          cause instanceof Error
-            ? cause.message
-            : "Không thể xác nhận đăng xuất trên máy chủ.",
-      });
-    }
   }, []);
 
   return {

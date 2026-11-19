@@ -23,6 +23,12 @@ function formatDate(value: string) {
 
 export function RefundAdminCard({ refund, onOpen }: Props) {
   const status = refundStatusPresentation[refund.status];
+  const eventTitle =
+    refund.order?.event.title ??
+    refund.resaleTransaction?.event.tieuDe ??
+    "Giao dịch";
+  const subjectId = refund.orderId ?? refund.resaleTransaction?.id ?? "—";
+  const customer = refund.order?.user ?? refund.resaleTransaction?.buyer;
 
   return (
     <article className="rounded-lg border border-line bg-surface p-5 sm:p-6">
@@ -34,11 +40,11 @@ export function RefundAdminCard({ refund, onOpen }: Props) {
             {status.label}
           </span>
           <h2 className="mt-3 mb-0 font-body text-2xl font-extrabold tracking-[-0.05em] text-pine">
-            {refund.order.event.title}
+            {eventTitle}
           </h2>
           <p className="mt-2 mb-0 break-all text-sm text-ink-soft">
-            Refund {refund.id} <span aria-hidden="true">·</span> Order{" "}
-            {refund.orderId}
+            Refund {refund.id} <span aria-hidden="true">·</span>{" "}
+            {refund.targetType === "RESALE" ? "Resale" : "Order"} {subjectId}
           </p>
         </div>
         <div className="text-left sm:text-right">
@@ -54,9 +60,15 @@ export function RefundAdminCard({ refund, onOpen }: Props) {
       <div className="mt-5 grid gap-x-6 gap-y-3 border-t border-line pt-4 sm:grid-cols-2">
         <p className="m-0 text-sm leading-6">
           <span className="text-ink-soft">Khách hàng: </span>
-          <strong>{refund.order.user.fullName}</strong>
+          <strong>
+            {customer
+              ? "fullName" in customer
+                ? customer.fullName
+                : customer.hoTen
+              : "—"}
+          </strong>
           <span className="block break-all text-xs text-ink-soft">
-            {refund.order.user.email}
+            {customer?.email ?? "—"}
           </span>
         </p>
         <p className="m-0 text-sm leading-6">

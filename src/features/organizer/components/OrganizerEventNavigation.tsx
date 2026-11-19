@@ -16,8 +16,7 @@ const destinations = [
   { label: "Tổng quan", step: null },
   { label: "Thông tin sự kiện", step: 0 },
   { label: "Thời gian & Loại vé", step: 1 },
-  { label: "Xác nhận sau khi mua", step: 2 },
-  { label: "Thông tin thanh toán", step: 3 },
+  { label: "Thông tin thanh toán", step: 2 },
 ] as const;
 
 export function OrganizerEventNavigation({
