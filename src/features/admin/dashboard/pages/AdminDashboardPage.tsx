@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react'
-import { selectAdminDashboard } from '../helpers/select-admin-dashboard.ts'
-import { AdminPageHeader, AdminStatusBadge } from './AdminCommon.tsx'
+﻿import { useState, type ReactNode } from 'react'
+import { selectAdminDashboard } from '../../helpers/select-admin-dashboard.ts'
+import { AdminPageHeader, AdminStatusBadge } from '../../components/AdminCommon.tsx'
 
 export function AdminWorkQueue({ items, onOpen }: { readonly items: readonly { id: string; label: string; detail: string; priority: 'critical' | 'high' | 'medium' | 'low'; path: string }[]; readonly onOpen: (path: string) => void }) {
   if (!items.length) return <p className="rounded-lg border border-dashed border-line p-5 text-ink-soft">Không có công việc cần xử lý ngay.</p>

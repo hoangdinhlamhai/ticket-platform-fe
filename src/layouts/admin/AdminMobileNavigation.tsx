@@ -39,9 +39,11 @@ const navigation: readonly {
   {
     group: "GIAO DỊCH",
     items: [
-      { label: "Orders", path: "/admin/orders", routes: ["orders"] },
-      { label: "Payments", path: "/admin/payments", routes: ["payments"] },
-      { label: "Refunds", path: "/admin/refunds", routes: ["refunds"] },
+      {
+        label: "Transactions",
+        path: "/admin/orders",
+        routes: ["orders", "payments", "refunds"],
+      },
       {
         label: "Payouts",
         path: "/admin/payouts",

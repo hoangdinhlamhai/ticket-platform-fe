@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from "react";
+﻿import { useCallback, type ReactNode } from "react";
 import { AdminLayout } from "../layouts/admin/AdminLayout.tsx";
 import {
   getAdminEventId,
@@ -19,10 +19,9 @@ import {
   PayoutDetailPage,
   PayoutListPage,
 } from "../features/admin/payout/index.ts";
-import { RefundAdminPage } from "../features/admin/refund/index.ts";
 import { ResaleTransactionsPage } from "../features/admin/resale/ResaleTransactionsPage.tsx";
-import { RealAdminPage } from "../features/admin/components/RealAdminPage.tsx";
-import { AdminPaymentsPage } from "../features/admin/payment/AdminPaymentsPage.tsx";
+import { RealAdminPage } from "../features/admin/components/AdminApiDataPage.tsx";
+import { AdminTransactionsPage } from "../features/admin/transactions/pages/AdminTransactionsPage.tsx";
 import { getAdminAccessState } from "./admin-access.ts";
 import type { AuthStatus } from "../features/auth/hooks/useAuth.ts";
 import type { AttendeeUser } from "../features/auth/types/authContract.ts";
@@ -100,9 +99,13 @@ export function AdminApplication({
   else if (route === "events-all")
     page = <AdminEventsPage navigate={navigatePage} />;
   else if (route === "organizers") page = <RealAdminPage kind="organizers" />;
-  else if (route === "orders") page = <RealAdminPage kind="orders" />;
-  else if (route === "payments") page = <AdminPaymentsPage />;
-  else if (route === "refunds") page = <RefundAdminPage />;
+  else if (["orders", "payments", "refunds"].includes(route))
+    page = (
+      <AdminTransactionsPage
+        route={route as "orders" | "payments" | "refunds"}
+        navigate={navigate}
+      />
+    );
   else if (route === "payouts") page = <PayoutListPage navigate={navigate} />;
   else if (route === "payout-detail" && payoutId)
     page = <PayoutDetailPage payoutId={payoutId} navigate={navigate} />;

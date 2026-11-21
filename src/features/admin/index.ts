@@ -1,22 +1,18 @@
-export { AdminDashboardPage } from './components/AdminDashboardPage.tsx'
-export {
-  AdminCaseDetailPage,
-  AdminCaseListPage,
-  AdminEventReviewDetailPage,
-  AdminEventReviewListPage,
-  AdminMissingRecord,
-} from './components/AdminModerationPages.tsx'
+﻿export { AdminDashboardPage } from './dashboard/pages/AdminDashboardPage.tsx'
+export { AdminCaseDetailPage } from './cases/pages/AdminCaseDetailPage.tsx'
+export { AdminCaseListPage } from './cases/pages/AdminCaseListPage.tsx'
+export { AdminMissingRecord } from './components/AdminMissingRecord.tsx'
 export {
   AdminOrderPage,
   AdminOrganizerPage,
   AdminResalePage,
   AdminTicketPage,
   AdminUserPage,
-} from './components/AdminOperationsPages.tsx'
+} from './operations/pages/AdminOperationsPages.tsx'
 export {
   AdminAuditLogPage,
   AdminPayoutPage,
   AdminRefundPage,
   AdminSettingsPage,
-} from './components/AdminFinancePages.tsx'
+} from './finance/pages/AdminFinancePages.tsx'
 export { AdminPrototypeNotice } from './components/AdminCommon.tsx'

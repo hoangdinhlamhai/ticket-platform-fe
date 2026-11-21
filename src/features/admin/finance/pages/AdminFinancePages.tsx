@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react'
-import { adminStatusLabel, adminStatusTone, formatAdminMoney } from '../helpers/admin-display.ts'
-import { matchesAdminQuery } from '../helpers/filter-admin-records.ts'
-import type { AdminSensitiveOperation } from '../helpers/admin-transitions.ts'
-import type { AdminWorkspaceController } from '../hooks/admin-workspace-controller.ts'
-import type { AdminPath } from '../../../routes/admin-route.ts'
-import { shouldUseClientNavigation } from '../../../routes/client-navigation.ts'
-import { AdminDataTable } from './AdminDataTable.tsx'
-import { AdminDecisionDialog, AdminFilterToolbar, AdminPageHeader, AdminRecordDrawer, AdminStatusBadge } from './AdminCommon.tsx'
+﻿import { useMemo, useState } from 'react'
+import { adminStatusLabel, adminStatusTone, formatAdminMoney } from '../../helpers/admin-display.ts'
+import { matchesAdminQuery } from '../../helpers/filter-admin-records.ts'
+import type { AdminSensitiveOperation } from '../../helpers/admin-transitions.ts'
+import type { AdminWorkspaceController } from '../../hooks/admin-workspace-controller.ts'
+import type { AdminPath } from '../../../../routes/admin-route.ts'
+import { shouldUseClientNavigation } from '../../../../routes/client-navigation.ts'
+import { AdminDataTable } from '../../components/AdminDataTable.tsx'
+import { AdminDecisionDialog, AdminFilterToolbar, AdminPageHeader, AdminRecordDrawer, AdminStatusBadge } from '../../components/AdminCommon.tsx'
 
 type Decision = { readonly title: string; readonly operation: AdminSensitiveOperation; readonly submit: (reason: string) => void }
 type Choice = { readonly value: string; readonly label: string }

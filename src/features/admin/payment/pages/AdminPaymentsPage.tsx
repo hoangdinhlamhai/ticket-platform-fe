@@ -1,71 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import * as adminApi from "../api/adminApi.ts";
-
-type Payment = {
-  id: string;
-  provider?: string;
-  transactionId?: string | null;
-  amount: number | string;
-  status: string;
-  paidAt?: string | null;
-  createdAt: string;
-  order: { id: string };
-};
-type Order = {
-  id: string;
-  total: number | string;
-  status: string;
-  createdAt: string;
-  user: { id: string; fullName: string; email: string };
-  event: { id: string; title: string };
-  payments: readonly {
-    id: string;
-    status: string;
-    provider: string;
-    transactionId: string | null;
-    amount: number | string;
-    paidAt: string | null;
-  }[];
-  tickets: readonly {
-    id: string;
-    ticketCode: string;
-    status: string;
-    ticketType: string;
-    seat: string | null;
-  }[];
-};
-const money = (value: unknown) =>
-  `${Number(value ?? 0).toLocaleString("vi-VN")} ₫`;
-const date = (value?: string | null) =>
-  value
-    ? new Intl.DateTimeFormat("vi-VN", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(value))
-    : "—";
-const statusText: Record<string, string> = {
-  PAID: "Thành công",
-  COMPLETED: "Thành công",
-  FAILED: "Thất bại",
-  PAYMENT_FAILED: "Thất bại",
-  PENDING: "Đang xử lý",
-  PENDING_PAYMENT: "Đang xử lý",
-  EXPIRED: "Hết hạn",
-  REFUNDED: "Đã hoàn tiền",
-};
-const statusTone: Record<string, string> = {
-  PAID: "bg-success/10 text-success",
-  COMPLETED: "bg-success/10 text-success",
-  FAILED: "bg-error/10 text-error",
-  PAYMENT_FAILED: "bg-error/10 text-error",
-  PENDING: "bg-warning/10 text-warning",
-  PENDING_PAYMENT: "bg-warning/10 text-warning",
-  EXPIRED: "bg-surface text-ink-soft",
-  REFUNDED: "bg-info/10 text-info",
-};
+﻿import { useEffect, useMemo, useState } from "react";
+import { findPayment, findPayments } from "../api/adminPaymentApi.ts";
+import type { AdminPayment } from "../types/admin-payment.ts";
+import {
+  formatPaymentDate as date,
+  formatPaymentMoney as money,
+  paymentStatusText as statusText,
+  paymentStatusTone as statusTone,
+} from "../components/payment-presentation.ts";
 export function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<readonly Payment[]>([]);
-  const [orders, setOrders] = useState<readonly Order[]>([]);
+  const [payments, setPayments] = useState<readonly AdminPayment[]>([]);
   const [total, setTotal] = useState(0);
   const [counts, setCounts] = useState({
     success: 0,
@@ -77,7 +20,9 @@ export function AdminPaymentsPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Payment | null>(null);
+  const [selected, setSelected] = useState<AdminPayment | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const pageSize = 100;
@@ -87,21 +32,19 @@ export function AdminPaymentsPage() {
       setLoading(true);
       setError("");
       try {
-        const [list, orderList, paid, failed, pending] = await Promise.all([
-          adminApi.findPayments({
+        const [list, paid, failed, pending] = await Promise.all([
+          findPayments({
             status: status || undefined,
             page,
             pageSize,
           }),
-          adminApi.findOrders({ page: 1, pageSize: 100 }),
-          adminApi.findPayments({ status: "PAID", page: 1, pageSize: 1 }),
-          adminApi.findPayments({ status: "FAILED", page: 1, pageSize: 1 }),
-          adminApi.findPayments({ status: "PENDING", page: 1, pageSize: 1 }),
+          findPayments({ status: "PAID", page: 1, pageSize: 1 }),
+          findPayments({ status: "FAILED", page: 1, pageSize: 1 }),
+          findPayments({ status: "PENDING", page: 1, pageSize: 1 }),
         ]);
         if (!active) return;
-        setPayments(list.data.payments as readonly Payment[]);
+        setPayments(list.data.payments as readonly AdminPayment[]);
         setTotal(list.data.total);
-        setOrders(orderList.data.orders as readonly Order[]);
         setCounts({
           success: paid.data.total,
           failed: failed.data.total,
@@ -121,14 +64,26 @@ export function AdminPaymentsPage() {
       active = false;
     };
   }, [page, status]);
-  const orderById = useMemo(
-    () => new Map(orders.map((order) => [order.id, order])),
-    [orders],
-  );
+  const openPayment = async (payment: AdminPayment) => {
+    setSelected(payment);
+    setDetailLoading(true);
+    setDetailError("");
+    try {
+      const response = await findPayment(payment.id);
+      setSelected(response.data.payment as unknown as AdminPayment);
+    } catch (cause) {
+      setDetailError(
+        cause instanceof Error
+          ? cause.message
+          : "Không thể tải chi tiết payment.",
+      );
+    } finally {
+      setDetailLoading(false);
+    }
+  };
   const filtered = useMemo(
     () =>
       payments.filter((payment) => {
-        const order = orderById.get(payment.order.id);
         const timestamp = new Date(
           payment.paidAt ?? payment.createdAt,
         ).getTime();
@@ -143,12 +98,12 @@ export function AdminPaymentsPage() {
             payment.id,
             payment.transactionId,
             payment.order.id,
-            order?.user.fullName,
-            order?.user.email,
+            payment.order.user.fullName,
+            payment.order.user.email,
           ].some((value) => value?.toLocaleLowerCase().includes(term));
         return afterFrom && beforeTo && matches;
       }),
-    [payments, orderById, from, to, query],
+    [payments, from, to, query],
   );
   const summary = [
     ["Tổng giao dịch", total, "text-blue-deep"],
@@ -257,7 +212,7 @@ export function AdminPaymentsPage() {
           </thead>
           <tbody>
             {filtered.map((payment) => {
-              const order = orderById.get(payment.order.id);
+              const order = payment.order;
               return (
                 <tr
                   key={payment.id}
@@ -265,13 +220,13 @@ export function AdminPaymentsPage() {
                 >
                   <td className="px-4 py-3 font-mono">{payment.id}</td>
                   <td className="px-4 py-3">
-                    {order?.user.fullName ?? "Chưa có dữ liệu"}
+                    {order.user.fullName ?? "Chưa có dữ liệu"}
                     <span className="block text-xs text-ink-soft">
-                      {order?.user.email ?? ""}
+                      {order.user.email ?? ""}
                     </span>
                   </td>
                   <td className="max-w-52 truncate px-4 py-3">
-                    {order?.event.title ?? "Chưa có dữ liệu"}
+                    {order.event.title ?? "Chưa có dữ liệu"}
                   </td>
                   <td className="px-4 py-3 font-bold">
                     {money(payment.amount)}
@@ -291,7 +246,7 @@ export function AdminPaymentsPage() {
                     <button
                       className="font-bold text-blue-deep underline"
                       type="button"
-                      onClick={() => setSelected(payment)}
+                      onClick={() => void openPayment(payment)}
                     >
                       Chi tiết
                     </button>
@@ -357,6 +312,10 @@ export function AdminPaymentsPage() {
             >
               ← Đóng chi tiết
             </button>
+            {detailLoading ? <p role="status">Đang tải chi tiết...</p> : null}
+            {detailError ? (
+              <p role="alert" className="text-error">{detailError}</p>
+            ) : null}
             <p className="text-sm font-bold uppercase tracking-widest text-ink-soft">
               Payment · Chỉ đọc
             </p>
@@ -372,7 +331,7 @@ export function AdminPaymentsPage() {
               {statusText[selected.status] ?? selected.status}
             </span>
             {(() => {
-              const order = orderById.get(selected.order.id);
+              const order = selected.order;
               const fields: [string, unknown][] = [
                 ["Transaction ID từ Provider", selected.transactionId],
                 ["Mã Order", selected.order.id],
@@ -413,9 +372,9 @@ export function AdminPaymentsPage() {
                       <p className="mb-0 text-sm text-ink-soft">
                         Không tải được thông tin đơn hàng liên quan.
                       </p>
-                    ) : order.tickets.length ? (
+                    ) : order.tickets?.length ? (
                       <ul className="m-0 grid list-none gap-3 p-0">
-                        {order.tickets.map((ticket) => (
+                        {order.tickets?.map((ticket) => (
                           <li
                             key={ticket.id}
                             className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-3"

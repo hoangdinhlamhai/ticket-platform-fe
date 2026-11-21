@@ -28,6 +28,13 @@ function getErrorMessage(error: unknown) {
 export function RefundAdminPage() {
   const [refunds, setRefunds] = useState<readonly AdminRefund[]>([]);
   const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState({
+    total: 0,
+    pending: 0,
+    processing: 0,
+    succeeded: 0,
+    failed: 0,
+  });
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<"" | AdminRefundStatus>("");
   const [query, setQuery] = useState("");
@@ -57,6 +64,7 @@ export function RefundAdminPage() {
         if (active) {
           setRefunds(data.refunds);
           setTotal(data.total);
+          setSummary(data.summary);
         }
       } catch (error) {
         if (active) setLoadError(getErrorMessage(error));
@@ -197,174 +205,205 @@ export function RefundAdminPage() {
   );
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
+  const summaryCards = [
+    { label: "Chờ duyệt", value: summary.pending, tone: "text-blue-deep" },
+    { label: "Đang xử lý", value: summary.processing, tone: "text-warning" },
+    { label: "Đã hoàn tiền", value: summary.succeeded, tone: "text-success" },
+    { label: "Thất bại", value: summary.failed, tone: "text-error" },
+  ] as const;
+
   return (
-    <section className="grid gap-5">
-      {selectedId ? (
-        isDetailLoading ? (
-          <p
-            className="rounded-lg border border-line bg-surface p-5"
-            role="status"
+    <section className="grid gap-6">
+      <header>
+        <p className="m-0 text-sm font-bold uppercase tracking-widest text-ink-soft">
+          Tài chính · Admin
+        </p>
+        <h1 className="mb-0 mt-1 font-body text-3xl font-extrabold tracking-tight text-pine">
+          Quản lý Refunds
+        </h1>
+        <p className="mb-0 mt-2 text-sm text-ink-soft">
+          {summary.total.toLocaleString("vi-VN")} yêu cầu hoàn tiền · Duyệt sẽ
+          gửi refund thật tới Xendit.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map((card) => (
+          <article
+            key={card.label}
+            className="rounded-lg border border-line bg-surface p-4"
           >
-            Đang tải chi tiết refund…
-          </p>
-        ) : detailError ? (
-          <div className="grid gap-4">
-            <p
-              className="rounded border border-error bg-error/10 p-4 text-error"
-              role="alert"
-            >
-              {detailError}
+            <p className="m-0 text-sm font-semibold text-ink-soft">
+              {card.label}
             </p>
-            <button
-              className="min-h-11 justify-self-start font-bold text-blue-deep underline"
-              type="button"
-              onClick={closeDetail}
-            >
-              Quay lại danh sách
-            </button>
-          </div>
-        ) : selectedRefund ? (
-          <>
-            {notice ? (
-              <p
-                className={`m-0 rounded-md border px-4 py-3 text-sm font-semibold ${
-                  selectedRefund.status === "FAILED"
-                    ? "border-error/30 bg-error/10 text-error"
-                    : "border-success/30 bg-mint text-success"
-                }`}
-                role="status"
-              >
-                {notice}
-              </p>
-            ) : null}
-            <RefundAdminDetailCard
-              refund={selectedRefund}
-              actionError={actionError}
-              isWorking={isWorking}
-              onBack={closeDetail}
-              onAction={handleAction}
-            />
-          </>
-        ) : null
+            <p className={`mb-0 mt-2 text-2xl font-extrabold ${card.tone}`}>
+              {isLoading ? "_" : card.value.toLocaleString("vi-VN")}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      {notice ? (
+        <p
+          className="m-0 rounded-md border border-success/30 bg-mint px-4 py-3 text-sm font-semibold text-success"
+          role="status"
+        >
+          {notice}
+        </p>
+      ) : null}
+
+      <div className="grid gap-3 rounded-lg border border-line bg-surface p-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_14rem]">
+        <label className="text-sm font-bold">
+          Tìm Refund, Order, khách hàng hoặc sự kiện
+          <input
+            className="mt-1 min-h-11 w-full rounded border border-line bg-paper px-3 font-normal"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Nhập mã refund, đơn hàng, khách hoặc sự kiện"
+          />
+        </label>
+        <label className="text-sm font-bold">
+          Trạng thái
+          <select
+            className="mt-1 min-h-11 w-full rounded border border-line bg-paper px-3 font-normal"
+            value={status}
+            onChange={(event) => {
+              setIsLoading(true);
+              setStatus(event.target.value as "" | AdminRefundStatus);
+              setPage(1);
+            }}
+          >
+            {statusOptions.map((option) => (
+              <option key={option.value || "ALL"} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {loadError ? (
+        <div
+          className="rounded-lg border border-error/30 bg-error/10 p-5"
+          role="alert"
+        >
+          <p className="m-0 text-sm text-error">{loadError}</p>
+          <button
+            className="mt-3 min-h-11 rounded border border-error/40 px-4 text-sm font-bold text-error"
+            type="button"
+            onClick={() => {
+              setIsLoading(true);
+              setReloadKey((key) => key + 1);
+            }}
+          >
+            Thử tải lại
+          </button>
+        </div>
+      ) : isLoading ? (
+        <p
+          className="grid min-h-56 place-items-center rounded-lg border border-line bg-surface p-5 text-center text-sm text-ink-soft"
+          role="status"
+        >
+          Đang tải giao dịch...
+        </p>
       ) : (
         <>
-          <header>
-            <p className="m-0 text-sm font-bold uppercase tracking-widest text-ink-soft">
-              Admin · Tài chính
-            </p>
-            <h1 className="mt-1 mb-0 font-body text-4xl font-extrabold tracking-[-0.06em] text-pine">
-              Yêu cầu hoàn tiền
-            </h1>
-            <p className="mt-2 mb-0 text-sm text-ink-soft">
-              {total} yêu cầu · Duyệt sẽ gửi refund thật tới Xendit.
-            </p>
-          </header>
-
-          {notice ? (
-            <p
-              className="m-0 rounded-md border border-success/30 bg-mint px-4 py-3 text-sm font-semibold text-success"
-              role="status"
-            >
-              {notice}
-            </p>
-          ) : null}
-
-          <div className="grid gap-3 rounded-lg border border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
-            <label className="text-sm font-bold">
-              Tìm yêu cầu
-              <input
-                className="mt-1 min-h-11 w-full rounded-md border border-line bg-paper px-3 font-normal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-deep"
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Mã refund, đơn hàng, khách, sự kiện"
-              />
-            </label>
-            <label className="text-sm font-bold">
-              Trạng thái
-              <select
-                className="mt-1 min-h-11 w-full rounded-md border border-line bg-paper px-3 font-normal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-deep"
-                value={status}
-                onChange={(event) => {
-                  setIsLoading(true);
-                  setStatus(event.target.value as "" | AdminRefundStatus);
-                  setPage(1);
-                }}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value || "ALL"} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {loadError ? (
-            <div
-              className="rounded-lg border border-error/30 bg-error/10 p-5"
-              role="alert"
-            >
-              <p className="m-0 text-sm text-error">{loadError}</p>
-              <button
-                className="mt-3 min-h-11 rounded-md border border-error/40 px-4 text-sm font-bold text-error"
-                type="button"
-                onClick={() => {
-                  setIsLoading(true);
-                  setReloadKey((key) => key + 1);
-                }}
-              >
-                Thử tải lại
-              </button>
-            </div>
-          ) : isLoading ? (
-            <p
-              className="rounded-lg border border-line bg-surface p-5"
-              role="status"
-            >
-              Đang tải danh sách refund…
-            </p>
-          ) : (
-            <>
-              <RefundAdminList refunds={visibleRefunds} onOpen={openRefund} />
-              {total > pageSize ? (
-                <nav
-                  className="flex flex-wrap items-center justify-between gap-3"
-                  aria-label="Phân trang yêu cầu refund"
+          <RefundAdminList refunds={visibleRefunds} onOpen={openRefund} />
+          {total > pageSize ? (
+            <footer className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft">
+              <span>
+                {total.toLocaleString("vi-VN")} yêu cầu · Trang {page} /{" "}
+                {pageCount}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  className="min-h-10 rounded border border-line px-3 disabled:opacity-40"
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => {
+                    setIsLoading(true);
+                    setPage((current) => current - 1);
+                  }}
                 >
-                  <p className="m-0 text-sm text-ink-soft">
-                    Trang {page} / {pageCount}
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      className="min-h-11 rounded-md border border-line bg-surface px-4 text-sm font-bold disabled:opacity-50"
-                      type="button"
-                      disabled={page <= 1}
-                      onClick={() => {
-                        setIsLoading(true);
-                        setPage((current) => current - 1);
-                      }}
-                    >
-                      Trước
-                    </button>
-                    <button
-                      className="min-h-11 rounded-md border border-line bg-surface px-4 text-sm font-bold disabled:opacity-50"
-                      type="button"
-                      disabled={page >= pageCount}
-                      onClick={() => {
-                        setIsLoading(true);
-                        setPage((current) => current + 1);
-                      }}
-                    >
-                      Sau
-                    </button>
-                  </div>
-                </nav>
-              ) : null}
-            </>
-          )}
+                  Trước
+                </button>
+                <button
+                  className="min-h-10 rounded border border-line px-3 disabled:opacity-40"
+                  type="button"
+                  disabled={page >= pageCount}
+                  onClick={() => {
+                    setIsLoading(true);
+                    setPage((current) => current + 1);
+                  }}
+                >
+                  Tiếp
+                </button>
+              </div>
+            </footer>
+          ) : null}
         </>
       )}
+
+      {selectedId ? (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-ink/40 backdrop-blur-[2px]"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeDetail();
+          }}
+        >
+          <aside
+            className="h-full w-full max-w-3xl animate-[transaction-enter_.2s_ease-out] overflow-y-auto bg-paper p-4 shadow-2xl sm:p-7"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="refund-detail-title"
+          >
+            {isDetailLoading ? (
+              <p
+                className="rounded-lg border border-line bg-surface p-5"
+                role="status"
+              >
+                Đang tải chi tiết...
+              </p>
+            ) : detailError ? (
+              <div className="grid gap-4">
+                <p
+                  className="rounded border border-error bg-error/10 p-4 text-error"
+                  role="alert"
+                >
+                  {detailError}
+                </p>
+                <button
+                  className="min-h-11 justify-self-start font-bold text-blue-deep underline"
+                  type="button"
+                  onClick={closeDetail}
+                >
+                  Đóng chi tiết
+                </button>
+              </div>
+            ) : selectedRefund ? (
+              <div className="grid gap-4">
+                {notice ? (
+                  <p
+                    className="m-0 rounded-md border border-success/30 bg-mint px-4 py-3 text-sm font-semibold text-success"
+                    role="status"
+                  >
+                    {notice}
+                  </p>
+                ) : null}
+                <RefundAdminDetailCard
+                  refund={selectedRefund}
+                  actionError={actionError}
+                  isWorking={isWorking}
+                  onBack={closeDetail}
+                  onAction={handleAction}
+                />
+              </div>
+            ) : null}
+          </aside>
+        </div>
+      ) : null}
     </section>
   );
 }

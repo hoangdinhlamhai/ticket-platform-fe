@@ -78,22 +78,6 @@ export const findOrganizers = (params: AdminQuery = {}) =>
     pageSize: number;
   }>("/admin/organizers", { params });
 
-export const findOrders = (params: AdminQuery = {}) =>
-  axiosClient.get<{
-    orders: readonly AdminRecord[];
-    total: number;
-    page: number;
-    pageSize: number;
-  }>("/admin/orders", { params });
-
-export const findPayments = (params: AdminQuery = {}) =>
-  axiosClient.get<{
-    payments: readonly AdminRecord[];
-    total: number;
-    page: number;
-    pageSize: number;
-  }>("/admin/payments", { params });
-
 export const findRefunds = (params: AdminQuery = {}) =>
   axiosClient.get<{
     refunds: readonly AdminRecord[];

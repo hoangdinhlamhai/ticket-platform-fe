@@ -55,6 +55,13 @@ export type AdminRefund = {
 export type AdminRefundListResponse = {
   refunds: AdminRefund[];
   total: number;
+  summary: {
+    total: number;
+    pending: number;
+    processing: number;
+    succeeded: number;
+    failed: number;
+  };
   page: number;
   pageSize: number;
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import * as adminApi from "../api/adminApi.ts";
 
 type Props = {
@@ -7,8 +7,6 @@ type Props = {
     | "users"
     | "events"
     | "organizers"
-    | "orders"
-    | "payments"
     | "refunds"
     | "categories"
     | "resale"
@@ -37,12 +35,6 @@ export function RealAdminPage({ kind }: Props) {
           case "organizers":
             result = (await adminApi.findOrganizers()).data;
             break;
-          case "orders":
-            result = (await adminApi.findOrders()).data;
-            break;
-          case "payments":
-            result = (await adminApi.findPayments()).data;
-            break;
           case "refunds":
             result = (await adminApi.findRefunds()).data;
             break;
@@ -60,7 +52,7 @@ export function RealAdminPage({ kind }: Props) {
       } catch (cause: unknown) {
         if (active)
           setError(
-            cause instanceof Error ? cause.message : "Không thể tải dữ liệu.",
+            cause instanceof Error ? cause.message : "KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u.",
           );
       }
     };
@@ -73,15 +65,13 @@ export function RealAdminPage({ kind }: Props) {
 
   const title = {
     dashboard: "Dashboard",
-    users: "Người dùng",
-    events: "Tất cả sự kiện",
+    users: "NgÆ°á»i dÃ¹ng",
+    events: "Táº¥t cáº£ sá»± kiá»‡n",
     organizers: "Organizer",
-    orders: "Orders",
-    payments: "Payments",
     refunds: "Refunds",
-    categories: "Danh mục",
-    resale: "Ticket Resale · Listings",
-    "resale-transactions": "Ticket Resale · Transactions",
+    categories: "Danh má»¥c",
+    resale: "Ticket Resale Â· Listings",
+    "resale-transactions": "Ticket Resale Â· Transactions",
   }[kind];
 
   return (
@@ -98,7 +88,7 @@ export function RealAdminPage({ kind }: Props) {
         </p>
       )}
       <pre className="max-h-[32rem] overflow-auto rounded-lg border border-line bg-surface p-5 text-sm">
-        {data ? JSON.stringify(data, null, 2) : "Dữ liệu đang được tải..."}
+        {data ? JSON.stringify(data, null, 2) : "Dá»¯ liá»‡u Ä‘ang Ä‘Æ°á»£c táº£i..."}
       </pre>
     </section>
   );
