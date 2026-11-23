@@ -5,8 +5,8 @@ export type AdminRoute =
   | "event-detail"
   | "cases"
   | "case-detail"
-  | "organizers"
   | "users"
+  | "user-detail"
   | "orders"
   | "tickets"
   | "resale"
@@ -26,8 +26,8 @@ export type AdminPath =
   | "/admin"
   | "/admin/events/review"
   | "/admin/cases"
-  | "/admin/organizers"
   | "/admin/users"
+  | `/admin/users/${string}`
   | "/admin/orders"
   | "/admin/tickets"
   | "/admin/resale"
@@ -49,7 +49,6 @@ const staticRoutes: Readonly<Record<string, AdminRoute>> = {
   "/admin": "dashboard",
   "/admin/events/review": "event-reviews",
   "/admin/cases": "cases",
-  "/admin/organizers": "organizers",
   "/admin/users": "users",
   "/admin/orders": "orders",
   "/admin/tickets": "tickets",
@@ -100,12 +99,17 @@ export function getAdminPayoutId(pathname: string) {
   return extractId(pathname, /^\/admin\/payouts\/([^/]+)$/);
 }
 
+export function getAdminUserId(pathname: string) {
+  return extractId(pathname, /^\/admin\/users\/([^/]+)$/);
+}
+
 export function getAdminResaleTransactionId(pathname: string) {
   return extractId(pathname, /^\/admin\/resale\/transactions\/([^/]+)$/);
 }
 
 export function getAdminRoute(pathname: string): AdminRoute {
   const path = normalizePath(pathname);
+  if (path === "/admin/organizers") return "users";
   const staticRoute = staticRoutes[path];
   if (staticRoute) return staticRoute;
   if (/^\/admin\/events\/[^/]+\/review$/.test(path) && getAdminEventId(path))
@@ -113,6 +117,7 @@ export function getAdminRoute(pathname: string): AdminRoute {
   if (/^\/admin\/events\/[^/]+\/details$/.test(path) && getAdminEventId(path))
     return "event-detail";
   if (getAdminCaseId(path)) return "case-detail";
+  if (getAdminUserId(path)) return "user-detail";
   if (getAdminPayoutId(path)) return "payout-detail";
   if (getAdminResaleTransactionId(path)) return "resale-transaction-detail";
   return "not-found";

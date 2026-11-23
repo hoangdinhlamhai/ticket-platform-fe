@@ -3,6 +3,7 @@ import { AdminLayout } from "../layouts/admin/AdminLayout.tsx";
 import {
   getAdminEventId,
   getAdminPayoutId,
+  getAdminUserId,
   getAdminResaleTransactionId,
   getAdminRoute,
   type AdminPath,
@@ -21,7 +22,13 @@ import {
 } from "../features/admin/payout/index.ts";
 import { ResaleTransactionsPage } from "../features/admin/resale/ResaleTransactionsPage.tsx";
 import { RealAdminPage } from "../features/admin/components/AdminApiDataPage.tsx";
+import { AdminDashboardPage } from "../features/admin/dashboard/pages/AdminDashboardPage.tsx";
 import { AdminTransactionsPage } from "../features/admin/transactions/pages/AdminTransactionsPage.tsx";
+import { AdminCategoriesPage } from "../features/admin/category/index.ts";
+import {
+  AdminUserDetailPage,
+  AdminUsersPage,
+} from "../features/admin/user/index.ts";
 import { getAdminAccessState } from "./admin-access.ts";
 import type { AuthStatus } from "../features/auth/hooks/useAuth.ts";
 import type { AttendeeUser } from "../features/auth/types/authContract.ts";
@@ -60,6 +67,7 @@ export function AdminApplication({
   });
   const eventId = getAdminEventId(pathname);
   const payoutId = getAdminPayoutId(pathname);
+  const userId = getAdminUserId(pathname);
   const resaleTransactionId = getAdminResaleTransactionId(pathname);
   const navigate = useCallback(
     (destination: AdminPath) => {
@@ -94,11 +102,13 @@ export function AdminApplication({
         </div>
       </section>
     );
-  } else if (route === "dashboard") page = <RealAdminPage kind="dashboard" />;
-  else if (route === "users") page = <RealAdminPage kind="users" />;
+  } else if (route === "dashboard")
+    page = <AdminDashboardPage navigate={navigatePage} />;
+  else if (route === "users") page = <AdminUsersPage navigate={navigate} />;
+  else if (route === "user-detail" && userId)
+    page = <AdminUserDetailPage userId={userId} navigate={navigate} />;
   else if (route === "events-all")
     page = <AdminEventsPage navigate={navigatePage} />;
-  else if (route === "organizers") page = <RealAdminPage kind="organizers" />;
   else if (["orders", "payments", "refunds"].includes(route))
     page = (
       <AdminTransactionsPage
@@ -109,7 +119,7 @@ export function AdminApplication({
   else if (route === "payouts") page = <PayoutListPage navigate={navigate} />;
   else if (route === "payout-detail" && payoutId)
     page = <PayoutDetailPage payoutId={payoutId} navigate={navigate} />;
-  else if (route === "categories") page = <RealAdminPage kind="categories" />;
+  else if (route === "categories") page = <AdminCategoriesPage />;
   else if (route === "resale") page = <RealAdminPage kind="resale" />;
   else if (
     route === "resale-transactions" ||
@@ -146,7 +156,13 @@ export function AdminApplication({
   const pendingCount = 0;
   return (
     <AdminLayout
-      activeRoute={route === "payout-detail" ? "payouts" : route}
+      activeRoute={
+        route === "payout-detail"
+          ? "payouts"
+          : route === "user-detail"
+            ? "users"
+            : route
+      }
       notice={getOperationNotice(workspace.lastOperation)}
       onAcknowledgeNotice={workspace.clearLastOperation}
       onExitToAttendee={onExitToAttendee}

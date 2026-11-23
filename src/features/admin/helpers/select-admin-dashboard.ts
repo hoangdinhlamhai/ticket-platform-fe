@@ -76,9 +76,6 @@ export function selectAdminDashboard(workspace: AdminWorkspace) {
   const openCases = workspace.cases.filter((item) =>
     unresolvedCaseStatuses.has(item.status),
   );
-  const pendingVerifications = workspace.organizers.filter(
-    (item) => item.verificationStatus === "pending",
-  );
   const heldPayouts = workspace.payouts.filter(
     (item) => item.status === "on_hold",
   );
@@ -96,13 +93,6 @@ export function selectAdminDashboard(workspace: AdminWorkspace) {
       value: openCases.length,
       detail: "Cần theo dõi hoặc xử lý",
       path: "/admin/cases",
-    },
-    {
-      id: "pending-organizer-verifications",
-      label: "Organizer chờ xác minh",
-      value: pendingVerifications.length,
-      detail: "Mở danh sách Organizer",
-      path: "/admin/organizers",
     },
     {
       id: "successful-transactions-today",
@@ -146,16 +136,6 @@ export function selectAdminDashboard(workspace: AdminWorkspace) {
       priority: priorityFromSeverity(item.severity),
       createdAt: item.createdAt,
       path: `/admin/cases/${item.id}` as AdminPath,
-    })),
-    ...pendingVerifications.map((item) => ({
-      id: `organizer-${item.id}`,
-      label: item.name,
-      detail: "Chờ xác minh Organizer",
-      targetId: item.id,
-      targetType: "organizer" as const,
-      priority: "medium" as const,
-      createdAt: "2026-08-29T08:00:00.000Z",
-      path: "/admin/organizers" as const,
     })),
     ...workspace.refunds
       .filter(

@@ -17,7 +17,6 @@ const navigation: readonly {
     items: [
       { label: "Người dùng", path: "/admin/users", routes: ["users"] },
       { label: "Danh mục", path: "/admin/categories", routes: ["categories"] },
-      { label: "Organizer", path: "/admin/organizers", routes: ["organizers"] },
     ],
   },
   {
@@ -39,7 +38,7 @@ const navigation: readonly {
     group: "GIAO DỊCH",
     items: [
       {
-        label: "Transactions",
+        label: "Đơn hàng",
         path: "/admin/orders",
         routes: ["orders", "payments", "refunds"],
       },

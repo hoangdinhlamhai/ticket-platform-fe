@@ -25,7 +25,7 @@ function adminCaseSubjectPath(
     return null;
   if (item.subjectType === "event")
     return `/admin/events/${encodeURIComponent(item.subjectId)}/review`;
-  if (item.subjectType === "organizer") return "/admin/organizers";
+  if (item.subjectType === "organizer") return "/admin/users";
   if (item.subjectType === "user") return "/admin/users";
   if (item.subjectType === "order") return "/admin/orders";
   if (item.subjectType === "ticket") return "/admin/tickets";

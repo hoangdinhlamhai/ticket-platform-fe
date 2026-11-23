@@ -16,7 +16,7 @@ const payoutStatusOptions = statusChoices(['scheduled', 'pending', 'on_hold', 'r
 
 function adminAuditTargetPath(targetType: string, targetId: string): AdminPath | null {
   if (targetType === 'event') return `/admin/events/${encodeURIComponent(targetId)}/review`
-  if (targetType === 'organizer') return '/admin/organizers'
+  if (targetType === 'organizer') return '/admin/users'
   if (targetType === 'user') return '/admin/users'
   if (targetType === 'order') return '/admin/orders'
   if (targetType === 'ticket') return '/admin/tickets'

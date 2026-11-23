@@ -459,6 +459,25 @@
   }
 }
 
+.admin-loading-skeleton {
+  background: linear-gradient(100deg, #e9e2d6 20%, #fffaf1 38%, #e9e2d6 60%);
+  background-size: 200% 100%;
+  animation: admin-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+@keyframes admin-skeleton-shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-loading-skeleton {
+    animation: none;
+    background-position: 50% 0;
+  }
+}
+
 @keyframes event-search-hero-slide {
   0%,
   20% {

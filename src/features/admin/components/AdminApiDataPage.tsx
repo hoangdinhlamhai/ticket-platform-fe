@@ -3,14 +3,7 @@ import * as adminApi from "../api/adminApi.ts";
 
 type Props = {
   readonly kind:
-    | "dashboard"
-    | "users"
-    | "events"
-    | "organizers"
-    | "refunds"
-    | "categories"
-    | "resale"
-    | "resale-transactions";
+    "dashboard" | "events" | "refunds" | "resale" | "resale-transactions";
 };
 
 export function RealAdminPage({ kind }: Props) {
@@ -26,20 +19,11 @@ export function RealAdminPage({ kind }: Props) {
           case "dashboard":
             result = (await adminApi.findMetrics()).data;
             break;
-          case "users":
-            result = (await adminApi.findUsers()).data;
-            break;
           case "events":
             result = (await adminApi.findEvents()).data;
             break;
-          case "organizers":
-            result = (await adminApi.findOrganizers()).data;
-            break;
           case "refunds":
             result = (await adminApi.findRefunds()).data;
-            break;
-          case "categories":
-            result = (await adminApi.findCategories()).data;
             break;
           case "resale":
             result = (await adminApi.findListings()).data;
@@ -52,7 +36,7 @@ export function RealAdminPage({ kind }: Props) {
       } catch (cause: unknown) {
         if (active)
           setError(
-            cause instanceof Error ? cause.message : "KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u.",
+            cause instanceof Error ? cause.message : "Không thể tải dữ liệu.",
           );
       }
     };
@@ -65,13 +49,10 @@ export function RealAdminPage({ kind }: Props) {
 
   const title = {
     dashboard: "Dashboard",
-    users: "NgÆ°á»i dÃ¹ng",
-    events: "Táº¥t cáº£ sá»± kiá»‡n",
-    organizers: "Organizer",
+    events: "Tất cả sự kiện",
     refunds: "Refunds",
-    categories: "Danh má»¥c",
-    resale: "Ticket Resale Â· Listings",
-    "resale-transactions": "Ticket Resale Â· Transactions",
+    resale: "Ticket Resale · Listings",
+    "resale-transactions": "Ticket Resale · Transactions",
   }[kind];
 
   return (
@@ -88,7 +69,7 @@ export function RealAdminPage({ kind }: Props) {
         </p>
       )}
       <pre className="max-h-[32rem] overflow-auto rounded-lg border border-line bg-surface p-5 text-sm">
-        {data ? JSON.stringify(data, null, 2) : "Dá»¯ liá»‡u Ä‘ang Ä‘Æ°á»£c táº£i..."}
+        {data ? JSON.stringify(data, null, 2) : "Dữ liệu đang được tải..."}
       </pre>
     </section>
   );

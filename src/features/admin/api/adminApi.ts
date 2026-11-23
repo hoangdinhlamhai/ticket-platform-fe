@@ -29,29 +29,6 @@ export const findTimeline = () =>
     }[];
   }>("/admin/dashboard/transactions-timeline");
 
-export const findUsers = (params: AdminQuery = {}) =>
-  axiosClient.get<{
-    users: readonly AdminRecord[];
-    total: number;
-    page: number;
-    pageSize: number;
-  }>("/admin/users", { params });
-
-export const findUser = (id: string) =>
-  axiosClient.get<{ user: AdminRecord }>(
-    `/admin/users/${encodeURIComponent(id)}`,
-  );
-
-export const setUserStatus = (
-  id: string,
-  status: "ACTIVE" | "SUSPENDED",
-  reason?: string,
-) =>
-  axiosClient.patch<{ user: AdminRecord }>(
-    `/admin/users/${encodeURIComponent(id)}/status`,
-    { status, reason },
-  );
-
 export const findEvents = (params: AdminQuery = {}) =>
   axiosClient.get<{
     events: readonly AdminRecord[];
@@ -69,14 +46,6 @@ export const reviewEvent = (
     `/admin/events/${encodeURIComponent(id)}/review`,
     { decision, reason },
   );
-
-export const findOrganizers = (params: AdminQuery = {}) =>
-  axiosClient.get<{
-    organizers: readonly AdminRecord[];
-    total: number;
-    page: number;
-    pageSize: number;
-  }>("/admin/organizers", { params });
 
 export const findRefunds = (params: AdminQuery = {}) =>
   axiosClient.get<{
@@ -183,24 +152,4 @@ export const retryResalePayout = (id: string, bankAccountId: string) =>
   axiosClient.post<{ transaction: { id: string; status: string } }>(
     `/admin/resale/transactions/${encodeURIComponent(id)}/payout/retry`,
     { bankAccountId },
-  );
-
-export const findCategories = () =>
-  axiosClient.get<{ categories: readonly AdminRecord[] }>("/admin/categories");
-
-export const createCategory = (name: string, slug: string) =>
-  axiosClient.post<{ category: AdminRecord }>("/admin/categories", {
-    name,
-    slug,
-  });
-
-export const updateCategory = (id: string, name: string, slug: string) =>
-  axiosClient.patch<{ category: AdminRecord }>(
-    `/admin/categories/${encodeURIComponent(id)}`,
-    { name, slug },
-  );
-
-export const deleteCategory = (id: string) =>
-  axiosClient.delete<{ id: string }>(
-    `/admin/categories/${encodeURIComponent(id)}`,
   );

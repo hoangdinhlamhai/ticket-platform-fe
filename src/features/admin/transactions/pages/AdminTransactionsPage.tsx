@@ -23,18 +23,18 @@ export function AdminTransactionsPage({
     <main className="grid min-w-0 gap-5">
       <header className="rounded-2xl border border-line bg-gradient-to-br from-surface to-paper-deep p-5 shadow-sm sm:p-7">
         <p className="m-0 text-xs font-extrabold uppercase tracking-[.16em] text-ink-soft">
-          Váº­n hÃ nh Â· Admin
+          Vận hành · Admin
         </p>
         <h1 className="mb-0 mt-2 font-body text-3xl font-extrabold tracking-tight text-pine sm:text-4xl">
-          Giao dá»‹ch
+          Giao dịch
         </h1>
         <p className="mb-0 mt-2 max-w-2xl text-sm text-ink-soft">
-          Tra cá»©u Ä‘Æ¡n hÃ ng, thanh toÃ¡n vÃ  yÃªu cáº§u hoÃ n tiá»n trÃªn cÃ¹ng má»™t khÃ´ng
-          gian quáº£n lÃ½.
+          Tra cứu đơn hàng, thanh toán và yêu cầu hoàn tiền trên cùng một không
+          gian quản lý.
         </p>
       </header>
       <nav
-        aria-label="PhÃ¢n há»‡ giao dá»‹ch"
+        aria-label="Phân hệ giao dịch"
         className="sticky top-0 z-10 -mx-1 flex overflow-x-auto rounded-xl border border-line bg-surface/95 p-1 shadow-sm backdrop-blur sm:mx-0 sm:w-fit"
       >
         {tabs.map((item) => (
