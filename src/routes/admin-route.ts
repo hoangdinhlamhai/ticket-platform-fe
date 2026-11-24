@@ -20,6 +20,7 @@ export type AdminRoute =
   | "payments"
   | "resale-transactions"
   | "resale-transaction-detail"
+  | "resale-complaints"
   | "not-found";
 
 export type AdminPath =
@@ -40,6 +41,7 @@ export type AdminPath =
   | "/admin/events"
   | "/admin/payments"
   | "/admin/resale/transactions"
+  | "/admin/resale/complaints"
   | `/admin/resale/transactions/${string}`
   | `/admin/events/${string}/review`
   | `/admin/events/${string}/details`
@@ -61,6 +63,7 @@ const staticRoutes: Readonly<Record<string, AdminRoute>> = {
   "/admin/events": "events-all",
   "/admin/payments": "payments",
   "/admin/resale/transactions": "resale-transactions",
+  "/admin/resale/complaints": "resale-complaints",
 };
 
 function normalizePath(pathname: string) {

@@ -1,231 +1,29 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Banknote, CalendarDays, ShoppingCart, UsersRound } from "lucide-react";
-import * as adminApi from "../../api/adminApi.ts";
-import * as userApi from "../../user/api/adminUserApi.ts";
-import * as orderApi from "../../order/api/adminOrderApi.ts";
-import * as payoutApi from "../../payout/api/adminPayoutApi.ts";
-import * as refundApi from "../../refund/api/refundAdminApi.ts";
 import { AdminStatusBadge } from "../../components/AdminCommon.tsx";
-
-type Metrics = {
-  userCount: number;
-  organizerCount: number;
-  eventCount: number;
-  pendingReviewCount: number;
-  paidOrderCount: number;
-  grossRevenue: number | string;
-  soldTicketCount: number;
-  refundPendingCount: number;
-  resaleActiveCount: number;
-};
-type TimelineRow = {
-  date: string;
-  revenue: number;
-  orders: number;
-  tickets: number;
-};
-type UserRow = {
-  id: string;
-  fullName: string;
-  email: string;
-  status: string;
-  createdAt: string;
-};
-type OrderRow = {
-  id: string;
-  total: number | string;
-  status: string;
-  createdAt: string;
-  user: { fullName: string; email: string };
-};
-type SectionState<T> = { data: T | null; error: string; loading: boolean };
-const empty = <T,>(): SectionState<T> => ({
-  data: null,
-  error: "",
-  loading: true,
-});
-const money = (value: number | string) =>
-  `${Number(value).toLocaleString("vi-VN")} ₫`;
-const dateKey = (value: Date) =>
-  `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
-const shortDate = (value: string) =>
-  new Date(`${value}T00:00:00`).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-const axisMoney = (value: number) => {
-  if (value === 0) return "0";
-  const formatAmount = (amount: number) =>
-    amount.toLocaleString("vi-VN", { maximumFractionDigits: 1 });
-  if (value < 1_000) return Math.round(value).toLocaleString("vi-VN");
-  if (value < 1_000_000) return `${formatAmount(value / 1_000)} N`;
-  if (value < 1_000_000_000) return `${formatAmount(value / 1_000_000)} Tr`;
-  return `${formatAmount(value / 1_000_000_000)} Tỷ`;
-};
-const dateTime = (value: string) =>
-  new Date(value).toLocaleString("vi-VN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-
-function Panel({
-  title,
-  subtitle,
-  action,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
-        <div>
-          <h2 className="m-0 text-base font-extrabold text-pine">{title}</h2>
-          {subtitle && (
-            <p className="mb-0 mt-1 text-xs text-ink-soft">{subtitle}</p>
-          )}
-        </div>
-        {action}
-      </header>
-      <div className="p-4 sm:p-5">{children}</div>
-    </section>
-  );
-}
-
-function LoadingRows({ count = 4 }: { count?: number }) {
-  return (
-    <div className="grid gap-3" role="status" aria-label="Đang tải dữ liệu">
-      {Array.from({ length: count }, (_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-3 rounded-lg border border-line p-3"
-        >
-          <span className="size-10 shrink-0 animate-pulse rounded-lg bg-paper-deep" />
-          <span className="grid flex-1 gap-2">
-            <span className="h-3 w-2/5 animate-pulse rounded bg-paper-deep" />
-            <span className="h-3 w-3/5 animate-pulse rounded bg-paper-deep" />
-          </span>
-          <span className="h-5 w-16 animate-pulse rounded bg-paper-deep" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ErrorBox({ message, retry }: { message: string; retry: () => void }) {
-  return (
-    <div
-      role="alert"
-      className="rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-error"
-    >
-      <p className="m-0">{message}</p>
-      <button
-        type="button"
-        onClick={retry}
-        className="mt-2 min-h-9 rounded border border-error/30 px-3 font-bold"
-      >
-        Thử tải lại
-      </button>
-    </div>
-  );
-}
-
-function Section<T>({
-  state,
-  retry,
-  children,
-}: {
-  state: SectionState<T>;
-  retry: () => void;
-  children: (data: T) => React.ReactNode;
-}) {
-  if (state.loading) return <LoadingRows />;
-  if (state.error) return <ErrorBox message={state.error} retry={retry} />;
-  return state.data ? (
-    children(state.data)
-  ) : (
-    <p className="rounded-lg border border-dashed border-line p-5 text-sm text-ink-soft">
-      Chưa có dữ liệu.
-    </p>
-  );
-}
+import {
+  Panel,
+  LoadingRows,
+  ErrorBox,
+  Section,
+} from "../components/AdminDashboardPrimitives.tsx";
+import {
+  axisMoney,
+  dateKey,
+  dateTime,
+  money,
+  shortDate,
+} from "../helpers/format-admin-dashboard.ts";
+import { useAdminDashboard } from "../hooks/use-admin-dashboard.ts";
 
 export function AdminDashboardPage({
   navigate,
 }: {
   readonly navigate: (path: string) => void;
 }) {
-  const [metrics, setMetrics] = useState(empty<Metrics>());
-  const [timeline, setTimeline] = useState(empty<readonly TimelineRow[]>());
-  const [users, setUsers] = useState(empty<readonly UserRow[]>());
-  const [orders, setOrders] = useState(empty<readonly OrderRow[]>());
-  const [payoutCount, setPayoutCount] = useState(empty<number>());
-  const [refundCount, setRefundCount] = useState(empty<number>());
+  const { metrics, timeline, users, orders, payoutCount, refundCount, retry } =
+    useAdminDashboard();
   const [range, setRange] = useState(30);
-  const [retryKey, setRetryKey] = useState(0);
-  const retry = () => setRetryKey((key) => key + 1);
-
-  useEffect(() => {
-    let active = true;
-    const load = async <T,>(
-      request: Promise<{ data: T }>,
-      setter: (state: SectionState<T>) => void,
-    ) => {
-      setter({ data: null, error: "", loading: true });
-      try {
-        const result = await request;
-        if (active) setter({ data: result.data, error: "", loading: false });
-      } catch (cause) {
-        if (active)
-          setter({
-            data: null,
-            error:
-              cause instanceof Error ? cause.message : "Không thể tải dữ liệu.",
-            loading: false,
-          });
-      }
-    };
-    void load(
-      adminApi
-        .findMetrics()
-        .then(({ data }) => ({ data: data.metrics as Metrics })),
-      setMetrics,
-    );
-    void load(
-      adminApi.findTimeline().then(({ data }) => ({ data: data.series })),
-      setTimeline,
-    );
-    void load(
-      userApi
-        .findUsers({ page: 1, pageSize: 5 })
-        .then(({ data }) => ({ data: data.users })),
-      setUsers,
-    );
-    void load(
-      orderApi
-        .findOrders({ page: 1, pageSize: 6 })
-        .then(({ data }) => ({ data: data.orders as readonly OrderRow[] })),
-      setOrders,
-    );
-    void load(
-      payoutApi
-        .findPending("PENDING_APPROVAL", 1)
-        .then(({ data }) => ({ data: data.total })),
-      setPayoutCount,
-    );
-    void load(
-      refundApi
-        .findRefunds({ status: "PENDING", page: 1, pageSize: 1 })
-        .then(({ data }) => ({ data: data.total })),
-      setRefundCount,
-    );
-    return () => {
-      active = false;
-    };
-  }, [retryKey]);
 
   const chartRows = useMemo(() => {
     if (!timeline.data) return [];

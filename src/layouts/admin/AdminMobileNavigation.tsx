@@ -53,11 +53,15 @@ const navigation: readonly {
   {
     group: "TICKET RESALE",
     items: [
-      { label: "Listings", path: "/admin/resale", routes: ["resale"] },
       {
-        label: "Transactions",
-        path: "/admin/resale/transactions",
-        routes: ["resale-transactions"],
+        label: "Resale",
+        path: "/admin/resale",
+        routes: [
+          "resale",
+          "resale-transactions",
+          "resale-transaction-detail",
+          "resale-complaints",
+        ],
       },
     ],
   },

@@ -78,6 +78,16 @@ export const findListings = (params: AdminQuery = {}) =>
     { params },
   );
 
+export type ResaleListingMetrics = {
+  total: number;
+  active: number;
+  sold: number;
+  hiddenOrLocked: number;
+};
+
+export const findResaleListingMetrics = () =>
+  axiosClient.get<ResaleListingMetrics>("/admin/resale/listings/metrics");
+
 export const findResaleTransactions = (params: AdminQuery = {}) =>
   axiosClient.get<{
     transactions: readonly ResaleTransaction[];
@@ -85,6 +95,18 @@ export const findResaleTransactions = (params: AdminQuery = {}) =>
     page: number;
     pageSize: number;
   }>("/admin/resale/transactions", { params });
+
+export type ResaleTransactionMetrics = {
+  total: number;
+  pendingPayment: number;
+  processing: number;
+  completed: number;
+};
+
+export const findResaleTransactionMetrics = () =>
+  axiosClient.get<ResaleTransactionMetrics>(
+    "/admin/resale/transactions/metrics",
+  );
 
 export type ResaleTransaction = {
   id: string;

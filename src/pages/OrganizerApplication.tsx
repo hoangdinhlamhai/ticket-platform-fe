@@ -135,6 +135,11 @@ export function OrganizerApplication({
         workspace={workspace.workspace}
         onOpenEvent={(id) => navigate(`/organizer/events/${id}`)}
         onOpenEvents={() => navigate("/organizer/events")}
+        onOpenFinance={() => navigate("/organizer/finance")}
+        onCreateEvent={() => navigate("/organizer/events/new")}
+        loading={workspace.loading}
+        loadError={workspace.loadError}
+        onRetry={workspace.retry}
       />
     );
   } else if (route === "events") {

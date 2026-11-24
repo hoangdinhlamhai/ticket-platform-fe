@@ -1,11 +1,20 @@
-﻿import { useState } from 'react';
-import { adminStatusLabel as statusLabel, adminStatusTone as tone } from '../../helpers/admin-display.ts';
-import type { AdminWorkspaceController } from '../../hooks/admin-workspace-controller.ts';
-import { shouldUseClientNavigation } from '../../../../routes/client-navigation.ts';
-import type { AdminCase, AdminSubjectType } from '../../types/admin-records.ts';
-import { AdminPageHeader, AdminStatusBadge } from '../../components/AdminCommon.tsx';
-import { AdminSensitiveDecisionDialog, type AdminDecision } from '../../components/AdminSensitiveDecisionDialog.tsx';
-import { AdminMissingRecord } from '../../components/AdminMissingRecord.tsx';
+﻿import { useState } from "react";
+import {
+  adminStatusLabel as statusLabel,
+  adminStatusTone as tone,
+} from "../../helpers/admin-display.ts";
+import type { AdminWorkspaceController } from "../../hooks/admin-workspace-controller.ts";
+import { shouldUseClientNavigation } from "../../../../routes/client-navigation.ts";
+import type { AdminCase, AdminSubjectType } from "../../types/admin-records.ts";
+import {
+  AdminPageHeader,
+  AdminStatusBadge,
+} from "../../components/AdminCommon.tsx";
+import {
+  AdminSensitiveDecisionDialog,
+  type AdminDecision,
+} from "../../components/AdminSensitiveDecisionDialog.tsx";
+import { AdminMissingRecord } from "../../components/AdminMissingRecord.tsx";
 
 function adminCaseSubjectPath(
   workspace: AdminWorkspaceController["workspace"],
@@ -49,33 +58,39 @@ export function AdminCaseDetailPage({
   const [decision, setDecision] = useState<AdminDecision | null>(null);
   if (!item)
     return (
-      <AdminMissingRecord title="KhÃ´ng tÃ¬m tháº¥y vá»¥ viá»‡c" navigate={navigate} />
+      <AdminMissingRecord title="Không tìm thấy vụ việc" navigate={navigate} />
     );
   const terminal = item.status === "resolved" || item.status === "dismissed";
   const subjectPath = adminCaseSubjectPath(controller.workspace, item);
   return (
     <div className="grid gap-6">
       <AdminPageHeader
-        eyebrow="Vá»¤ VIá»†C / CHI TIáº¾T"
+        eyebrow="VỤ VIỆC / CHI TIẾT"
         title={item.summary}
         actions={
           <button
             className="min-h-11 rounded border border-line px-4 font-bold"
             type="button"
-            onClick={() => navigate("/admin/cases")}
+            onClick={() =>
+              navigate(
+                item.subjectType === "resale"
+                  ? "/admin/resale/complaints"
+                  : "/admin/cases",
+              )
+            }
           >
-            Quay láº¡i danh sÃ¡ch
+            Quay lại danh sách
           </button>
         }
       >
-        NgÆ°á»i bÃ¡o cÃ¡o: {item.reporter} Â· {item.category} Â·{" "}
+        Người báo cáo: {item.reporter} · {item.category} ·{" "}
         <AdminStatusBadge
           label={statusLabel(item.severity)}
           tone={tone(item.severity)}
         />
       </AdminPageHeader>
       <section className="rounded-lg border border-line bg-surface p-5">
-        <h2 className="mt-0 text-xl font-extrabold">Äá»‘i tÆ°á»£ng liÃªn quan</h2>
+        <h2 className="mt-0 text-xl font-extrabold">Đối tượng liên quan</h2>
         <p>
           {subjectPath ? (
             <a
@@ -90,10 +105,10 @@ export function AdminCaseDetailPage({
               {item.subjectType}: {item.subjectId}
             </a>
           ) : (
-            "Äá»‘i tÆ°á»£ng khÃ´ng cÃ²n kháº£ dá»¥ng"
+            "Đối tượng không còn khả dụng"
           )}
         </p>
-        <h2 className="text-xl font-extrabold">Báº±ng chá»©ng</h2>
+        <h2 className="text-xl font-extrabold">Bằng chứng</h2>
         <ul>
           {item.evidence.map((evidence) => (
             <li key={evidence}>{evidence}</li>
@@ -105,7 +120,7 @@ export function AdminCaseDetailPage({
         <ol>
           {item.timeline.map((entry) => (
             <li key={entry.id}>
-              {entry.message} Â·{" "}
+              {entry.message} ·{" "}
               {new Date(entry.occurredAt).toLocaleString("vi-VN")}
             </li>
           ))}
@@ -120,7 +135,7 @@ export function AdminCaseDetailPage({
               controller.updateCaseStatus(item.id, "investigating", "")
             }
           >
-            Äang Ä‘iá»u tra
+            Đang điều tra
           </button>
           <button
             className="min-h-11 rounded border border-blue px-4 font-bold text-blue-deep"
@@ -133,15 +148,15 @@ export function AdminCaseDetailPage({
               )
             }
           >
-            Chá» thÃ´ng tin
+            Chờ thông tin
           </button>
           <button
             className="min-h-11 rounded bg-mint px-4 font-extrabold text-success"
             type="button"
             onClick={() =>
               setDecision({
-                title: "Giáº£i quyáº¿t vá»¥ viá»‡c",
-                description: "Ghi chÃº xá»­ lÃ½ lÃ  báº¯t buá»™c.",
+                title: "Giải quyết vụ việc",
+                description: "Ghi chú xử lý là bắt buộc.",
                 confirm: "Giáº£i quyáº¿t",
                 operation: "resolve_case",
                 submit: (reason) =>
@@ -156,20 +171,23 @@ export function AdminCaseDetailPage({
             type="button"
             onClick={() =>
               setDecision({
-                title: "BÃ¡c bá» vá»¥ viá»‡c",
-                description: "Ghi chÃº xá»­ lÃ½ lÃ  báº¯t buá»™c.",
-                confirm: "BÃ¡c bá»",
+                title: "Bác bỏ vụ việc",
+                description: "Ghi chú xử lý là bắt buộc.",
+                confirm: "Bác bỏ",
                 operation: "dismiss_case",
                 submit: (reason) =>
                   controller.updateCaseStatus(item.id, "dismissed", reason),
               })
             }
           >
-            BÃ¡c bá»
+            Bác bỏ
           </button>
         </div>
       )}
-      <AdminSensitiveDecisionDialog decision={decision} onClose={() => setDecision(null)} />
+      <AdminSensitiveDecisionDialog
+        decision={decision}
+        onClose={() => setDecision(null)}
+      />
     </div>
   );
 }
