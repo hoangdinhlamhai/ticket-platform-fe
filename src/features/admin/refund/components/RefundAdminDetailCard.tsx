@@ -1,5 +1,6 @@
 import { refundStatusPresentation } from "../helpers/refund-status.ts";
 import type { AdminRefund } from "../types/admin-refund.ts";
+import { AdminBackButton } from "../../components/AdminCommon.tsx";
 
 type RefundAction = "APPROVED" | "REJECTED" | "RETRY";
 
@@ -45,13 +46,7 @@ export function RefundAdminDetailCard({
 
   return (
     <section className="grid gap-5" aria-labelledby="refund-detail-title">
-      <button
-        className="min-h-11 justify-self-start font-bold text-blue-deep underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-deep"
-        type="button"
-        onClick={onBack}
-      >
-        ← Quay lại danh sách
-      </button>
+      <AdminBackButton onClick={onBack} />
 
       <article className="rounded-lg border border-line bg-surface p-5 sm:p-7">
         <header className="flex flex-wrap items-start justify-between gap-4">

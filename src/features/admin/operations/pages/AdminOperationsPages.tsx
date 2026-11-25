@@ -1,4 +1,5 @@
-﻿import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { EyeOff, ListChecks, TicketCheck, WalletCards } from "lucide-react";
 import {
   adminStatusLabel,
   adminStatusTone,
@@ -10,6 +11,7 @@ import type { AdminWorkspaceController } from "../../hooks/admin-workspace-contr
 import { AdminDataTable } from "../../components/AdminDataTable.tsx";
 import type { AdminPath } from "../../../../routes/admin-route.ts";
 import { useResaleStats } from "../../resale/hooks/use-resale-stats.ts";
+import * as adminApi from "../../api/adminApi.ts";
 import { ResaleSectionTabs } from "../../resale/components/ResaleSectionTabs.tsx";
 import { ResaleStatsCards } from "../../resale/components/ResaleStatsCards.tsx";
 import {
@@ -31,6 +33,13 @@ type Choice = { readonly value: string; readonly label: string };
 
 const statusChoices = (values: readonly string[]): readonly Choice[] =>
   values.map((value) => ({ value, label: adminStatusLabel(value) }));
+const resaleStatusLabel = (status: string) =>
+  ({
+    ACTIVE: "Đang bán",
+    RESERVED: "Đang giữ chỗ",
+    SOLD: "Đã bán",
+    WITHDRAWN: "Đã rút",
+  })[status] ?? status;
 const organizerStatusOptions = statusChoices([
   "not_submitted",
   "pending",
@@ -908,261 +917,228 @@ export function AdminTicketPage({
 }
 
 export function AdminResalePage({
-  controller,
   navigate,
 }: {
-  readonly controller: AdminWorkspaceController;
   readonly navigate: (path: AdminPath) => void;
 }) {
-  const [query, setQuery] = useState("");
-  const [visibility, setVisibility] = useState("");
-  const [listingStatus, setListingStatus] = useState("");
-  const [reported, setReported] = useState("");
-  const [sellerId, setSellerId] = useState("");
-  const [eventId, setEventId] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [decision, setDecision] = useState<Decision | null>(null);
+  const [status, setStatus] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [rows, setRows] = useState<
+    readonly {
+      id: string;
+      price: number;
+      status: string;
+      createdAt: string;
+      seller: { id: string; fullName: string; email: string };
+      event: { id: string; title: string };
+      ticket: { ticketCode: string };
+    }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
+  const summary = useResaleStats("listings");
+
+  useEffect(() => {
+    let active = true;
+    async function loadListings() {
+      setLoading(true);
+      setError("");
+      try {
+        const response = await adminApi.findListings({
+          page: 1,
+          pageSize: 100,
+        });
+        if (!active) return;
+        setRows(
+          response.data.listings.map((entry) => ({
+            id: String(entry.id),
+            price: Number(entry.price),
+            status: String(entry.status),
+            createdAt: String(entry.createdAt),
+            seller: entry.seller as {
+              id: string;
+              fullName: string;
+              email: string;
+            },
+            event: entry.event as { id: string; title: string },
+            ticket: entry.ticket as { ticketCode: string },
+          })),
+        );
+      } catch (cause) {
+        if (active)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "Không thể tải danh sách tin đăng.",
+          );
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void loadListings();
+    return () => {
+      active = false;
+    };
+  }, [retryKey]);
+
   const listings = useMemo(
     () =>
-      controller.workspace.resales.filter(
+      rows.filter(
         (item) =>
-          (!visibility || item.visibility === visibility) &&
-          (!listingStatus || item.listingStatus === listingStatus) &&
-          (!reported || (reported === "yes") === item.reported) &&
-          (!sellerId || item.sellerId === sellerId) &&
-          (!eventId || item.eventId === eventId) &&
-          matchesAdminQuery(query, [item.id, item.ticketId]),
+          (!status || item.status === status) &&
+          (!minPrice || item.price >= Number(minPrice)) &&
+          (!maxPrice || item.price <= Number(maxPrice)),
       ),
-    [
-      controller.workspace.resales,
-      eventId,
-      listingStatus,
-      query,
-      reported,
-      sellerId,
-      visibility,
-    ],
+    [maxPrice, minPrice, rows, status],
   );
-  const selected =
-    controller.workspace.resales.find((item) => item.id === selectedId) ?? null;
-  const summary = useResaleStats("listings");
   const cards = [
     {
-      label: "T?ng tin ??ng",
+      label: "Tổng tin đăng",
       value: summary.stats?.total ?? null,
-      icon: "?",
+      icon: <ListChecks size={18} aria-hidden="true" />,
       tone: "text-pine",
-      sub: "Tr?n to?n h? th?ng",
+      sub: "Trên toàn hệ thống",
     },
     {
-      label: "?ang b?n",
+      label: "Đang bán",
       value: summary.stats?.active ?? null,
-      icon: "?",
+      icon: <TicketCheck size={18} aria-hidden="true" />,
       tone: "text-blue-deep",
-      sub: "Tin ??ng ?ang ho?t ??ng",
+      sub: "Tin đăng đang hoạt động",
     },
     {
-      label: "?? b?n",
+      label: "Đã bán",
       value: summary.stats?.sold ?? null,
-      icon: "?",
+      icon: <WalletCards size={18} aria-hidden="true" />,
       tone: "text-success",
-      sub: "Tin ??ng ?? giao d?ch",
+      sub: "Tin đăng đã giao dịch",
     },
     {
-      label: "?? ?n / b? kh?a",
+      label: "Đã ẩn / bị khóa",
       value: summary.stats?.hiddenOrLocked ?? null,
-      icon: "?",
+      icon: <EyeOff size={18} aria-hidden="true" />,
       tone: "text-error",
-      sub: "Kh?ng hi?n th? v?i ng??i mua",
+      sub: "Không hiển thị với người mua",
     },
   ];
   return (
     <div className="grid gap-6">
-      <AdminPageHeader eyebrow="VẬN HÀNH" title="Resale marketplace">
-        Moderate hiển thị listing; giá niêm yết chỉ đọc.
+      <AdminPageHeader eyebrow="VẬN HÀNH" title="Chợ vé resale">
+        Danh sách và thống kê được tải từ hệ thống; giá niêm yết chỉ đọc.
       </AdminPageHeader>
       <ResaleSectionTabs activeTab="listings" navigate={navigate} />
       <ResaleStatsCards cards={cards} loading={summary.loading} />
-      {summary.error && (
+      {(summary.error || error) && (
         <p
           role="alert"
           className="rounded border border-error bg-error/10 p-4 text-error"
         >
-          {summary.error}{" "}
+          {error || summary.error}{" "}
           <button
             type="button"
             className="ml-2 font-bold underline"
-            onClick={summary.retry}
+            onClick={() => {
+              setRetryKey((key) => key + 1);
+              summary.retry();
+            }}
           >
-            Th? t?i l?i th?ng k?
+            Thử tải lại
           </button>
         </p>
       )}
-      <AdminFilterToolbar
-        query={query}
-        status=""
-        resultCount={listings.length}
-        onQueryChange={setQuery}
-        onStatusChange={() => undefined}
-      />
-      <div className="grid gap-3 rounded-lg border border-line bg-surface p-4 sm:grid-cols-2 xl:grid-cols-5">
-        <AdminSelect
-          label="Hiển thị"
-          value={visibility}
-          onChange={setVisibility}
-          choices={[
-            { value: "", label: "Tất cả hiển thị" },
-            { value: "visible", label: "Hiển thị" },
-            { value: "hidden", label: "Đã ẩn" },
-          ]}
-        />
-        <AdminSelect
-          label="Listing"
-          value={listingStatus}
-          onChange={setListingStatus}
-          choices={[
-            { value: "", label: "Tất cả listing" },
-            ...["active", "sold", "withdrawn"].map((value) => ({
-              value,
-              label: adminStatusLabel(value),
-            })),
-          ]}
-        />
-        <AdminSelect
-          label="Báo cáo"
-          value={reported}
-          onChange={setReported}
-          choices={[
-            { value: "", label: "Tất cả" },
-            { value: "yes", label: "Đã báo cáo" },
-            { value: "no", label: "Không báo cáo" },
-          ]}
-        />
-        <AdminSelect
-          label="Người bán"
-          value={sellerId}
-          onChange={setSellerId}
-          choices={[
-            { value: "", label: "Tất cả người bán" },
-            ...controller.workspace.users.map((item) => ({
-              value: item.id,
-              label: item.name,
-            })),
-          ]}
-        />
-        <AdminSelect
-          label="Sự kiện"
-          value={eventId}
-          onChange={setEventId}
-          choices={[
-            { value: "", label: "Tất cả sự kiện" },
-            ...controller.workspace.events.map((item) => ({
-              value: item.id,
-              label: item.title,
-            })),
-          ]}
-        />
+      <div className="grid gap-3 rounded-lg border border-line bg-surface p-4 sm:grid-cols-2 xl:grid-cols-4">
+        <label className="text-sm font-bold">
+          Trạng thái
+          <select
+            className="mt-1 min-h-11 w-full rounded border border-line bg-paper px-3"
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            {["ACTIVE", "RESERVED", "SOLD", "WITHDRAWN"].map((value) => (
+              <option key={value} value={value}>
+                {resaleStatusLabel(value)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-bold">
+          Giá từ (₫)
+          <input
+            type="number"
+            min="0"
+            className="mt-1 min-h-11 w-full rounded border border-line bg-paper px-3"
+            value={minPrice}
+            onChange={(event) => setMinPrice(event.target.value)}
+          />
+        </label>
+        <label className="text-sm font-bold">
+          Giá đến (₫)
+          <input
+            type="number"
+            min="0"
+            className="mt-1 min-h-11 w-full rounded border border-line bg-paper px-3"
+            value={maxPrice}
+            onChange={(event) => setMaxPrice(event.target.value)}
+          />
+        </label>
+        <p className="self-end text-sm text-ink-soft">
+          {listings.length} kết quả
+        </p>
       </div>
-      <AdminDataTable
-        label="Listing resale"
-        headers={["Listing", "Vé", "Giá", "Hiển thị", "Báo cáo"]}
-        rows={listings.map((item) => ({
-          key: item.id,
-          cells: [
-            item.id,
-            item.ticketId,
-            formatAdminMoney(item.amount),
-            <Status key="visibility" value={item.visibility} />,
-            item.reported ? "Có" : "Không",
-          ],
-          onOpen: () => setSelectedId(item.id),
-        }))}
-      />
-      <AdminRecordDrawer
-        open={Boolean(selected)}
-        title={selected?.id ?? ""}
-        onClose={() => setSelectedId(null)}
-      >
-        {selected && (
-          <RecordBody>
-            <p>
-              <strong>Vé nguồn:</strong> {selected.ticketId} · người bán:{" "}
-              {controller.workspace.users.find(
-                (item) => item.id === selected.sellerId,
-              )?.name ?? selected.sellerId}
-            </p>
-            <p>
-              <strong>Giá niêm yết readonly:</strong>{" "}
-              {formatAdminMoney(selected.amount)} ·{" "}
-              {adminStatusLabel(selected.listingStatus)}
-            </p>
-            <p>
-              <strong>Nguy cơ fixture:</strong>{" "}
-              {selected.reported
-                ? "Listing đã bị báo cáo."
-                : "Không có báo cáo."}
-            </p>
-            <RelatedList
-              title="Buyer / order"
-              items={
-                selected.buyerId
-                  ? controller.workspace.orders
-                      .filter(
-                        (item) =>
-                          item.userId === selected.buyerId &&
-                          item.source === "resale",
-                      )
-                      .map(
-                        (item) =>
-                          `${controller.workspace.users.find((user) => user.id === selected.buyerId)?.name ?? selected.buyerId} · ${item.id}`,
-                      )
-                  : []
-              }
-            />
-            <RelatedList
-              title="Vụ việc"
-              items={relatedCases(controller, "resale", selected.id).map(
-                (item) => `${item.id} · ${item.summary}`,
-              )}
-            />
-            <Actions
-              items={[
-                {
-                  label:
-                    selected.visibility === "visible"
-                      ? "Ẩn listing"
-                      : "Khôi phục listing",
-                  tone:
-                    selected.visibility === "visible" ? "critical" : "neutral",
-                  onClick: () =>
-                    setDecision({
-                      title:
-                        selected.visibility === "visible"
-                          ? "Ẩn listing resale"
-                          : "Khôi phục listing resale",
-                      description:
-                        "Ẩn listing cần lý do; khôi phục có thể để trống.",
-                      confirm: "Xác nhận",
-                      operation:
-                        selected.visibility === "visible"
-                          ? "hide_resale"
-                          : "restore_resale",
-                      submit: (reason) =>
-                        controller.setResaleVisibility(
-                          selected.id,
-                          selected.visibility === "visible"
-                            ? "hidden"
-                            : "visible",
-                          reason,
-                        ),
-                    }),
-                },
-              ]}
-            />
-          </RecordBody>
-        )}
-      </AdminRecordDrawer>
-      <DecisionDialog decision={decision} onClose={() => setDecision(null)} />
+      {loading ? (
+        <p role="status">Đang tải tin đăng…</p>
+      ) : (
+        <AdminDataTable
+          label="Tin đăng resale"
+          headers={[
+            "Mã tin",
+            "Vé",
+            "Sự kiện",
+            "Người bán",
+            "Giá",
+            "Trạng thái",
+            "Ngày đăng",
+          ]}
+          rows={listings.map((item) => ({
+            key: item.id,
+            cells: [
+              <span
+                key="id"
+                className="block max-w-36 overflow-hidden text-ellipsis whitespace-nowrap"
+                title={item.id}
+              >
+                {item.id}
+              </span>,
+              item.ticket.ticketCode,
+              item.event.title,
+              <span key="seller">
+                {item.seller.fullName}
+                <span className="block text-ink-soft">{item.seller.email}</span>
+              </span>,
+              formatAdminMoney(item.price),
+              <AdminStatusBadge
+                key="status"
+                label={resaleStatusLabel(item.status)}
+                tone={
+                  item.status === "SOLD"
+                    ? "mint"
+                    : item.status === "ACTIVE"
+                      ? "blue"
+                      : "neutral"
+                }
+              />,
+              new Date(item.createdAt).toLocaleString("vi-VN"),
+            ],
+            onOpen: () =>
+              navigate(
+                `/admin/resale/listings/${encodeURIComponent(item.id)}` as AdminPath,
+              ),
+          }))}
+        />
+      )}
     </div>
   );
 }

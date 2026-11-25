@@ -1,11 +1,22 @@
-﻿import { useState } from 'react';
-import { adminStatusLabel as statusLabel, adminStatusTone as tone, formatAdminMoney as money } from '../../helpers/admin-display.ts';
-import type { AdminSensitiveOperation } from '../../helpers/admin-transitions.ts';
-import type { AdminWorkspaceController } from '../../hooks/admin-workspace-controller.ts';
-import type { AdminReviewDecision } from '../../types/admin-records.ts';
-import { AdminPageHeader, AdminStatusBadge } from '../../components/AdminCommon.tsx';
-import { AdminSensitiveDecisionDialog, type AdminDecision } from '../../components/AdminSensitiveDecisionDialog.tsx';
-import { AdminMissingRecord } from '../../components/AdminMissingRecord.tsx';
+﻿import { useState } from "react";
+import {
+  adminStatusLabel as statusLabel,
+  adminStatusTone as tone,
+  formatAdminMoney as money,
+} from "../../helpers/admin-display.ts";
+import type { AdminSensitiveOperation } from "../../helpers/admin-transitions.ts";
+import type { AdminWorkspaceController } from "../../hooks/admin-workspace-controller.ts";
+import type { AdminReviewDecision } from "../../types/admin-records.ts";
+import {
+  AdminBackButton,
+  AdminPageHeader,
+  AdminStatusBadge,
+} from "../../components/AdminCommon.tsx";
+import {
+  AdminSensitiveDecisionDialog,
+  type AdminDecision,
+} from "../../components/AdminSensitiveDecisionDialog.tsx";
+import { AdminMissingRecord } from "../../components/AdminMissingRecord.tsx";
 
 export function AdminEventReviewDetailPage({
   controller,
@@ -61,13 +72,7 @@ export function AdminEventReviewDetailPage({
         eyebrow="KIỂM DUYỆT / CHI TIẾT"
         title={event.title}
         actions={
-          <button
-            className="min-h-11 rounded border border-line px-4 font-bold"
-            type="button"
-            onClick={() => navigate("/admin/events/review")}
-          >
-            Quay lại danh sách
-          </button>
+          <AdminBackButton onClick={() => navigate("/admin/events/review")} />
         }
       >
         Organizer: {organizer?.name ?? "Đối tượng không còn khả dụng"} ·{" "}
@@ -175,7 +180,10 @@ export function AdminEventReviewDetailPage({
           </button>
         </div>
       )}
-      <AdminSensitiveDecisionDialog decision={decision} onClose={() => setDecision(null)} />
+      <AdminSensitiveDecisionDialog
+        decision={decision}
+        onClose={() => setDecision(null)}
+      />
     </div>
   );
 }

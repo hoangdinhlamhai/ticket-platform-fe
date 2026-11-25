@@ -7,6 +7,7 @@ import type { AdminWorkspaceController } from "../../hooks/admin-workspace-contr
 import { shouldUseClientNavigation } from "../../../../routes/client-navigation.ts";
 import type { AdminCase, AdminSubjectType } from "../../types/admin-records.ts";
 import {
+  AdminBackButton,
   AdminPageHeader,
   AdminStatusBadge,
 } from "../../components/AdminCommon.tsx";
@@ -68,9 +69,7 @@ export function AdminCaseDetailPage({
         eyebrow="VỤ VIỆC / CHI TIẾT"
         title={item.summary}
         actions={
-          <button
-            className="min-h-11 rounded border border-line px-4 font-bold"
-            type="button"
+          <AdminBackButton
             onClick={() =>
               navigate(
                 item.subjectType === "resale"
@@ -78,9 +77,7 @@ export function AdminCaseDetailPage({
                   : "/admin/cases",
               )
             }
-          >
-            Quay lại danh sách
-          </button>
+          />
         }
       >
         Người báo cáo: {item.reporter} · {item.category} ·{" "}

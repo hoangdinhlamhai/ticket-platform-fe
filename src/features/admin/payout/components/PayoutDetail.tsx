@@ -1,4 +1,5 @@
 import type { AdminPayout } from "../types/admin-payout.ts";
+import { AdminBackButton } from "../../components/AdminCommon.tsx";
 
 type Props = {
   payout: AdminPayout;
@@ -52,13 +53,7 @@ export function PayoutDetail({
   return (
     <section className="grid gap-6">
       <header>
-        <button
-          className="min-h-10 font-bold text-blue-deep underline"
-          type="button"
-          onClick={onBack}
-        >
-          ← Danh sách payout
-        </button>
+        <AdminBackButton label="Danh sách payout" onClick={onBack} />
         <p className="mt-5 text-xs font-extrabold uppercase tracking-widest text-coral-dark">
           Chi tiết payout
         </p>

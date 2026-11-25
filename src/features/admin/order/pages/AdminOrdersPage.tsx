@@ -1,9 +1,19 @@
-﻿import { useEffect, useMemo, useState } from 'react';
-import { findOrder, findOrders } from '../api/adminOrderApi.ts';
-import type { AdminOrderRow } from '../types/admin-order.ts';
-import { orderDate, orderMoney, orderStatus } from '../components/order-presentation.ts';
+import { useEffect, useMemo, useState } from "react";
+import { BadgeCheck, Ban, Clock3, ReceiptText } from "lucide-react";
+import { findOrders } from "../api/adminOrderApi.ts";
+import type { AdminOrderRow } from "../types/admin-order.ts";
+import {
+  orderDate,
+  orderMoney,
+  orderStatus,
+} from "../components/order-presentation.ts";
+import type { AdminPath } from "../../../../routes/admin-route.ts";
 
-export function AdminOrdersPage() {
+export function AdminOrdersPage({
+  navigate,
+}: {
+  navigate: (path: AdminPath) => void;
+}) {
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -20,9 +30,6 @@ export function AdminOrdersPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState<AdminOrderRow | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
   const pageSize = 20;
 
@@ -76,23 +83,8 @@ export function AdminOrdersPage() {
     };
   }, [page, pageSize, status, query, retryKey]);
 
-  const openOrder = async (order: AdminOrderRow) => {
-    setSelected(order);
-    setDetailLoading(true);
-    setDetailError("");
-    try {
-      const response = await findOrder(order.id);
-      setSelected(response.data.order as unknown as AdminOrderRow);
-    } catch (cause) {
-      setDetailError(
-        cause instanceof Error
-          ? cause.message
-          : "Không thể tải chi tiết đơn hàng.",
-      );
-    } finally {
-      setDetailLoading(false);
-    }
-  };
+  const openOrder = (order: AdminOrderRow) =>
+    navigate(`/admin/orders/${encodeURIComponent(order.id)}`);
 
   const events = useMemo(
     () => [
@@ -119,28 +111,28 @@ export function AdminOrdersPage() {
     {
       label: "Tổng đơn hàng",
       value: stats.total,
-      icon: "▤",
+      icon: <ReceiptText size={18} aria-hidden="true" />,
       tone: "text-pine",
       sub: "Trên toàn hệ thống",
     },
     {
       label: "Đã thanh toán",
       value: stats.paid,
-      icon: "✓",
+      icon: <BadgeCheck size={18} aria-hidden="true" />,
       tone: "text-success",
       sub: "Đơn đã ghi nhận thanh toán",
     },
     {
       label: "Chờ thanh toán",
       value: stats.pending,
-      icon: "◷",
+      icon: <Clock3 size={18} aria-hidden="true" />,
       tone: "text-warning",
       sub: "Đang chờ hoàn tất",
     },
     {
       label: "Đã hủy",
       value: stats.cancelled,
-      icon: "×",
+      icon: <Ban size={18} aria-hidden="true" />,
       tone: "text-error",
       sub: "Đơn đã bị hủy",
     },
@@ -168,7 +160,7 @@ export function AdminOrdersPage() {
               </p>
               <span
                 aria-hidden="true"
-                className={`grid size-9 place-items-center rounded-lg bg-paper-deep text-lg font-bold ${card.tone}`}
+                className={`grid size-9 place-items-center rounded-lg bg-paper-deep ${card.tone}`}
               >
                 {card.icon}
               </span>
@@ -361,9 +353,9 @@ export function AdminOrdersPage() {
                         <tr
                           key={order.id}
                           tabIndex={0}
-                          onClick={() => void openOrder(order)}
+                          onClick={() => openOrder(order)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") void openOrder(order);
+                            if (e.key === "Enter") openOrder(order);
                           }}
                           className="cursor-pointer border-t border-line/70 transition-colors hover:bg-paper/70 focus-visible:outline-2 focus-visible:outline-pine"
                         >
@@ -416,7 +408,7 @@ export function AdminOrdersPage() {
                               aria-label={`Xem đơn hàng ${order.id}`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                void openOrder(order);
+                                openOrder(order);
                               }}
                               className="grid size-9 place-items-center rounded-lg text-pine transition hover:bg-pine/10"
                             >
@@ -440,7 +432,7 @@ export function AdminOrdersPage() {
                     <button
                       key={order.id}
                       type="button"
-                      onClick={() => void openOrder(order)}
+                      onClick={() => openOrder(order)}
                       className="grid gap-3 rounded-xl border border-line p-4 text-left transition hover:border-pine/40 hover:bg-paper/60"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -501,227 +493,6 @@ export function AdminOrdersPage() {
           </div>
         </footer>
       </div>
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 flex justify-end bg-ink/40 backdrop-blur-[2px]"
-          role="presentation"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setSelected(null);
-          }}
-        >
-          <aside
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="order-detail-heading"
-            className="h-full w-full max-w-3el animate-[transaction-enter_.2s_ease-out] overflow-y-auto bg-paper p-5 shadow-2xl sm:p-8"
-          >
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              className="mb-5 rounded-lg border border-line px-3 py-2 text-sm font-bold text-pine transition hover:bg-surface"
-            >
-              ← Quay lại danh sách
-            </button>
-            {detailLoading ? <p role="status">Đang tải chi tiết...</p> : null}
-            {detailError ? (
-              <p role="alert" className="text-error">
-                {detailError}
-              </p>
-            ) : null}
-            {!detailLoading &&
-            !detailError &&
-            selected.payments &&
-            selected.tickets ? (
-              <>
-                <p className="m-0 text-xs font-extrabold uppercase tracking-widest text-ink-soft">
-                  Chi tiết đơn hàng
-                </p>
-                <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
-                  <h2
-                    id="order-detail-heading"
-                    className="m-0 break-all font-mono text-xl font-extrabold text-pine"
-                  >
-                    {selected.id}
-                  </h2>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${orderStatus[selected.status]?.style ?? "bg-paper-deep text-ink"}`}
-                  >
-                    {orderStatus[selected.status]?.label ?? selected.status}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-ink-soft">
-                  Tạo lúc {orderDate(selected.createdAt)}
-                </p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  {[
-                    [
-                      "Thông tin người mua",
-                      selected.user.fullName,
-                      selected.user.email,
-                      `ID: ${selected.user.id}`,
-                    ],
-                    [
-                      "Sự kiện",
-                      selected.event.title,
-                      `Mã sự kiện: ${selected.event.id}`,
-                      "Ngày diễn ra và địa điểm chưa được API cung cấp",
-                    ],
-                  ].map(([title, primary, secondary, extra]) => (
-                    <section
-                      key={title}
-                      className="rounded-xl border border-line bg-surface p-4"
-                    >
-                      <h3 className="m-0 text-sm font-extrabold text-pine">
-                        {title}
-                      </h3>
-                      <p className="mb-0 mt-3 font-bold">{primary}</p>
-                      <p className="mb-0 mt-1 break-all text-sm text-ink-soft">
-                        {secondary}
-                      </p>
-                      <p className="mb-0 mt-1 break-all text-xs text-ink-soft">
-                        {extra}
-                      </p>
-                    </section>
-                  ))}
-                </div>
-                <section className="mt-4 rounded-xl border border-line bg-surface p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="m-0 text-sm font-extrabold text-pine">
-                      Tóm tắt đơn hàng
-                    </h3>
-                    <strong className="text-lg">
-                      {orderMoney(selected.total)}
-                    </strong>
-                  </div>
-                  <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <dt className="text-ink-soft">Tạm tính</dt>
-                      <dd className="mb-0 mt-1 font-semibold">
-                        {selected.subtotal == null
-                          ? "Chưa có dữ liệu"
-                          : orderMoney(selected.subtotal)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink-soft">Phí nền tảng</dt>
-                      <dd className="mb-0 mt-1 font-semibold">
-                        API chưa cung cấp
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink-soft">Hạn thanh toán</dt>
-                      <dd className="mb-0 mt-1 font-semibold">
-                        API chưa cung cấp
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink-soft">Ảnh sự kiện</dt>
-                      <dd className="mb-0 mt-1 font-semibold">
-                        API chưa cung cấp
-                      </dd>
-                    </div>
-                  </dl>
-                </section>
-                <section className="mt-4 rounded-xl border border-line bg-surface p-4">
-                  <h3 className="m-0 text-sm font-extrabold text-pine">
-                    Vé trong đơn hàng{" "}
-                    <span className="font-normal text-ink-soft">
-                      ({selected.tickets?.length ?? 0})
-                    </span>
-                  </h3>
-                  {selected.tickets?.length ? (
-                    <div className="mt-3 divide-y divide-line">
-                      {selected.tickets.map((ticket) => (
-                        <div
-                          key={ticket.id}
-                          className="flex flex-wrap items-center justify-between gap-2 py-3"
-                        >
-                          <div>
-                            <p className="m-0 font-bold">
-                              {ticket.ticketType}
-                              {ticket.seat ? ` · ${ticket.seat}` : ""}
-                            </p>
-                            <p className="mb-0 mt-1 font-mono text-xs text-ink-soft">
-                              {ticket.ticketCode}
-                            </p>
-                          </div>
-                          <span className="rounded-full bg-paper-deep px-2.5 py-1 text-xs font-bold">
-                            {ticket.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mb-0 mt-3 text-sm text-ink-soft">
-                      Đơn chưa có vé được phát hành.
-                    </p>
-                  )}
-                </section>
-                <section className="mt-4 rounded-xl border border-line bg-surface p-4">
-                  <h3 className="m-0 text-sm font-extrabold text-pine">
-                    Thanh toán liên quan
-                  </h3>
-                  {selected.payments?.length ? (
-                    <div className="mt-3 grid gap-3">
-                      {selected.payments.map((payment) => (
-                        <article
-                          key={payment.id}
-                          className="rounded-lg border border-line bg-paper p-3"
-                        >
-                          <div className="flex flex-wrap justify-between gap-2">
-                            <span className="font-mono text-xs font-bold">
-                              {payment.id}
-                            </span>
-                            <span className="rounded-full bg-paper-deep px-2 py-1 text-xs font-bold">
-                              {payment.status}
-                            </span>
-                          </div>
-                          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                              <dt className="text-xs text-ink-soft">
-                                Provider
-                              </dt>
-                              <dd className="mb-0 mt-1 font-semibold">
-                                {payment.provider}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-xs text-ink-soft">Số tiền</dt>
-                              <dd className="mb-0 mt-1 font-semibold">
-                                {orderMoney(payment.amount)}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-xs text-ink-soft">
-                                Mã giao dịch
-                              </dt>
-                              <dd className="mb-0 mt-1 break-all font-mono text-xs">
-                                {payment.transactionId ?? "Chưa có dữ liệu"}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-xs text-ink-soft">
-                                Đã thanh toán lúc
-                              </dt>
-                              <dd className="mb-0 mt-1">
-                                {orderDate(payment.paidAt)}
-                              </dd>
-                            </div>
-                          </dl>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mb-0 mt-3 text-sm text-ink-soft">
-                      Chưa có giao dịch thanh toán.
-                    </p>
-                  )}
-                </section>
-              </>
-            ) : null}
-          </aside>
-        </div>
-      )}
     </section>
   );
 }

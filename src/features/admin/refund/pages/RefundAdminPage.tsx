@@ -214,19 +214,6 @@ export function RefundAdminPage() {
 
   return (
     <section className="grid gap-6">
-      <header>
-        <p className="m-0 text-sm font-bold uppercase tracking-widest text-ink-soft">
-          Tài chính · Admin
-        </p>
-        <h1 className="mb-0 mt-1 font-body text-3xl font-extrabold tracking-tight text-pine">
-          Quản lý Refunds
-        </h1>
-        <p className="mb-0 mt-2 text-sm text-ink-soft">
-          {summary.total.toLocaleString("vi-VN")} yêu cầu hoàn tiền · Duyệt sẽ
-          gửi refund thật tới Xendit.
-        </p>
-      </header>
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => (
           <article

@@ -8,8 +8,10 @@ export type AdminRoute =
   | "users"
   | "user-detail"
   | "orders"
+  | "order-detail"
   | "tickets"
   | "resale"
+  | "resale-listing-detail"
   | "refunds"
   | "payouts"
   | "payout-detail"
@@ -30,8 +32,10 @@ export type AdminPath =
   | "/admin/users"
   | `/admin/users/${string}`
   | "/admin/orders"
+  | `/admin/orders/${string}`
   | "/admin/tickets"
   | "/admin/resale"
+  | `/admin/resale/listings/${string}`
   | "/admin/refunds"
   | "/admin/payouts"
   | `/admin/payouts/${string}`
@@ -110,6 +114,14 @@ export function getAdminResaleTransactionId(pathname: string) {
   return extractId(pathname, /^\/admin\/resale\/transactions\/([^/]+)$/);
 }
 
+export function getAdminResaleListingId(pathname: string) {
+  return extractId(pathname, /^\/admin\/resale\/listings\/([^/]+)$/);
+}
+
+export function getAdminOrderId(pathname: string) {
+  return extractId(pathname, /^\/admin\/orders\/([^/]+)$/);
+}
+
 export function getAdminRoute(pathname: string): AdminRoute {
   const path = normalizePath(pathname);
   if (path === "/admin/organizers") return "users";
@@ -122,6 +134,8 @@ export function getAdminRoute(pathname: string): AdminRoute {
   if (getAdminCaseId(path)) return "case-detail";
   if (getAdminUserId(path)) return "user-detail";
   if (getAdminPayoutId(path)) return "payout-detail";
+  if (getAdminOrderId(path)) return "order-detail";
   if (getAdminResaleTransactionId(path)) return "resale-transaction-detail";
+  if (getAdminResaleListingId(path)) return "resale-listing-detail";
   return "not-found";
 }

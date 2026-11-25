@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
+
 export type ResaleStatCard = {
   readonly label: string;
   readonly value: number | null;
-  readonly icon: string;
+  readonly icon: ReactNode;
   readonly tone: string;
   readonly sub: string;
 };
@@ -37,7 +39,7 @@ export function ResaleStatsCards({
                 </p>
                 <span
                   aria-hidden="true"
-                  className={`grid size-9 place-items-center rounded-lg bg-paper-deep text-lg font-bold ${card.tone}`}
+                  className={`grid size-9 place-items-center rounded-lg bg-paper-deep ${card.tone}`}
                 >
                   {card.icon}
                 </span>

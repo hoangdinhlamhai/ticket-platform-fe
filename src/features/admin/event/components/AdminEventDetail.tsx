@@ -3,6 +3,7 @@ import * as adminEventApi from "../api/adminEventApi.ts";
 import { AdminEventSeatMap } from "./AdminEventSeatMap.tsx";
 import { adminStatusLabel } from "../../helpers/admin-display.ts";
 import type { AdminEventDetail as EventDetail } from "../types/admin-event.ts";
+import { AdminBackButton } from "../../components/AdminCommon.tsx";
 
 type Props = {
   readonly eventId: string;
@@ -109,13 +110,7 @@ function AdminEventDetailLoader({
   if (error && !event)
     return (
       <section className="grid gap-4 rounded-lg border border-line bg-surface p-5">
-        <button
-          className="min-h-10 w-fit font-bold underline underline-offset-4"
-          type="button"
-          onClick={() => navigate(backPath)}
-        >
-          Quay lại danh sách
-        </button>
+        <AdminBackButton onClick={() => navigate(backPath)} />
         <p className="text-error" role="alert">
           {error}
         </p>
@@ -140,13 +135,7 @@ function AdminEventDetailLoader({
 
   return (
     <div className="mx-auto grid w-full max-w-[1600px] gap-5">
-      <button
-        className="min-h-10 w-fit rounded-md px-2 text-sm font-bold text-pine underline decoration-pine/40 underline-offset-4 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
-        type="button"
-        onClick={() => navigate(backPath)}
-      >
-        ← Quay lại danh sách
-      </button>
+      <AdminBackButton onClick={() => navigate(backPath)} />
 
       <header
         className="grid min-w-0 gap-2 rounded-xl bg-pine text-paper"

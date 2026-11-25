@@ -1,4 +1,5 @@
 import type { ResaleTransaction } from "../../api/adminApi.ts";
+import { BadgeCheck, Clock3, ListOrdered, LoaderCircle } from "lucide-react";
 import type { AdminPath } from "../../../../routes/admin-route.ts";
 import { useResaleStats } from "../hooks/use-resale-stats.ts";
 import { ResaleSectionTabs } from "./ResaleSectionTabs.tsx";
@@ -55,28 +56,28 @@ export function ResaleTransactionList({
     {
       label: "Tổng giao dịch",
       value: summary.stats?.total ?? null,
-      icon: "▤",
+      icon: <ListOrdered size={18} aria-hidden="true" />,
       tone: "text-pine",
       sub: "Trên toàn hệ thống",
     },
     {
       label: "Chờ thanh toán",
       value: summary.stats?.pendingPayment ?? null,
-      icon: "◷",
+      icon: <Clock3 size={18} aria-hidden="true" />,
       tone: "text-blue-deep",
       sub: "Người mua chưa hoàn tất",
     },
     {
       label: "Đang xử lý",
       value: summary.stats?.processing ?? null,
-      icon: "↻",
+      icon: <LoaderCircle size={18} aria-hidden="true" />,
       tone: "text-warning",
       sub: "Đã thanh toán, chờ hoàn tất",
     },
     {
       label: "Thành công",
       value: summary.stats?.completed ?? null,
-      icon: "✓",
+      icon: <BadgeCheck size={18} aria-hidden="true" />,
       tone: "text-success",
       sub: "Giao dịch hoàn tất",
     },
@@ -193,7 +194,12 @@ export function ResaleTransactionList({
             {rows.map((row) => (
               <tr key={row.id} className="border-b border-line last:border-0">
                 <td className="px-4 py-3 font-mono">
-                  {row.maGiaoDich ?? row.transactionCode ?? row.id}
+                  <span
+                    className="block max-w-44 overflow-hidden text-ellipsis whitespace-nowrap"
+                    title={row.maGiaoDich ?? row.transactionCode ?? row.id}
+                  >
+                    {row.maGiaoDich ?? row.transactionCode ?? row.id}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   {row.event?.title ??

@@ -113,15 +113,6 @@ export function AdminPaymentsPage() {
   ] as const;
   return (
     <section className="grid gap-6">
-      <header>
-        <p className="text-sm font-bold uppercase tracking-widest text-ink-soft">
-          Tài chính · Admin
-        </p>
-        <h1 className="m-0 text-3xl font-extrabold">Quản lý Payments</h1>
-        <p className="mb-0 mt-2 text-ink-soft">
-          Theo dõi giao dịch thanh toán và thông tin đối soát.
-        </p>
-      </header>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {summary.map(([label, value, tone]) => (
           <article

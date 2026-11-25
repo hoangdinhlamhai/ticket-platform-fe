@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import type { AdminPath } from "../../../../routes/admin-route.ts";
-import { AdminDecisionDialog } from "../../components/AdminCommon.tsx";
+import {
+  AdminBackButton,
+  AdminDecisionDialog,
+} from "../../components/AdminCommon.tsx";
 import * as userApi from "../api/adminUserApi.ts";
 import type { AdminUser, AdminUserStatus } from "../types/admin-user.ts";
 
@@ -158,13 +161,7 @@ export function AdminUserDetailPage({ userId, navigate }: Props) {
           >
             Thử tải lại
           </button>
-          <button
-            type="button"
-            className="min-h-10 font-bold text-blue-deep underline"
-            onClick={() => navigate("/admin/users")}
-          >
-            Quay lại danh sách
-          </button>
+          <AdminBackButton onClick={() => navigate("/admin/users")} />
         </div>
       </section>
     );

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BadgeCheck, Clock3, LoaderCircle, ReceiptText } from "lucide-react";
 import type { AdminPath } from "../../../../routes/admin-route.ts";
 import * as adminPayoutApi from "../api/adminPayoutApi.ts";
 import { PayoutList } from "../components/PayoutList.tsx";
@@ -77,28 +78,28 @@ export function PayoutListPage({ navigate }: Props) {
     {
       label: "Tổng payout",
       value: summary.total,
-      icon: "▤",
+      icon: <ReceiptText size={18} aria-hidden="true" />,
       tone: "text-pine",
       sub: "Trên toàn hệ thống",
     },
     {
       label: "Chờ duyệt",
       value: summary.pending,
-      icon: "◷",
+      icon: <Clock3 size={18} aria-hidden="true" />,
       tone: "text-blue-deep",
       sub: "Cần quản trị viên xem xét",
     },
     {
       label: "Đang xử lý",
       value: summary.processing,
-      icon: "↻",
+      icon: <LoaderCircle size={18} aria-hidden="true" />,
       tone: "text-warning",
       sub: "Đang gửi lệnh chi",
     },
     {
       label: "Đã hoàn tất",
       value: summary.approved,
-      icon: "✓",
+      icon: <BadgeCheck size={18} aria-hidden="true" />,
       tone: "text-success",
       sub: "Đã xử lý thành công",
     },
@@ -128,7 +129,7 @@ export function PayoutListPage({ navigate }: Props) {
               </p>
               <span
                 aria-hidden="true"
-                className={`grid size-9 place-items-center rounded-lg bg-paper-deep text-lg font-bold ${card.tone}`}
+                className={`grid size-9 place-items-center rounded-lg bg-paper-deep ${card.tone}`}
               >
                 {card.icon}
               </span>
@@ -143,9 +144,7 @@ export function PayoutListPage({ navigate }: Props) {
 
       <div className="grid gap-3 rounded-xl border border-line bg-surface p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_16rem_auto]">
         <div className="hidden sm:block">
-          <h2 className="m-0 text-base font-extrabold text-pine">
-            Lọc payout
-          </h2>
+          <h2 className="m-0 text-base font-extrabold text-pine">Lọc payout</h2>
           <p className="mb-0 mt-1 text-xs text-ink-soft">
             Chọn trạng thái cần theo dõi
           </p>

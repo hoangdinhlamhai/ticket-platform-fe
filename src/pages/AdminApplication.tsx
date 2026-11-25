@@ -1,4 +1,4 @@
-﻿import { useCallback, type ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import { AdminLayout } from "../layouts/admin/AdminLayout.tsx";
 import {
   getAdminEventId,
@@ -6,6 +6,8 @@ import {
   getAdminPayoutId,
   getAdminUserId,
   getAdminResaleTransactionId,
+  getAdminResaleListingId,
+  getAdminOrderId,
   getAdminRoute,
   type AdminPath,
 } from "../routes/admin-route.ts";
@@ -27,8 +29,10 @@ import {
   PayoutListPage,
 } from "../features/admin/payout/index.ts";
 import { ResaleTransactionsPage } from "../features/admin/resale/pages/ResaleTransactionsPage.tsx";
+import { AdminResaleListingDetailPage } from "../features/admin/resale/pages/AdminResaleListingDetailPage.tsx";
 import { AdminDashboardPage } from "../features/admin/dashboard/pages/AdminDashboardPage.tsx";
 import { AdminTransactionsPage } from "../features/admin/transactions/pages/AdminTransactionsPage.tsx";
+import { AdminOrderDetailPage } from "../features/admin/order/pages/AdminOrderDetailPage.tsx";
 import { AdminCategoriesPage } from "../features/admin/category/index.ts";
 import {
   AdminUserDetailPage,
@@ -75,6 +79,8 @@ export function AdminApplication({
   const payoutId = getAdminPayoutId(pathname);
   const userId = getAdminUserId(pathname);
   const resaleTransactionId = getAdminResaleTransactionId(pathname);
+  const resaleListingId = getAdminResaleListingId(pathname);
+  const orderId = getAdminOrderId(pathname);
   const navigate = useCallback(
     (destination: AdminPath) => {
       if (destination === pathname) return;
@@ -111,6 +117,8 @@ export function AdminApplication({
   } else if (route === "dashboard")
     page = <AdminDashboardPage navigate={navigatePage} />;
   else if (route === "users") page = <AdminUsersPage navigate={navigate} />;
+  else if (route === "order-detail" && orderId)
+    page = <AdminOrderDetailPage orderId={orderId} navigate={navigate} />;
   else if (route === "user-detail" && userId)
     page = <AdminUserDetailPage userId={userId} navigate={navigate} />;
   else if (route === "events-all")
@@ -126,8 +134,14 @@ export function AdminApplication({
   else if (route === "payout-detail" && payoutId)
     page = <PayoutDetailPage payoutId={payoutId} navigate={navigate} />;
   else if (route === "categories") page = <AdminCategoriesPage />;
-  else if (route === "resale")
-    page = <AdminResalePage controller={workspace} navigate={navigate} />;
+  else if (route === "resale") page = <AdminResalePage navigate={navigate} />;
+  else if (route === "resale-listing-detail" && resaleListingId)
+    page = (
+      <AdminResaleListingDetailPage
+        listingId={resaleListingId}
+        navigate={navigate}
+      />
+    );
   else if (route === "resale-complaints")
     page = (
       <AdminCaseListPage
@@ -186,15 +200,19 @@ export function AdminApplication({
           ? "payouts"
           : route === "user-detail"
             ? "users"
-            : route === "resale-transaction-detail"
-              ? "resale-transactions"
-              : route === "case-detail" &&
-                  workspace.workspace.cases.some(
-                    (item) =>
-                      item.id === caseId && item.subjectType === "resale",
-                  )
-                ? "resale-complaints"
-                : route
+            : route === "order-detail"
+              ? "orders"
+              : route === "resale-transaction-detail"
+                ? "resale-transactions"
+                : route === "resale-listing-detail"
+                  ? "resale"
+                  : route === "case-detail" &&
+                      workspace.workspace.cases.some(
+                        (item) =>
+                          item.id === caseId && item.subjectType === "resale",
+                      )
+                    ? "resale-complaints"
+                    : route
       }
       notice={getOperationNotice(workspace.lastOperation)}
       onAcknowledgeNotice={workspace.clearLastOperation}

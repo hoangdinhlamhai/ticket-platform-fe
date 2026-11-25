@@ -35,7 +35,7 @@ export function AdminTransactionsPage({
       </header>
       <nav
         aria-label="Phân hệ giao dịch"
-        className="sticky top-0 z-10 -mx-1 flex overflow-x-auto rounded-xl border border-line bg-surface/95 p-1 shadow-sm backdrop-blur sm:mx-0 sm:w-fit"
+        className="flex gap-2 overflow-x-auto border-b border-line"
       >
         {tabs.map((item) => (
           <button
@@ -43,7 +43,7 @@ export function AdminTransactionsPage({
             type="button"
             aria-current={tab === item.id ? "page" : undefined}
             onClick={() => navigate(item.path)}
-            className={`relative min-h-11 min-w-28 rounded-lg px-5 text-sm font-bold transition-all duration-200 ${tab === item.id ? "bg-pine text-paper shadow-sm" : "text-ink-soft hover:bg-paper-deep hover:text-ink"}`}
+            className={`min-h-11 shrink-0 border-b-2 px-3 text-sm font-bold transition ${tab === item.id ? "border-pine text-pine" : "border-transparent text-ink-soft hover:text-pine"}`}
           >
             {item.label}
           </button>
@@ -54,7 +54,7 @@ export function AdminTransactionsPage({
         className="min-w-0 animate-[transaction-enter_.22s_ease-out] motion-reduce:animate-none"
       >
         {tab === "orders" ? (
-          <AdminOrdersPage />
+          <AdminOrdersPage navigate={navigate} />
         ) : tab === "payments" ? (
           <AdminPaymentsPage />
         ) : (

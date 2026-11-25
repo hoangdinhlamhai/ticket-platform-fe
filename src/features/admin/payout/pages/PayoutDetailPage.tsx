@@ -1,7 +1,10 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import type { AdminPath } from "../../../../routes/admin-route.ts";
-import { AdminDecisionDialog } from "../../components/AdminCommon.tsx";
+import {
+  AdminBackButton,
+  AdminDecisionDialog,
+} from "../../components/AdminCommon.tsx";
 import * as adminPayoutApi from "../api/adminPayoutApi.ts";
 import { PayoutDetail } from "../components/PayoutDetail.tsx";
 import type { AdminPayout } from "../types/admin-payout.ts";
@@ -145,13 +148,7 @@ export function PayoutDetailPage({ payoutId, navigate }: Props) {
         >
           {current.error}
         </p>
-        <button
-          className="min-h-10 justify-self-start font-bold text-blue-deep underline"
-          type="button"
-          onClick={() => navigate("/admin/payouts")}
-        >
-          Quay lại danh sách
-        </button>
+        <AdminBackButton onClick={() => navigate("/admin/payouts")} />
       </section>
     );
   }

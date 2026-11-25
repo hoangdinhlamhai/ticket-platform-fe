@@ -78,6 +78,21 @@ export const findListings = (params: AdminQuery = {}) =>
     { params },
   );
 
+export type AdminResaleListing = {
+  id: string;
+  price: number;
+  status: string;
+  createdAt: string;
+  seller: { id: string; fullName: string; email: string };
+  event: { id: string; title: string };
+  ticket: { ticketCode: string };
+};
+
+export const findListing = (id: string) =>
+  axiosClient.get<{ listing: AdminResaleListing }>(
+    `/admin/resale/listings/${encodeURIComponent(id)}`,
+  );
+
 export type ResaleListingMetrics = {
   total: number;
   active: number;
