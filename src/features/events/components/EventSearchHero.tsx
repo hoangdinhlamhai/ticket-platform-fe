@@ -1,5 +1,11 @@
 import type { ChangeEvent } from "react";
-import heroMockup from "../../../assets/hero.png";
+import bg1 from "../../../assets/bg-img/bg1.jpg";
+import bg2 from "../../../assets/bg-img/bg2.jpg";
+import bg3 from "../../../assets/bg-img/bg3.jpg";
+import bg4 from "../../../assets/bg-img/bg4.jpg";
+import bg5 from "../../../assets/bg-img/bg5.jpg";
+import bg6 from "../../../assets/bg-img/bg6.jpg";
+import bg7 from "../../../assets/bg-img/bg7.jpg";
 import { SearchIcon } from "../../../components/icons/TicketlyIcons";
 import { EventCategoryFilter } from "./EventCategoryFilter";
 import { EventRecentSearches } from "./EventRecentSearches";
@@ -23,6 +29,8 @@ export function EventSearchHero({
   query,
   selectedCategory,
 }: EventSearchHeroProps) {
+  const backgroundImages = [bg1, bg2, bg3, bg4, bg5, bg6, bg7, bg1];
+
   return (
     <section
       className="relative overflow-hidden bg-pine text-paper"
@@ -32,31 +40,19 @@ export function EventSearchHero({
         className="pointer-events-none absolute inset-0 overflow-hidden"
         aria-hidden="true"
       >
-        <div className="event-search-hero-track flex h-full w-[400%]">
-          <img
-            src={heroMockup}
-            alt=""
-            className="h-full w-1/4 shrink-0 object-cover object-center opacity-55"
-          />
-          <img
-            src={heroMockup}
-            alt=""
-            className="h-full w-1/4 shrink-0 object-cover object-center opacity-55"
-          />
-          <img
-            src={heroMockup}
-            alt=""
-            className="h-full w-1/4 shrink-0 object-cover object-center opacity-55"
-          />
-          <img
-            src={heroMockup}
-            alt=""
-            className="h-full w-1/4 shrink-0 object-cover object-center opacity-55"
-          />
+        <div className="event-search-hero-track flex h-full w-[800%]">
+          {backgroundImages.map((image, index) => (
+            <img
+              key={`${image}-${index}`}
+              src={image}
+              alt=""
+              className="h-full w-[12.5%] shrink-0 object-cover object-center opacity-70"
+            />
+          ))}
         </div>
       </div>
       <div
-        className="pointer-events-none absolute inset-0 bg-pine/85"
+        className="pointer-events-none absolute inset-0 bg-pine/70"
         aria-hidden="true"
       />
       <div
@@ -68,18 +64,18 @@ export function EventSearchHero({
         aria-hidden="true"
       />
 
-      <div className="relative z-20 attendee-container grid grid-cols-[minmax(0,1.25fr)_minmax(16rem,0.75fr)] gap-12 pt-[clamp(3rem,7vw,6.25rem)] pb-[clamp(3.5rem,7vw,6.5rem)] max-[1100px]:block">
+      <div className="relative z-20 attendee-container grid grid-cols-[minmax(0,1.25fr)_minmax(16rem,0.75fr)] gap-12 pt-[calc(clamp(3rem,7vw,6.25rem)+8.5rem)] pb-[clamp(3.5rem,7vw,6.5rem)] max-[1100px]:block">
         <div className="min-w-0">
           <p className="m-0 text-[0.72rem] font-extrabold tracking-[0.12em] text-mint">
             VÉ TRONG TAY, VUI LÊN NGAY
           </p>
           <h1
             id="attendee-home-title"
-            className="mt-4 mb-0 max-w-[42rem] font-body text-[clamp(3.1rem,7vw,6.3rem)] leading-[0.92] font-extrabold tracking-[-0.075em]"
+            className="mt-4 mb-0 max-w-[42rem] font-body text-[clamp(3.1rem,7vw,6.3rem)] leading-[1.02] font-extrabold tracking-[-0.075em]"
           >
             Đêm nay,
             <br />
-            bạn muốn đi đâu?
+            bạn muốn đi <span className="inline-block mt-2">đâu?</span>
           </h1>
           <p className="mt-6 mb-0 max-w-[35rem] text-base leading-[1.65] text-story-copy">
             Ghim lại một cuộc hẹn, tìm chiếc vé phù hợp và để thành phố dẫn bạn
@@ -118,9 +114,7 @@ export function EventSearchHero({
           className="relative mt-auto rounded-lg border border-poster-yellow/70 bg-poster-yellow p-5 text-pine max-[1100px]:mt-10"
           aria-label="Tóm tắt kết quả khám phá"
         >
-          <p className="m-0 text-[0.67rem] font-extrabold tracking-[0.12em]">
-            LỊCH CUỐI TUẦN
-          </p>
+          <p className="m-0 text-[0.67rem] font-extrabold tracking-[0.12em]"></p>
           <strong className="mt-8 block font-body text-[clamp(4rem,10vw,7.5rem)] leading-[0.72] font-extrabold tracking-[-0.12em]">
             {eventCount}
           </strong>
@@ -128,7 +122,7 @@ export function EventSearchHero({
             sự kiện đang chờ bạn khám phá
           </p>
           <span className="absolute right-4 bottom-4 rounded-sm bg-blue px-2 py-1 text-[0.68rem] font-extrabold tracking-[0.08em] text-paper">
-            TICKETLY / 26
+            TICKETLY
           </span>
         </aside>
       </div>

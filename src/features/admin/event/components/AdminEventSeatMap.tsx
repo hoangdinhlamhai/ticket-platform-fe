@@ -41,9 +41,11 @@ export function AdminEventSeatMap({ eventId }: Props) {
     return (
       <section className="grid content-start gap-4">
         <h2 className="m-0 text-xl font-extrabold">Sơ đồ chỗ ngồi</h2>
-        <p className="rounded border border-line bg-surface p-4" role="status">
-          Đang tải sơ đồ chỗ ngồi...
-        </p>
+        <div
+          className="admin-loading-skeleton min-h-64 rounded border border-line bg-surface"
+          role="status"
+          aria-label="Đang tải sơ đồ chỗ ngồi"
+        />
       </section>
     );
 

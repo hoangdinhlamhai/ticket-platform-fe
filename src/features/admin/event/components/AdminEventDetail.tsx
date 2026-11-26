@@ -4,6 +4,7 @@ import { AdminEventSeatMap } from "./AdminEventSeatMap.tsx";
 import { adminStatusLabel } from "../../helpers/admin-display.ts";
 import type { AdminEventDetail as EventDetail } from "../types/admin-event.ts";
 import { AdminBackButton } from "../../components/AdminCommon.tsx";
+import { AdminDetailSkeleton } from "../../components/AdminDetailSkeleton.tsx";
 
 type Props = {
   readonly eventId: string;
@@ -101,12 +102,7 @@ function AdminEventDetailLoader({
     }
   }
 
-  if (loading)
-    return (
-      <p className="rounded-lg border border-line bg-surface p-5" role="status">
-        Đang tải chi tiết sự kiện...
-      </p>
-    );
+  if (loading) return <AdminDetailSkeleton label="Đang tải chi tiết sự kiện" />;
   if (error && !event)
     return (
       <section className="grid gap-4 rounded-lg border border-line bg-surface p-5">

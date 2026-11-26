@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import * as refundAdminApi from "../api/refundAdminApi.ts";
 import { RefundAdminDetailCard } from "../components/RefundAdminDetailCard.tsx";
 import { RefundAdminList } from "../components/RefundAdminList.tsx";
+import { AdminDetailSkeleton } from "../../components/AdminDetailSkeleton.tsx";
 import type { AdminRefund, AdminRefundStatus } from "../types/admin-refund.ts";
 
 const pageSize = 20;
@@ -347,12 +348,11 @@ export function RefundAdminPage() {
             aria-labelledby="refund-detail-title"
           >
             {isDetailLoading ? (
-              <p
-                className="rounded-lg border border-line bg-surface p-5"
-                role="status"
-              >
-                Đang tải chi tiết...
-              </p>
+              <AdminDetailSkeleton
+                label="Đang tải chi tiết yêu cầu hoàn tiền"
+                sections={1}
+                showBackButton={false}
+              />
             ) : detailError ? (
               <div className="grid gap-4">
                 <p

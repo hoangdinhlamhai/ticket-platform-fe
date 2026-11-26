@@ -24,6 +24,7 @@ type NavigationLinkProps = {
   active: boolean;
   children: string;
   href: AttendeePath;
+  overlay: boolean;
   onNavigate: (path: AttendeePath) => void;
 };
 
@@ -31,11 +32,12 @@ function NavigationLink({
   active,
   children,
   href,
+  overlay,
   onNavigate,
 }: NavigationLinkProps) {
   return (
     <a
-      className={`min-h-11 px-3 py-3 ${active ? "text-blue-deep underline underline-offset-4" : "text-ink hover:text-blue-deep"}`}
+      className={`min-h-11 px-3 py-3 ${active ? `${overlay ? "text-mint" : "text-blue-deep"} underline underline-offset-4` : overlay ? "text-paper hover:text-mint" : "text-ink hover:text-blue-deep"}`}
       href={href}
       aria-current={active ? "page" : undefined}
       onClick={(event) => {
@@ -57,11 +59,19 @@ export function AttendeeHeader({
   onNavigate,
   onNavigateToOrganizer,
 }: AttendeeHeaderProps) {
+  const overlay = activeRoute === "home";
+
   return (
-    <header className="border-b border-line bg-paper">
+    <header
+      className={
+        overlay
+          ? "absolute inset-x-0 top-0 z-30 border-b border-paper/30 bg-transparent"
+          : "border-b border-line bg-paper"
+      }
+    >
       <div className="attendee-container flex min-h-[5.25rem] flex-wrap items-center justify-between gap-x-6 gap-y-3 py-3">
         <a
-          className="flex min-h-11 items-center gap-2 text-pine no-underline"
+          className={`flex min-h-11 items-center gap-2 ${overlay ? "text-paper" : "text-pine"} no-underline`}
           href="/"
           onClick={(event) => {
             if (!shouldUseClientNavigation(event)) return;
@@ -69,19 +79,20 @@ export function AttendeeHeader({
             onNavigate("/");
           }}
         >
-          <TicketlyMark className="h-9 w-9" />
+          <TicketlyMark className={`h-9 w-9 ${overlay ? "text-coral" : ""}`} />
           <span className="font-body text-[1.65rem] font-extrabold tracking-[-0.09em]">
             Ticketly
           </span>
         </a>
 
         <nav
-          className="order-3 flex w-full flex-wrap items-center gap-1 border-t border-line pt-2 text-[0.82rem] font-bold mobile:order-3"
+          className={`order-3 flex w-full flex-wrap items-center gap-1 border-t ${overlay ? "border-paper/30" : "border-line"} pt-2 text-[0.82rem] font-bold mobile:order-3`}
           aria-label="Điều hướng chính"
         >
           <NavigationLink
             active={activeRoute === "home"}
             href="/"
+            overlay={overlay}
             onNavigate={onNavigate}
           >
             Khám phá
@@ -89,6 +100,7 @@ export function AttendeeHeader({
           <NavigationLink
             active={activeRoute === "saved-events"}
             href="/saved-events"
+            overlay={overlay}
             onNavigate={onNavigate}
           >
             Sự kiện đã lưu
@@ -98,6 +110,7 @@ export function AttendeeHeader({
               activeRoute === "tickets" || activeRoute === "ticket-status"
             }
             href="/tickets"
+            overlay={overlay}
             onNavigate={onNavigate}
           >
             Vé của tôi
@@ -105,6 +118,7 @@ export function AttendeeHeader({
           <NavigationLink
             active={isOrderRoute(activeRoute)}
             href="/orders"
+            overlay={overlay}
             onNavigate={onNavigate}
           >
             Đơn hàng
@@ -114,6 +128,7 @@ export function AttendeeHeader({
               activeRoute === "refunds" || activeRoute === "refund-detail"
             }
             href="/refunds"
+            overlay={overlay}
             onNavigate={onNavigate}
           >
             Hoàn tiền
@@ -121,6 +136,7 @@ export function AttendeeHeader({
           <NavigationLink
             active={isResaleRoute(activeRoute)}
             href="/resale"
+            overlay={overlay}
             onNavigate={onNavigate}
           >
             Chợ resale

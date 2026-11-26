@@ -14,6 +14,7 @@ import {
   statusText,
 } from "../helpers/resale-transaction-format.ts";
 import { resalePayoutFailureReasons } from "../../../resale/helpers/resale-payout-domain.ts";
+import { AdminDetailSkeleton } from "../../components/AdminDetailSkeleton.tsx";
 
 const label = (name: string, value: unknown) => (
   <div>
@@ -57,6 +58,9 @@ export function ResaleTransactionDetail({
   retryPayout,
   restrictedFailure,
 }: Props) {
+  if ((!detail || detailId !== transactionId) && !error)
+    return <AdminDetailSkeleton label="Đang tải chi tiết giao dịch resale" />;
+
   return (
     <section className="grid gap-5">
       <button
@@ -75,9 +79,7 @@ export function ResaleTransactionDetail({
         </p>
       )}
       {!detail || detailId !== transactionId ? (
-        <p role="status">
-          {error ? "Không tải được dữ liệu." : "Đang tải chi tiết…"}
-        </p>
+        <p role="status">Không tải được dữ liệu.</p>
       ) : (
         <>
           <section className="grid gap-5 rounded-lg border border-line bg-surface p-5">

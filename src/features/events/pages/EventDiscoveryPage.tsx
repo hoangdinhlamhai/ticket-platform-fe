@@ -31,6 +31,7 @@ const normalize = (value: string) => value.trim().toLocaleLowerCase("vi-VN");
 
 export function EventDiscoveryPage({ onNavigate, onNoticeChange }: Props) {
   const [events, setEvents] = useState<EventCardData[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -65,9 +66,35 @@ export function EventDiscoveryPage({ onNavigate, onNoticeChange }: Props) {
     };
   }, [loadAttempt]);
 
+  useEffect(() => {
+    let active = true;
+    const loadCategories = async () => {
+      try {
+        const { data } = await eventApi.categories();
+        if (active) {
+          setAvailableCategories(
+            data.categories.map((category) => category.name),
+          );
+        }
+      } catch {
+        // Categories from loaded events remain available if the category endpoint fails.
+      }
+    };
+    void loadCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const categories = useMemo(
-    () => ["Tất cả", ...new Set(events.map((event) => event.category))],
-    [events],
+    () => [
+      "Tất cả",
+      ...new Set([
+        ...availableCategories,
+        ...events.map((event) => event.category),
+      ]),
+    ],
+    [availableCategories, events],
   );
   const activeFilterChips = useMemo(
     () => getActiveEventFilterChips(advancedFilters),

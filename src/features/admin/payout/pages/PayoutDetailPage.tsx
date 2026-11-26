@@ -5,6 +5,7 @@ import {
   AdminBackButton,
   AdminDecisionDialog,
 } from "../../components/AdminCommon.tsx";
+import { AdminDetailSkeleton } from "../../components/AdminDetailSkeleton.tsx";
 import * as adminPayoutApi from "../api/adminPayoutApi.ts";
 import { PayoutDetail } from "../components/PayoutDetail.tsx";
 import type { AdminPayout } from "../types/admin-payout.ts";
@@ -132,13 +133,8 @@ export function PayoutDetailPage({ payoutId, navigate }: Props) {
     }
   }
 
-  if (current.loading) {
-    return (
-      <p className="rounded-lg border border-line bg-surface p-5" role="status">
-        Đang tải chi tiết payout…
-      </p>
-    );
-  }
+  if (current.loading)
+    return <AdminDetailSkeleton label="Đang tải chi tiết payout" />;
   if (current.error) {
     return (
       <section className="grid gap-4">

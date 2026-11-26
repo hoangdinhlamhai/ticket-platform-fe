@@ -480,23 +480,37 @@
 
 @keyframes event-search-hero-slide {
   0%,
-  20% {
+  10.9% {
     transform: translate3d(0, 0, 0);
   }
-
+  12.5%,
+  23.4% {
+    transform: translate3d(-12.5%, 0, 0);
+  }
   25%,
-  45% {
+  35.9% {
     transform: translate3d(-25%, 0, 0);
   }
-
+  37.5%,
+  48.4% {
+    transform: translate3d(-37.5%, 0, 0);
+  }
   50%,
-  70% {
+  60.9% {
     transform: translate3d(-50%, 0, 0);
   }
-
+  62.5%,
+  73.4% {
+    transform: translate3d(-62.5%, 0, 0);
+  }
   75%,
-  100% {
+  85.9% {
     transform: translate3d(-75%, 0, 0);
+  }
+  87.5%,
+  98.4%,
+  100% {
+    transform: translate3d(-87.5%, 0, 0);
   }
 }
 
@@ -526,7 +540,7 @@
 }
 
 .event-search-hero-track {
-  animation: event-search-hero-slide 24s ease-in-out infinite;
+  animation: event-search-hero-slide 32s ease-in-out infinite;
   will-change: transform;
 }
 
