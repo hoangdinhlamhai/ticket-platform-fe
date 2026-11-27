@@ -1,4 +1,4 @@
-import { AuthBrand } from './AuthBrand'
+import { AuthBrand } from "./AuthBrand";
 
 export function AuthStoryPanel() {
   return (
@@ -15,7 +15,11 @@ export function AuthStoryPanel() {
           TICKETLY PRESENTS
         </span>
         <strong className="relative z-[1] font-body text-[clamp(2.45rem,4.2vw,4rem)] leading-[0.77] font-bold tracking-[-0.1em]">
-          ĐI<br />XEM<br />THÔI
+          ĐI
+          <br />
+          XEM
+          <br />
+          THÔI
         </strong>
         <span className="absolute bottom-[1.1rem] left-5 block max-w-36 text-[0.61rem] font-extrabold tracking-[0.08em]">
           MỖI TUẦN · MỘT KỶ NIỆM
@@ -29,16 +33,19 @@ export function AuthStoryPanel() {
         <p className="m-0 mb-[0.7rem] text-[0.72rem] font-extrabold tracking-[0.11em] text-mint">
           VÉ TRONG TAY, VUI LÊN NGAY
         </p>
-        <h2 className="m-0 max-w-[29rem] font-body text-[clamp(2.2rem,3.7vw,4.15rem)] leading-[0.92] font-bold tracking-[-0.075em]">
-          Nơi mọi cuộc hẹn đáng nhớ bắt đầu.
+        <h2 className="m-0 max-w-[29rem] font-body text-[clamp(2.2rem,3.7vw,4.15rem)] leading-[0.98] font-bold tracking-[-0.075em]">
+          <span className="block">Nơi mọi cuộc</span>
+          <span className="mt-1 block">hẹn đáng nhớ</span>
+          <span className="mt-1 block">bắt đầu.</span>
         </h2>
         <p className="mt-4 mb-0 max-w-[28rem] text-[0.98rem] leading-[1.7] text-story-copy">
-          Khám phá concert, sân khấu và những trải nghiệm đang làm thành phố sôi động hơn mỗi ngày.
+          Khám phá concert, sân khấu và những trải nghiệm đang làm thành phố sôi
+          động hơn mỗi ngày.
         </p>
       </div>
       <p className="relative z-[1] m-0 text-[0.66rem] font-extrabold tracking-[0.1em] text-mint">
         CÙNG TICKETLY TẠO KỶ NIỆM MỚI
       </p>
     </aside>
-  )
+  );
 }

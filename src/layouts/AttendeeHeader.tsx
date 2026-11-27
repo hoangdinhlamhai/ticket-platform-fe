@@ -165,7 +165,7 @@ export function AttendeeHeader({
           {authStatus === "authenticated" && authenticatedUser ? (
             <>
               <a
-                className="flex min-h-11 items-center rounded-md border border-pine/40 px-3 text-[0.8rem] font-extrabold text-pine no-underline hover:bg-pine/10"
+                className="flex min-h-11 items-center rounded-md border border-coral-dark bg-coral px-3 text-[0.8rem] font-extrabold text-paper no-underline hover:bg-coral-dark"
                 href="/organizer/events/new"
                 onClick={(event) => {
                   if (!shouldUseClientNavigation(event)) return;
